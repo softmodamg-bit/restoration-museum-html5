@@ -1,0 +1,7976 @@
+(() => {
+  "use strict";
+
+  const SAVE_KEY = "sparkle_restoration_museum_v1";
+  const RANKING_CONFIG = Object.freeze({
+    endpoint: String(window.RESTORATION_RANKING_CONFIG?.endpoint || "").trim(),
+    season: String(window.RESTORATION_RANKING_CONFIG?.season || "공모전 시즌 1").slice(0, 40),
+    gameVersion: String(window.RESTORATION_RANKING_CONFIG?.gameVersion || "prototype-2026-08").slice(0, 40),
+    rulesVersion: String(window.RESTORATION_RANKING_CONFIG?.rulesVersion || "director-score-v2").slice(0, 40)
+  });
+  const SFX_FILES = {
+    click: "assets/sfx-click.wav",
+    hit: "assets/sfx-hit.wav",
+    wrong: "assets/sfx-wrong.wav",
+    success: "assets/sfx-success.wav",
+    open: "assets/sfx-open.wav",
+    complete: "assets/sfx-complete.wav",
+    coin: "assets/sfx-coin.wav"
+  };
+  const MUSIC_THEMES = {
+    storage: {
+      label: "별빛 수장고", root: 50, scale: [0, 2, 5, 7, 9], phraseMs: 8800, wave: "sine",
+      chords: [[0, 2, 4], [3, 0, 2], [1, 3, 0], [4, 1, 3]],
+      melody: [4, 3, 2, null, 1, 2, 0, null, 2, 3, 4, 5, 4, 2, 1, null]
+    },
+    lab: {
+      label: "정밀 복원실", root: 45, scale: [0, 2, 3, 7, 8], phraseMs: 7200, wave: "triangle",
+      chords: [[0, 2, 4], [1, 3, 0], [2, 4, 1], [0, 3, 4]],
+      melody: [0, 2, 1, 3, 2, null, 4, 3, 2, 1, 0, 2, 3, 2, 1, null]
+    },
+    gallery: {
+      label: "햇살 전시관", root: 55, scale: [0, 2, 4, 7, 9], phraseMs: 8000, wave: "sine",
+      chords: [[0, 2, 4], [3, 0, 2], [4, 1, 3], [0, 2, 4]],
+      melody: [0, 1, 2, 4, 3, 2, 1, null, 2, 3, 4, 6, 4, 3, 2, 0]
+    },
+    story: {
+      label: "봉인된 관장실", root: 48, scale: [0, 3, 5, 7, 10], phraseMs: 9600, wave: "sine",
+      chords: [[0, 2, 4], [4, 1, 3], [3, 0, 2], [1, 3, 0]],
+      melody: [4, null, 3, 2, 1, null, 0, 1, 2, null, 3, 4, 3, 1, 0, null]
+    },
+    records: {
+      label: "기록의 서가", root: 52, scale: [0, 2, 4, 7, 11], phraseMs: 8800, wave: "triangle",
+      chords: [[0, 2, 4], [2, 4, 1], [3, 0, 2], [1, 3, 0]],
+      melody: [0, 2, 3, null, 4, 3, 2, 1, 2, 4, 3, null, 2, 1, 0, null]
+    },
+    practice: {
+      label: "보존 연습 리듬", root: 57, scale: [0, 2, 4, 7, 9], phraseMs: 6400, wave: "square",
+      chords: [[0, 2, 4], [4, 1, 3], [3, 0, 2], [4, 2, 1]],
+      melody: [0, 1, 2, 3, 4, 3, 2, 1, 2, 4, 5, 4, 3, 2, 1, 0]
+    }
+  };
+  const FORBIDDEN_NAME_TOKENS = [
+    "시발", "씨발", "ㅅㅂ", "개새끼", "개색기", "새끼", "병신", "ㅂㅅ", "지랄", "좆", "존나", "닥쳐", "꺼져", "느금마", "니애미",
+    "마약", "도박", "성매매", "테러", "폭탄", "살인", "자살", "혐오", "나치",
+    "fuck", "shit", "bitch", "cunt", "nigger", "nigga", "faggot", "retard", "whore", "nazi", "terror", "casino"
+  ];
+
+  const TOOLS = {
+    magnifier: { name: "확대경", icon: "🔎", desc: "손상 부위를 조사해 기록합니다." },
+    uvLamp: { name: "자외선(UV) 조사등", icon: "🔦", desc: "자외선 빛 반응으로 옛 수리 흔적과 원래 재료를 구분합니다." },
+    testSwab: { name: "작은 시험용 면봉", icon: "🧪", desc: "눈에 잘 띄지 않는 작은 자리에서 안전한지 먼저 확인합니다." },
+    softBrush: { name: "부드러운 붓", icon: "🖌️", desc: "표면 먼지를 물을 쓰지 않고 제거합니다." },
+    paperPatch: { name: "보존용 종이", icon: "📜", desc: "찢김을 지지하고 구조를 튼튼하게 잡아 줍니다." },
+    reversibleAdhesive: { name: "나중에 다시 뗄 수 있는 접착제", icon: "🫧", desc: "깨진 조각이 맞닿는 곳에 필요한 만큼만 사용합니다." },
+    fillSpatula: { name: "작은 틈 메움 주걱", icon: "🥄", desc: "비어 있는 부분 안쪽만 필요한 만큼 메웁니다." },
+    retouchBrush: { name: "복원 색 붓", icon: "🎨", desc: "가까이에서 원래 부분과 구별되도록 색을 맞춥니다." },
+    microPick: { name: "미세 제거 도구", icon: "🪛", desc: "아직 번지고 있는 녹을 조심스럽게 제거합니다." },
+    stabilizer: { name: "부식 안정화 도구", icon: "💧", desc: "계속 번지는 녹과 손상이 더 커지지 않게 돕습니다." },
+    protectiveWax: { name: "보호 코팅", icon: "🕯️", desc: "얇고 균일한 보호막을 만듭니다." },
+    humidityPack: { name: "직접 물이 닿지 않는 가습 팩", icon: "🌫️", desc: "작품에 물을 바로 대지 않고 구김과 휨을 천천히 줄입니다." },
+    varnishGel: { name: "오염 제거 겔", icon: "🧴", desc: "작은 자리에서 먼저 시험한 뒤 누렇게 변한 층만 조금씩 줄입니다." },
+    surfaceVacuum: { name: "약한 먼지 흡입 도구", icon: "🌬️", desc: "보호망 너머에서 느슨한 먼지만 약하게 빨아들입니다." },
+    fiberTweezers: { name: "섬유 정돈 핀셋", icon: "🧵", desc: "풀린 섬유를 당기지 않고 원래 방향으로 정돈합니다." },
+    supportStitch: { name: "지지 바느질", icon: "🪡", desc: "약해진 직물을 받침에 최소 지점으로 고정합니다." },
+    consolidant: { name: "약한 표면 고정 도구", icon: "💠", desc: "들뜨거나 가루처럼 약해진 곳만 작은 범위로 고정합니다." },
+    glassSupport: { name: "유리 조각 지지대", icon: "🫙", desc: "접합 전 유리 조각의 무게와 움직임을 안전하게 받칩니다." },
+    resinFill: { name: "유리 틈 투명 메움재", icon: "💎", desc: "유리의 금과 조각이 맞닿는 선 안쪽만 받쳐 줍니다." },
+    supportMount: { name: "작품 맞춤 받침", icon: "🧩", desc: "작품의 현재 모양에 맞춰 무게와 움직임을 나눕니다." },
+    photoSleeve: { name: "사진 보존 슬리브", icon: "🖼️", desc: "사진 표면과 마찰하지 않는 안정적인 보호층을 만듭니다." },
+    bindingCradle: { name: "책등 받침대", icon: "📖", desc: "제본에 무리가 가지 않는 펼침 각도를 유지합니다." },
+    sootSponge: { name: "그을음 흡착 도구", icon: "🧽", desc: "안정한 벽화면의 느슨한 그을음을 작은 면 단위로 줄입니다." },
+    groutTool: { name: "바탕층 충전 도구", icon: "🪨", desc: "들뜬 벽화 뒤에서 꼭 필요한 틈만 받쳐 줍니다." },
+    isolationLayer: { name: "재료 사이 보호막", icon: "🪟", desc: "서로 영향을 주는 현대 재료 사이에 나중에 걷어 낼 수 있는 얇은 막을 둡니다." }
+  };
+
+  const CORE_ARTWORKS = [
+    {
+      id: "moon-jar",
+      title: "색동 달항아리",
+      material: "도자기",
+      rarity: "첫 소장품",
+      unlockRep: 0,
+      supplyCost: 40,
+      rewardCoins: 150,
+      rewardRep: 7,
+      appeal: 28,
+      colors: ["#ffe1cf", "#cceee2"],
+      accent: "#ef7d6f",
+      era: "동시대 전통 재해석",
+      artist: "도예가 한가람 (가상)",
+      artType: "색띠 장식 백자 항아리",
+      origin: "해오름 도요 기증",
+      culturalValue: "전통 달항아리의 비대칭적 균형에 현대적인 색띠를 더해 전통 공예가 오늘의 감각으로 이어지는 방식을 보여 줍니다.",
+      story: "한가람은 서로 다른 흙 두 덩이를 이어 붙이는 달항아리 제작법을 ‘두 개의 마음이 하나의 둥근 풍경이 되는 일’이라고 기록했습니다. 이 작품은 작가가 지역 축제의 색동천에서 영감을 받아 만든 첫 번째 실험작입니다.",
+      fictional: true,
+      damage: "먼지와 접합 이탈, 작은 결손이 함께 보입니다.",
+      summary: "깨진 선을 숨기기보다 구조를 튼튼하게 잡고 비어 있는 부분만 꼭 필요한 만큼 보완했습니다.",
+      ethics: "좋은 복원은 새것처럼 만드는 일이 아니라, 원본을 더 손상시키지 않으면서 읽을 수 있게 돕는 일입니다.",
+      steps: [
+        step("손상 조사", "균열과 결손 위치를 확대 관찰하세요.", "magnifier", "조명 아래에서 균열 방향과 파편 이탈 범위를 먼저 기록합니다.", [[38,34],[55,46],[48,69]]),
+        step("안전성 시험", "접착 전 작은 시험구를 확인하세요.", "testSwab", "표면 장식과 유약이 처리 재료에 반응하지 않는지 시험합니다.", [[31,58],[64,38],[61,70]]),
+        step("파편 접합", "맞닿는 파편 경계를 따라 접합하세요.", "reversibleAdhesive", "나중에 다시 손볼 수 있는 재료를 꼭 필요한 만큼만 써서 구조를 튼튼하게 잡아 줍니다.", [[44,39],[51,51],[55,63]]),
+        step("결손 보완", "비어 있는 작은 결손만 메워 주세요.", "fillSpatula", "원래 모습을 짐작해 지나치게 채우지 않고 구조에 필요한 범위만 보완합니다.", [[36,45],[62,54],[47,76]]),
+        step("식별 가능한 보색", "보완부의 색을 주변과 부드럽게 연결하세요.", "retouchBrush", "가까이에서는 복원한 곳을 구별할 수 있도록 필요한 부분만 색을 맞춥니다.", [[40,48],[58,56],[49,73]])
+      ]
+    },
+    {
+      id: "spring-scroll",
+      title: "봄빛 화조도 족자",
+      material: "종이·채색",
+      rarity: "고운 기록",
+      unlockRep: 6,
+      supplyCost: 65,
+      rewardCoins: 220,
+      rewardRep: 10,
+      appeal: 42,
+      colors: ["#ffe5b8", "#f4c9dc"],
+      accent: "#ef7f88",
+      era: "1920년대 민화 재해석풍",
+      artist: "채색화가 윤매화 (가상)",
+      artType: "종이 바탕 수묵채색 족자",
+      origin: "다정헌 문중 기탁",
+      culturalValue: "화조도의 길상 상징과 근대기 안료 사용, 족자 장황 방식을 한 작품에서 살펴볼 수 있는 생활문화 자료입니다.",
+      story: "윤매화가 어린 딸의 첫 봄나들이를 기념해 그린 작품으로 전해집니다. 새의 시선이 화면 밖을 향하는 것은 아직 오지 않은 계절을 기다린다는 뜻을 담은 작가의 개인적인 표식입니다.",
+      fictional: true,
+      damage: "접힘 변형, 얼룩, 가장자리 찢김이 확인됩니다.",
+      summary: "수분에 민감한 채색을 시험한 뒤 간접 가습과 보존용 종이 지지로 안정화했습니다.",
+      ethics: "종이는 물에 민감하고 안료마다 반응이 다릅니다. 전체 세척보다 색별 시험과 국부 처리가 먼저입니다.",
+      steps: [
+        step("매체 반응 조사", "색과 종이의 민감한 지점을 찾으세요.", "magnifier", "번짐 가능성이 있는 채색과 과거 보수 흔적을 구분해 기록합니다.", [[43,31],[57,42],[36,69]]),
+        step("이염 시험", "색별 시험 지점을 가볍게 확인하세요.", "testSwab", "물에 녹는 안료가 묻어나지 않는지 작은 지점에서 확인합니다.", [[38,37],[60,36],[52,66]]),
+        step("간접 가습·평탄화", "구겨진 부분을 천천히 펴 주세요.", "humidityPack", "직접 물을 대지 않고 습도를 서서히 전달해 접힌 자국을 천천히 폅니다.", [[33,52],[50,47],[65,61]]),
+        step("찢김 지지", "찢어진 가장자리를 뒤에서 지지하세요.", "paperPatch", "얇은 보존용 종이와 알맞은 접착제로 찢김의 당기는 힘을 여러 곳으로 나눕니다.", [[27,43],[72,57],[48,78]])
+      ]
+    },
+    {
+      id: "sunset-painting",
+      title: "노을 정원의 산책",
+      material: "유화",
+      rarity: "인기 작품",
+      unlockRep: 15,
+      supplyCost: 90,
+      rewardCoins: 310,
+      rewardRep: 13,
+      appeal: 58,
+      colors: ["#ffd29c", "#9fd4ef"],
+      accent: "#ee8069",
+      era: "1930년대 서정 회화풍",
+      artist: "화가 박도윤 (가상)",
+      artType: "캔버스 유채",
+      origin: "은하 미술연구회 기증",
+      culturalValue: "도시 외곽 공원이 대중의 새로운 여가 공간으로 자리 잡던 시기의 풍경과 빛에 대한 실험을 보여 줍니다.",
+      story: "박도윤은 같은 산책길을 열두 번 그렸지만 해 질 무렵의 두 인물이 함께 등장하는 작품은 이것뿐입니다. 뒷면에는 ‘돌아가는 길이 가장 오래 남는다’는 짧은 연필 메모가 있습니다.",
+      fictional: true,
+      damage: "표면 먼지, 변색된 바니시, 작은 박락이 보입니다.",
+      summary: "세척 시험을 거쳐 변색층을 작은 범위만 줄이고, 들뜬 채색층을 먼저 단단히 고정했습니다.",
+      ethics: "바니시 제거는 항상 정답이 아닙니다. 원래 표면과 안료가 안전하다는 근거가 있을 때만 단계적으로 진행합니다.",
+      steps: [
+        step("층위 조사", "바니시와 채색층의 경계를 확인하세요.", "magnifier", "표면 광택, 균열, 과거 덧칠을 관찰해 처리 범위를 정합니다.", [[31,33],[55,30],[65,62]]),
+        step("자외선 형광 조사", "나중에 한 수리와 원본 재료가 자외선 아래서 어떻게 다르게 보이는지 구분하세요.", "uvLamp", "과거 덧칠·보수 니스와 원본층이 보이는 빛의 차이를 기록합니다.", [[35,44],[61,40],[47,67]]),
+        step("표면 세척", "먼지층을 부드럽게 제거하세요.", "softBrush", "불안정한 채색층을 피하면서 느슨한 표면 오염만 제거합니다.", [[27,58],[50,47],[70,51]]),
+        step("변색층 국부 제거", "시험이 끝난 부분만 천천히 처리하세요.", "varnishGel", "전체를 한 번에 벗기지 않고 국부 단위로 반응을 확인합니다.", [[36,35],[56,54],[63,70]]),
+        step("박락부 보색", "안정화된 작은 결손을 연결하세요.", "retouchBrush", "원본 위를 덮지 않고 비어 있는 부분 안에서만 다시 알아보기 쉽게 합니다.", [[42,42],[59,48],[49,72]])
+      ]
+    },
+    {
+      id: "bronze-mirror",
+      title: "구름무늬 청동거울",
+      material: "금속",
+      rarity: "별빛 유물",
+      unlockRep: 27,
+      supplyCost: 120,
+      rewardCoins: 430,
+      rewardRep: 17,
+      appeal: 74,
+      colors: ["#c8ebd8", "#a7c7df"],
+      accent: "#e0b25b",
+      era: "19세기 후반 장식금속풍",
+      artist: "금속공예가 최해원 (가상)",
+      artType: "주조 청동 거울",
+      origin: "별고을 생활사관 이관",
+      culturalValue: "주조 뒤 새긴 구름무늬와 표면의 안정한 녹을 통해 장식 기술과 오랜 사용 환경을 함께 읽을 수 있습니다.",
+      story: "거울은 한 여행 상인이 길을 떠날 때마다 가족에게 맡겼다고 전해집니다. 가장자리의 네 점은 방향을 잊지 말라는 뜻으로 후대에 새겨진 것으로 추정되는 게임 속 설정입니다.",
+      fictional: true,
+      damage: "표면에 녹색 부식물과 불균일한 산화층이 있습니다.",
+      summary: "활성 부식 여부를 먼저 확인하고, 불안정한 부식물만 제거한 뒤 얇은 보호층을 적용했습니다.",
+      ethics: "금속은 반짝이게 닦는 것보다 활성 부식을 멈추고 안정적인 표면을 남기는 일이 우선입니다.",
+      steps: [
+        step("활성 부식 조사", "불안정한 부식 지점을 표시하세요.", "magnifier", "색, 분말화, 들뜸을 관찰해 안정한 녹과 활성 부식을 구분합니다.", [[35,34],[62,38],[51,67]]),
+        step("기계적 제거", "가루화된 부식물만 조심스럽게 제거하세요.", "microPick", "금속심과 안정한 표면을 건드리지 않도록 확대 관찰하며 제거합니다.", [[31,52],[54,43],[67,63]]),
+        step("부식 안정화", "진행성 손상 부위에 안정화 처리를 하세요.", "stabilizer", "남은 염화물과 환경 위험을 살펴 손상이 더 번지지 않게 막습니다.", [[39,37],[63,51],[45,72]]),
+        step("보호 코팅", "얇고 균일한 보호층을 만들어 주세요.", "protectiveWax", "두껍게 광택을 내지 않고 수분과 오염을 줄일 정도로만 도포합니다.", [[33,45],[55,52],[66,70]])
+      ]
+    }
+  ];
+
+  const MECHANIC_IDS = ["spot", "choice", "trace", "drag", "stability", "precision", "sequence", "rhythm", "tone", "align", "cleaning", "uv", "budget", "balance"];
+  const PAPER_ALIGNMENT_TOOLS = new Set(["paperPatch"]);
+  const CLEANING_MECHANIC_TOOLS = new Set(["varnishGel", "surfaceVacuum", "sootSponge", "microPick"]);
+  const BALANCE_MECHANIC_TOOLS = new Set(["supportMount", "glassSupport", "bindingCradle", "photoSleeve"]);
+  const MECHANIC_NAMES = {
+    spot: "사광 손상 조사",
+    choice: "시험구 안전 판정",
+    trace: "결 따라 표면 정리",
+    drag: "파편 가접합",
+    stability: "환경 안정화 조절",
+    precision: "미세량 홀드 조절",
+    sequence: "처리 절차 판단",
+    rhythm: "접착제 점적 타이밍",
+    tone: "식별 가능한 보색",
+    align: "접합면 방향 정렬",
+    cleaning: "세척 강도 판단",
+    uv: "자외선 형광 조사",
+    budget: "처리량 나누기",
+    balance: "받침 무게 잡기"
+  };
+
+  const MECHANIC_EASY_NAMES = {
+    spot: "옆빛으로 손상 찾기",
+    choice: "작은 시험 결과 고르기",
+    trace: "결을 따라 먼지 털기",
+    drag: "붙이기 전 조각 맞춤",
+    stability: "온도·습도 안전하게 맞추기",
+    precision: "알맞은 양에서 손 떼기",
+    sequence: "안전한 다음 행동 고르기",
+    rhythm: "접착제 한 방울 맞추기",
+    tone: "구별되는 복원 색 고르기",
+    align: "금과 무늬 이어 맞추기",
+    cleaning: "오염을 걷고 멈출 때 고르기",
+    uv: "자외선으로 옛 수리 흔적 찾기",
+    budget: "꼭 필요한 곳에 작업 나누기",
+    balance: "약한 곳을 피해 받침 놓기"
+  };
+
+  const EASY_COPY_REPLACEMENTS = [
+    ["받침 무게 잡기", "약한 곳을 피해 받침 놓기"],
+    ["처리량 나누기", "꼭 필요한 곳에 작업 나누기"],
+    ["자외선 형광 조사", "자외선으로 옛 수리 흔적 찾기"],
+    ["사광 손상 조사", "옆빛으로 손상 찾기"],
+    ["시험구 안전 판정", "작은 시험 결과 고르기"],
+    ["파편 가접합", "붙이기 전 조각 맞춤"],
+    ["파편 건식 맞춤", "깨진 조각을 접착 전에 미리 맞추기"],
+    ["건식 맞춤", "접착제를 바르기 전 미리 맞추기"],
+    ["환경 안정화 조절", "온도·습도 안전하게 맞추기"],
+    ["미세량 홀드 조절", "알맞은 양에서 손 떼기"],
+    ["처리 절차 판단", "안전한 다음 행동 고르기"],
+    ["접착제 점적 타이밍", "접착제 한 방울 맞추기"],
+    ["식별 가능한 보색", "구별되는 복원 색 고르기"],
+    ["접합면 방향 정렬", "금과 무늬 이어 맞추기"],
+    ["세척 강도 판단", "오염을 걷고 멈출 때 고르기"],
+    ["안료 이동", "그림 물감 묻어남"],
+    ["활성 부식", "계속 번지는 녹"],
+    ["진행성 손상", "계속 커지는 손상"],
+    ["후대 보수", "나중에 한 수리"],
+    ["후대 덧칠", "나중에 덧칠한 곳"],
+    ["주조·단조 금속공예", "쇳물을 틀에 붓거나 두드려 만든 금속 공예"],
+    ["취입·성형 유리", "입으로 불고 모양을 잡아 만든 유리"],
+    ["제본 문서·필사본", "실이나 풀로 묶은 책·손으로 쓴 문서"],
+    ["석고·복합재료 조각", "석고와 여러 재료로 만든 조각"],
+    ["조각·결구 목제 유물", "새기고 짜 맞춰 만든 나무 유물"],
+    ["수묵채색", "먹과 색으로 그린 그림"],
+    ["장소특정 벽화", "그 장소를 위해 만든 벽화"],
+    ["아상블라주", "여러 물건을 모아 만든 작품"],
+    ["석고원형", "청동상을 만들기 전 석고 본"],
+    ["은염사진", "빛에 반응하는 은 재료로 만든 사진"],
+    ["인화지", "사진 종이"],
+    ["필사본", "손으로 베껴 쓴 책"],
+    ["장정본", "겉표지를 꾸민 책"],
+    ["목제완구", "나무 장난감"],
+    ["풍화면", "비바람에 닳은 표면"],
+    ["합금", "여러 금속을 섞은 재료"],
+    ["결구", "나무를 짜 맞추는 방법"],
+    ["길상", "좋은 일을 바라는"],
+    ["족자 장황", "그림을 족자로 꾸미는"],
+    ["비대칭적 균형", "완전히 똑같지 않아도 편안한 균형"],
+    ["복합 공예의 정수", "여러 공예 기술이 어우러진 모습"],
+    ["주조 뒤", "쇳물을 틀에 부어 만든 뒤"],
+    ["화법", "그리는 방법"],
+    ["색채 계획", "색을 쓰는 계획"],
+    ["공동체 의식", "함께 지내는 사람들의 생각"],
+    ["회벽", "석회로 바른 벽"],
+    ["부조", "도톰하게 새긴 조각"],
+    ["문중 기탁", "가문에서 맡김"],
+    ["재단 기탁", "재단에서 맡김"],
+    ["공예관 기탁", "공예관에서 맡김"],
+    ["생활사관 이관", "생활사관에서 옮겨 받음"],
+    ["옛 극장 수습", "옛 극장에서 구해 옴"],
+    ["사진관 아카이브", "사진관 기록 보관소"],
+    ["스튜디오 장기대여", "작가 작업실에서 오래 빌려 옴"],
+    ["가역 접착제", "나중에 다시 뗄 수 있는 접착제"],
+    ["가역적 격리층", "나중에 걷어 낼 수 있는 재료 사이 보호막"],
+    ["시험구", "시험 자리"],
+    ["둥근 사광", "둥근 옆빛"],
+    ["사광", "옆에서 비추는 빛"],
+    ["접합면", "조각이 맞닿는 면"],
+    ["점적", "한 방울 떨어뜨리기"],
+    ["보색 시편을", "복원 색 보기 카드를"],
+    ["보색을 고르는", "복원 색을 고르는"],
+    ["보색 시편", "복원 색 보기 카드"],
+    ["보색", "복원한 곳의 색 맞추기"],
+    ["서로 다른 재료의 접합 이탈", "서로 다른 재료를 붙인 부분이 벌어짐"],
+    ["접합 이탈", "붙인 부분이 벌어짐"],
+    ["오래된 접합부", "오래전에 붙인 부분"],
+    ["미세 균열", "아주 가는 금"],
+    ["균열선", "금이 간 선"],
+    ["균열", "금"],
+    ["돌출부 결손", "돌출부가 떨어져 빈 곳"],
+    ["국부 결손", "일부가 떨어져 빈 곳"],
+    ["미세 결손", "작은 빈 곳"],
+    ["결손부", "비어 있는 부분"],
+    ["결손", "빈 곳"],
+    ["황변된", "누렇게 변한"],
+    ["황변", "누렇게 변함"],
+    ["바니시", "투명 보호막"],
+    ["안료층 분말화와 바탕층의 들뜸", "그림 물감층이 가루처럼 약해지고 바탕층도 들뜸"],
+    ["안료층 분말화와", "그림 물감층이 가루처럼 약해지고"],
+    ["표면 분말화", "표면이 가루처럼 약해지는 현상"],
+    ["표면 풍화와", "표면이 오래되어 약해지고"],
+    ["건조 변형과 표면 박락", "마르며 뒤틀리고 표면이 떨어짐"],
+    ["도금층 박락", "금빛 표면이 떨어짐"],
+    ["도막 박락", "칠한 층이 떨어짐"],
+    ["채색층 박락", "채색층이 떨어짐"],
+    ["표면 박락", "표면이 떨어짐"],
+    ["미세 박락", "표면이 조금 떨어짐"],
+    ["작은 박락", "표면이 조금 떨어진 곳"],
+    ["박락부", "표면이 떨어진 부분"],
+    ["박락과", "표면이 떨어지는 현상과"],
+    ["박락이", "표면이 떨어지는 현상이"],
+    ["박락", "표면이 떨어지는 현상"],
+    ["분말화와", "가루처럼 약해지는 현상과"],
+    ["분말화가", "가루처럼 약해지는 현상이"],
+    ["분말화된", "가루처럼 약해진"],
+    ["분말화", "가루처럼 약해지는 현상"],
+    ["미세 박리", "표면이 얇게 떨어지는 곳"],
+    ["박리", "표면이 얇게 떨어짐"],
+    ["녹색 부식물", "녹색으로 녹슨 부분"],
+    ["불균일한 산화층", "고르지 않게 녹슨 표면"],
+    ["안정한 산화층", "더 번지지 않는 녹슨 표면"],
+    ["산화층", "녹슨 표면"],
+    ["가장자리 산성 변색", "산 때문에 가장자리 색이 변함"],
+    ["산성 변색", "산 때문에 색이 변한 부분"],
+    ["채색층의 들뜸", "채색층이 들뜬 곳"],
+    ["작은 채색층 들뜸", "채색층이 조금 들뜬 곳"],
+    ["바탕층의 들뜸", "바탕층이 들뜬 곳"],
+    ["표면 들뜸", "표면이 들뜬 곳"],
+    ["칠층 들뜸", "옻칠한 층이 들뜸"],
+    ["칠층", "옻칠한 층"],
+    ["목재 이음부 벌어짐", "나무를 이어 붙인 곳이 벌어짐"],
+    ["이음부 벌어짐", "이어 붙인 곳이 벌어짐"],
+    ["느슨한 퇴적물", "느슨하게 붙은 먼지와 이물질"],
+    ["표면 풍화", "오래되어 약해진 표면"],
+    ["이염", "색 묻어남"],
+    ["매체", "재료"],
+    ["안료와", "그림 물감과"],
+    ["안료", "그림 물감"],
+    ["국부적으로", "작은 범위만"],
+    ["국부", "작은 범위"],
+    ["가독성", "알아보기 쉬운 모습"],
+    ["식별", "구별"],
+    ["실루엣", "겉모양"],
+    ["재평가", "다시 확인"],
+    ["응력", "당기는 힘"],
+    ["하중", "무게"],
+    ["충전량", "메우는 양"],
+    ["충전재", "메움 재료"],
+    ["격리층", "재료 사이 보호막"],
+    ["평탄화", "평평하게 펴기"],
+    ["도포량", "바르는 양"],
+    ["도포합니다", "바릅니다"],
+    ["도포하세요", "발라 주세요"],
+    ["도포", "바르기"],
+    ["열화", "손상 진행"],
+    ["형광 판독", "빛 반응 구별"],
+    ["형광", "빛 반응"],
+    ["붙인 부분이 벌어짐, 작은 빈 곳", "붙인 부분이 벌어지고 작은 빈 곳"],
+    ["옻칠한 층이 들뜸과 나무를 이어 붙인 곳이 벌어짐", "옻칠한 층과 나무를 이어 붙인 곳이 들떠 벌어짐"],
+    ["표면의 느슨하게 붙은 먼지와 이물질과", "표면에 느슨하게 붙은 먼지와 이물질,"],
+    ["표면이 오래되어 약해지고 금, 붙인 부분이 벌어짐이", "표면이 오래되어 약해졌고, 금과 붙인 부분의 벌어짐이"],
+    ["표면이 들뜬 곳, 산 때문에 가장자리 색이 변함이", "표면이 들뜨고 산 때문에 가장자리 색이 변한 곳이"],
+    ["그림 물감층이 가루처럼 약해지고 바탕층도 들뜸,", "그림 물감층이 가루처럼 약해지고 바탕층도 들떠 있으며,"],
+    ["서로 다른 재료를 붙인 부분이 벌어짐과 표면 변화가 복합적으로 나타납니다.", "서로 다른 재료를 붙인 부분이 벌어지고 표면도 여러 모습으로 변했습니다."],
+    ["마르며 뒤틀리고 표면이 떨어짐, 약한 이음부", "마르며 뒤틀린 곳, 표면이 떨어진 곳, 약한 이음부"],
+    ["가루처럼 약해진 부식물", "가루처럼 약해진 녹"],
+    ["은빛 반사", "빛을 비추면 은빛으로 반사되는 곳"],
+    ["안정화제", "표면을 단단하게 잡아 주는 재료"],
+    ["저자극", "자극이 적은"],
+    ["곳와", "곳과"]
+  ];
+
+  const EASY_COPY_PARTICLES = /^(?:을|를|이|가|은|는|과|와|으로|로)$/;
+  const EASY_COPY_PARTICLE_SUFFIX = "(으로|로|을|를|이|가|은|는|과|와)?";
+  const FINAL_CONSONANT_DIGITS = new Set(["0", "1", "3", "6", "7", "8"]);
+
+  function escapeEasyCopyPattern(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function finalConsonantIndex(value) {
+    const cleaned = String(value).trim().replace(/[\s.!?,:;~…'"”’）)\]}]+$/g, "");
+    const lastCharacter = Array.from(cleaned).at(-1) || "";
+    const code = lastCharacter.charCodeAt(0);
+    if (code >= 0xac00 && code <= 0xd7a3) return (code - 0xac00) % 28;
+    if (/\d/.test(lastCharacter)) return FINAL_CONSONANT_DIGITS.has(lastCharacter) ? 1 : 0;
+    return null;
+  }
+
+  function hasFinalConsonant(value) {
+    const index = finalConsonantIndex(value);
+    return index !== null && index !== 0;
+  }
+
+  function particleForEasyCopy(value, particle) {
+    if (!EASY_COPY_PARTICLES.test(particle)) return particle;
+    const consonantIndex = finalConsonantIndex(value);
+    if (consonantIndex === null) return particle;
+    if (particle === "으로" || particle === "로") return consonantIndex !== 0 && consonantIndex !== 8 ? "으로" : "로";
+    const pair = {
+      "을": ["을", "를"], "를": ["을", "를"],
+      "이": ["이", "가"], "가": ["이", "가"],
+      "은": ["은", "는"], "는": ["은", "는"],
+      "과": ["과", "와"], "와": ["과", "와"]
+    }[particle];
+    return pair?.[hasFinalConsonant(value) ? 0 : 1] || particle;
+  }
+
+  function replaceEasyCopyTerm(copy, formal, easy) {
+    const pattern = new RegExp(`${escapeEasyCopyPattern(formal)}${EASY_COPY_PARTICLE_SUFFIX}`, "g");
+    const replaced = copy.replace(pattern, (_, particle = "") => `${easy}${particleForEasyCopy(easy, particle)}`);
+    const duplicate = new RegExp(`(${escapeEasyCopyPattern(easy)})(?:\\s+\\1)+`, "g");
+    return replaced.replace(duplicate, "$1");
+  }
+
+  function collapseRepeatedEojeol(value) {
+    let copy = String(value);
+    let previous = "";
+    while (copy !== previous) {
+      previous = copy;
+      copy = copy.replace(/(^|\s)([^\s]+)(?:\s+\2)+(?=\s|$)/g, "$1$2");
+    }
+    return copy;
+  }
+
+  function easyCopy(value) {
+    const replaced = EASY_COPY_REPLACEMENTS.reduce(
+      (copy, [formal, easy]) => replaceEasyCopyTerm(copy, formal, easy),
+      String(value ?? "")
+    );
+    return collapseRepeatedEojeol(replaced);
+  }
+
+  const MECHANIC_GUIDES = {
+    spot: {
+      easy: "둥근 옆빛을 직접 움직여 평소에는 잘 안 보이는 금이나 들뜬 곳을 밝힌 뒤 그 지점을 기록하는 일이에요.",
+      impact: "약한 곳을 먼저 찾아 표시하므로, 다음 작업 중 작품이 더 갈라지거나 떨어지는 사고를 막아 줘요."
+    },
+    choice: {
+      easy: "여러 작은 시험 자리를 하나씩 눌러 본 뒤, 색과 표면 빛이 안전하게 남은 결과를 고르는 일이에요. 숙련 단계에서는 네 곳이 모두 위험해 작업을 멈춰야 할 수도 있어요.",
+      impact: "먼지를 닦으려다 작품의 원래 색까지 지우거나 반짝임을 바꾸는 일을 예방해요."
+    },
+    trace: {
+      easy: "마우스나 손가락을 붓처럼 움직여 화면에 보이는 결을 직접 따라 그으며 먼지만 걷어 내는 일이에요.",
+      impact: "겉먼지는 줄어들지만 약한 그림 물감과 종이·천의 실은 뽑히거나 쓸려 나가지 않게 지켜 줘요."
+    },
+    drag: {
+      easy: "접착제를 바르기 전에 완성된 배치를 기록해 둔 뒤, 흩어진 깨진 조각의 모양과 무늬를 기억해 빈자리에 맞추는 일이에요.",
+      impact: "조각을 틀린 곳에 붙이거나 여러 번 떼어 내면서 가장자리가 더 깨지는 일을 줄여 줘요."
+    },
+    stability: {
+      easy: "온도나 습기를 갑자기 바꾸지 않고 안전한 범위에서 작품을 천천히 안정시키는 일이에요. 난이도 5에서는 초록 표시 대신 표면색, 반짝임, 거친 느낌의 변화를 살펴봐요.",
+      impact: "휘어진 종이와 천이 무리 없이 편안해지고, 급격한 변화 때문에 새 금이나 주름이 생기는 것을 막아요."
+    },
+    precision: {
+      easy: "도구를 필요한 시간만 누르고 있다가 알맞은 양이 되었을 때 떼는 일이에요. 난이도 5에서는 초록 범위 없이 재료가 탁함에서 고른 광택으로 변하는 순간을 찾아요.",
+      impact: "원래 표면을 너무 많이 깎거나 빈 곳을 지나치게 채우지 않고, 손상된 부분만 최소한으로 다뤄요."
+    },
+    sequence: {
+      easy: "예상 밖의 반응이 나타난 상황을 읽고 그 순간 작품에 가장 안전한 다음 행동을 고르는 일이에요. 높은 난이도에서는 안전해 보이지만 아직 하면 안 되는 행동도 구별해요.",
+      impact: "안전 확인 전에 작품을 건드리는 실수를 막고, 나중에 무엇을 했는지 다시 확인할 수 있게 해요."
+    },
+    rhythm: {
+      easy: "조각을 붙일 곳 주위의 큰 원이 점점 좁아지다가 가운데 원과 꼭 겹치는 순간 한 방울을 떨어뜨리는 일이에요. 난이도 5에서는 목표 원 대신 표면색, 반짝임, 가장자리 모양으로 순간을 판단해요.",
+      impact: "접착제가 밖으로 넘쳐 얼룩이 되거나, 조각 주변이 너무 딱딱해지는 것을 막아 줘요."
+    },
+    tone: {
+      easy: "빈 곳의 모양을 먼저 맞춘 뒤, 멀리서는 자연스럽고 가까이서는 붓자국으로 구별되는 색과 무늬를 함께 골라요. 높은 난이도에서는 아주 작은 테두리와 가는 선의 간격도 비교해요.",
+      impact: "감상할 때 빈 부분은 덜 거슬리지만 원래 그림을 덮거나 새것처럼 속이지는 않아요."
+    },
+    align: {
+      easy: "깨진 조각을 조금씩 돌려 무늬와 금이 이어지는 올바른 방향을 찾는 일이에요. 난이도가 오르면 한 번에 도는 각도와 허용 오차가 작아지고 맞출 조각이 늘어나요.",
+      impact: "조각이 비뚤어진 채 굳어 틈이 생기거나, 맞지 않는 면에 힘이 걸려 다시 깨지는 일을 막아요."
+    },
+    cleaning: {
+      easy: "작품을 덮은 때를 한 겹씩 걷어 내며 표면 변화를 살피고, 원래 작품층을 건드리기 전에 스스로 멈추는 일이에요.",
+      impact: "작품의 색과 무늬를 되찾되 새것처럼 만들려고 너무 많이 닦아 원래 작품층까지 지우는 일을 막아 줘요."
+    },
+    uv: {
+      easy: "자외선(UV) 조사등을 움직여 원래 재료와 다르게 빛나는 나중의 덧칠, 접착제, 보강 흔적을 찾아 기록하는 일이에요.",
+      impact: "과거에 고친 범위를 먼저 알면 원래 부분으로 잘못 알고 지우거나 같은 곳을 다시 무리하게 처리하는 일을 막아요."
+    },
+    budget: {
+      easy: "오늘 쓸 수 있는 작업량 100을 여러 손상 부위에 나누는 일이에요. 작품 안전에 급한 곳과 눈에 잘 띄는 곳이 서로 다를 수 있어요.",
+      impact: "한 번에 모든 곳을 완벽하게 고치기보다, 더 망가질 곳을 먼저 지키고 이번에 미룬 부분도 분명하게 기록해요."
+    },
+    balance: {
+      easy: "받침을 좌우로 움직여 작품의 무게를 고르게 나누되, 금이 가거나 갈라진 약한 곳은 누르지 않게 놓는 일이에요.",
+      impact: "작품이 한쪽으로 기울거나 가운데가 처지는 일을 막고, 약한 곳 하나에 힘이 몰려 금이 더 커지는 것도 줄여 줘요."
+    }
+  };
+
+  const TOOL_MECHANIC_GUIDES = {
+    magnifier: {
+      easy: "둥근 옆빛을 움직여 금, 들뜬 곳, 만든 흔적을 구분하고 실제 손상만 기록하는 일이에요.",
+      impact: "약한 지점을 먼저 표시해 다음 작업에서 손상이 더 커지는 일을 막아요."
+    },
+    uvLamp: {
+      easy: "어두운 화면에서 자외선(UV) 조사등을 움직여 과거에 고친 곳과 원래 재료가 서로 다르게 빛나는 모습을 구분하는 일이에요.",
+      impact: "과거에 고친 기록을 남겨 원래 재료와 나중에 더한 재료를 알맞게 다룰 수 있게 해요."
+    },
+    testSwab: {
+      easy: "아주 작은 시험 자리에서 색이 묻어나는지, 표면 빛이 달라지는지 비교해 안전한 작업인지 판단하는 일이에요.",
+      impact: "오염과 함께 작품의 원래 색이나 표면까지 지우는 사고를 예방해요."
+    },
+    softBrush: {
+      easy: "부드러운 붓을 결 방향으로 직접 움직여 느슨한 먼지만 걷어 내는 일이에요.",
+      impact: "약한 안료와 표면 섬유가 붓질에 쓸려 나가지 않게 지켜 줘요."
+    },
+    paperPatch: {
+      easy: "찢어진 원본과 뒤에서 받칠 보존용 종이의 섬유 방향을 맞추는 일이에요.",
+      impact: "찢김에 걸리는 힘을 고르게 나눠 가장자리가 다시 벌어지는 일을 막아요."
+    },
+    reversibleAdhesive: {
+      easy: "접착제를 바르기 전에 깨진 조각을 미리 맞추고 맞닿는 면을 가지런히 한 뒤 필요한 한 방울만 쓰는 일이에요.",
+      impact: "잘못 붙였다 다시 떼는 손상과 접착제 넘침을 줄여요."
+    },
+    fillSpatula: {
+      easy: "빈 곳에 꼭 필요한 만큼만 채우고 원래 표면 위로 넘치지 않게 멈추는 일이에요.",
+      impact: "빈 곳을 상상으로 넓혀 메우지 않고 구조에 필요한 부분만 지지해요."
+    },
+    retouchBrush: {
+      easy: "빈 곳의 모양과 주변색을 함께 비교해 가까이에서는 원래 그림과 구별되는 복원 색을 고르는 일이에요.",
+      impact: "감상 흐름은 회복하되 원래 부분과 복원한 부분을 속이지 않게 해요."
+    },
+    microPick: {
+      easy: "미세 제거 도구를 부식 경계 안에서만 움직여 가루화된 부분을 조금씩 덜어 내는 일이에요.",
+      impact: "안정한 오래된 표면과 금속심을 함께 긁어 내는 일을 막아요."
+    },
+    stabilizer: {
+      easy: "표면을 단단하게 잡아 주는 재료를 조금 적용하고 흡수 반응을 기다리며 안전 범위를 유지하는 일이에요.",
+      impact: "진행 중인 부식은 늦추면서 안정한 금속 표면은 남겨요."
+    },
+    protectiveWax: {
+      easy: "보호막 두께가 너무 얇거나 두껍지 않도록 세 구간에서 도포량을 맞추는 일이에요.",
+      impact: "과한 광택과 코팅 고임 없이 수분과 오염을 줄이는 얇은 막을 만들어요."
+    },
+    humidityPack: {
+      easy: "작품에 물을 직접 대지 않고 습기를 조금씩 주고 쉬며, 습도를 안전 범위에 천천히 머물게 하는 일이에요.",
+      impact: "급격한 수분 변화로 종이나 나무가 새로 울고 갈라지는 일을 막아요."
+    },
+    varnishGel: {
+      easy: "세척 겔의 접촉 시간을 시험으로 확인한 범위 안에서만 맞추는 일이에요.",
+      impact: "변색층과 함께 원래 물감이나 광택까지 제거하는 일을 막아요."
+    },
+    surfaceVacuum: {
+      easy: "보호망 위에서 자극이 적은 흡입구를 천천히 움직여 느슨한 먼지만 정리하는 일이에요.",
+      impact: "풀린 실과 종이 가장자리가 흡입구에 빨려 들어가지 않게 해요."
+    },
+    fiberTweezers: {
+      easy: "핀셋의 장력을 안전 범위에 맞춰 풀린 섬유를 당기지 않고 제자리로 놓는 일이에요.",
+      impact: "약한 실이 늘어나거나 끊어지고 조직이 더 벌어지는 일을 막아요."
+    },
+    supportStitch: {
+      easy: "받침 직물에 필요한 지지점을 일정한 간격으로 한 땀씩 놓는 일이에요.",
+      impact: "바느질이 한곳을 세게 당기지 않고 약해진 천의 무게를 여러 곳으로 나눠요."
+    },
+    consolidant: {
+      easy: "표면을 단단하게 잡아 주는 재료를 조금 적용하고 표면에 고이지 않도록 스며드는 모습을 살피는 일이에요.",
+      impact: "들뜬 칠·석재·안료층이 더 떨어지지 않게 현재 위치에서 붙잡아 줘요."
+    },
+    glassSupport: {
+      easy: "유리의 모양과 하중 지점을 보고 맞는 지지 블록을 빈자리에 배치하는 일이에요.",
+      impact: "깨지기 쉬운 접합선 한곳에 무게가 몰려 균열이 길어지는 일을 막아요."
+    },
+    resinFill: {
+      easy: "투명 보완재가 균열선 밖으로 넘치지 않도록 필요한 양만 채우는 일이에요.",
+      impact: "원본 유리 표면을 덮지 않고 접합선 안에서만 구조를 지지해요."
+    },
+    supportMount: {
+      easy: "작품 형태와 하중 표시를 보고 맞춤 받침 조각을 알맞은 지점에 배치하는 일이에요.",
+      impact: "휘거나 무거운 부분 한곳에 힘이 몰리지 않도록 여러 곳으로 나눠요."
+    },
+    photoSleeve: {
+      easy: "사진층을 만지지 않고 안전한 방향과 순서로 보존 슬리브에 넣는 판단을 하는 일이에요.",
+      impact: "사진 표면의 마찰·지문·모서리 꺾임을 줄여요."
+    },
+    bindingCradle: {
+      easy: "책등에 무리가 가지 않는 펼침 각도가 될 때까지 받침 높이를 조절하는 일이에요.",
+      impact: "책을 과하게 펼쳐 실과 책등이 갈라지는 일을 막아요."
+    },
+    sootSponge: {
+      easy: "그을음 흡착 도구의 접촉 압력을 안전 범위에 맞춰 짧게 눌렀다 떼는 일이에요.",
+      impact: "그을음을 문질러 번지게 하거나 약한 벽화 안료를 함께 떼는 일을 막아요."
+    },
+    groutTool: {
+      easy: "벽화 뒤 빈 공간의 모양을 보고 꼭 필요한 곳만 받치는 일이에요.",
+      impact: "충전재가 표면을 밀어 올리거나 불필요한 공간까지 채우는 일을 막아요."
+    },
+    isolationLayer: {
+      easy: "서로 다른 현대 재료 사이의 격리층 두께를 얇고 일정하게 맞추는 일이에요.",
+      impact: "재료끼리 달라붙거나 서로를 변색시키면서 외관이 달라지는 일을 줄여요."
+    }
+  };
+
+  const MATERIAL_GUIDES = {
+    "금속": {
+      watch: "가루처럼 번지는 녹과 더 번지지 않는 오래된 녹의 차이를 특히 살펴봐요.",
+      effect: "오래되어 안정된 표면은 남기고 지금도 번지는 녹만 다루게 해요."
+    },
+    "도자기": {
+      watch: "도자기 표면을 덮은 유리 같은 층(유약)의 가는 금과 깨진 조각이 맞닿는 곳을 특히 살펴봐요.",
+      effect: "표면의 금이 더 벌어지거나 깨진 가장자리가 새로 깨지는 것을 막아요."
+    },
+    "목재·칠기": {
+      watch: "벌어진 나무 이음부와 바탕에서 들뜬 칠 조각을 특히 살펴봐요.",
+      effect: "나무와 칠이 서로 떨어지거나 칠 조각이 더 빠지는 것을 막아요."
+    },
+    "목제 유물": {
+      watch: "건조로 휜 나뭇결과 약해진 이음부를 특히 살펴봐요.",
+      effect: "나무가 더 갈라지거나 휜 부분 한곳에 힘이 몰리는 것을 줄여요."
+    },
+    "벽화 조각": {
+      watch: "바탕에서 들뜬 그림 물감과 가루처럼 약해진 그림 표면을 특히 살펴봐요.",
+      effect: "그림층이 바탕에서 떨어져 색가루로 빠지는 것을 막아요."
+    },
+    "사진": {
+      watch: "긁히기 쉬운 사진 표면과 들뜬 이미지층을 특히 살펴봐요.",
+      effect: "사진 이미지가 벗겨지거나 빛바래고 얼룩지는 것을 줄여요."
+    },
+    "석고·복합 조각": {
+      watch: "가루가 나는 표면과 손가락·장식처럼 쉽게 부러지는 돌출부를 특히 살펴봐요.",
+      effect: "가느다란 돌출부가 더 부서지거나 표면이 가루로 빠지는 것을 막아요."
+    },
+    "석재": {
+      watch: "약해진 표면과 원래 남아 있던 도구 자국·풍화 흔적을 특히 살펴봐요.",
+      effect: "원래 조각 자국을 과하게 깎지 않으면서 느슨한 부분만 안전하게 다뤄요."
+    },
+    "유리": {
+      watch: "빛에서 드러나는 금의 끝과 조각이 맞닿는 면을 특히 살펴봐요.",
+      effect: "한 점에 힘이 몰려 금이 길어지거나 조각이 다시 깨지는 것을 줄여요."
+    },
+    "유화": {
+      watch: "갈라진 물감층과 바탕천에서 들뜬 부분을 특히 살펴봐요.",
+      effect: "원래 물감이 떨어지거나 세척 중 색과 광택이 함께 사라지는 것을 막아요."
+    },
+    "종이·채색": {
+      watch: "약해진 종이 섬유와 바탕에서 들뜬 채색층을 특히 살펴봐요.",
+      effect: "종이가 울거나 찢어지고, 색이 번지거나 떨어지는 것을 줄여요."
+    },
+    "직물·자수": {
+      watch: "약해진 실과 팽팽하게 당겨진 자수·천의 결을 특히 살펴봐요.",
+      effect: "실이 끊어지거나 자수가 당겨지고 천이 더 찢어지는 것을 막아요."
+    },
+    "책·문서": {
+      watch: "약해진 책등과 낱장 가장자리, 번지기 쉬운 글씨를 특히 살펴봐요.",
+      effect: "책장이 더 찢어지거나 글씨가 번지고 책등이 갈라지는 것을 줄여요."
+    },
+    "현대 복합재료": {
+      watch: "서로 다른 재료가 맞닿는 경계와 움직임 차이를 특히 살펴봐요.",
+      effect: "재료끼리 당기거나 밀고, 한 재료가 다른 재료를 변색시키는 것을 줄여요."
+    }
+  };
+
+  const DEFAULT_MATERIAL_GUIDE = {
+    watch: "재료의 약한 표면과 손상이 시작된 경계를 특히 살펴봐요.",
+    effect: "원본을 과하게 건드리지 않고 손상된 부분만 안전하게 다루게 해요."
+  };
+
+  function mechanicGuideForArtwork(mechanic, art, toolId = "") {
+    const base = ["cleaning", "uv", "sequence", "budget", "balance"].includes(mechanic) ? MECHANIC_GUIDES[mechanic] : TOOL_MECHANIC_GUIDES[toolId] || (mechanic === "align" && PAPER_ALIGNMENT_TOOLS.has(toolId)
+      ? {
+          easy: "찢어진 원본 종이와 뒤에서 받칠 보존용 종이를 조금씩 돌려, 찢김선과 가는 섬유 결이 한 방향으로 이어지게 맞추는 일이에요.",
+          impact: "찢김의 힘이 보존용 종이에 고르게 퍼져 원본 가장자리가 다시 벌어지거나 한쪽으로 당겨지는 일을 막아요."
+        }
+      : MECHANIC_GUIDES[mechanic] || MECHANIC_GUIDES.spot);
+    const material = art?.material || "작품 재료";
+    const materialGuide = MATERIAL_GUIDES[material] || DEFAULT_MATERIAL_GUIDE;
+    return {
+      materialLabel: `${material} 맞춤 안내`,
+      easy: `${base.easy} ${material} 작품에서는 ${materialGuide.watch}`,
+      impact: `${base.impact} ${materialGuide.effect}`
+    };
+  }
+
+  const ARTWORKS = CORE_ARTWORKS
+    .concat(window.RESTORATION_ARTWORKS || [])
+    .map(prepareArtworkForRestoration);
+  const STORAGE_PAGE_SIZE = 24;
+  if (ARTWORKS.length !== 500) {
+    console.warn(`Artwork catalog expected 500 entries but found ${ARTWORKS.length}.`);
+  }
+  const missingMaterialGuides = [...new Set(ARTWORKS.map(art => art.material))]
+    .filter(material => !MATERIAL_GUIDES[material]);
+  if (missingMaterialGuides.length) {
+    console.warn(`Missing material guides: ${missingMaterialGuides.join(", ")}`);
+  }
+  const mechanicCoverage = new Set();
+  const invalidMechanicPlans = ARTWORKS.filter(art => {
+    const plan = mechanicPlanForArtwork(art);
+    plan.forEach(mechanic => mechanicCoverage.add(mechanic));
+    return art.steps.length < 4 || art.steps.length > 5 || plan.length !== art.steps.length;
+  });
+  if (invalidMechanicPlans.length || mechanicCoverage.size !== MECHANIC_IDS.length) {
+    console.warn(`Restoration challenge plan mismatch: ${invalidMechanicPlans.length} invalid artworks, ${mechanicCoverage.size}/${MECHANIC_IDS.length} mechanics covered.`);
+  }
+
+  function prepareArtworkForRestoration(art) {
+    const steps = art.steps.slice(0, 5).map(item => ({ ...item, targets: item.targets.map(point => [...point]) }));
+    return { ...art, steps };
+  }
+
+  const UPGRADES = [
+    { id: "lighting", category: "전시 환경", name: "작품 집중 조명", icon: "💡", cost: 180, desc: "전시 매력도 +15%", effect: { appealMult: 0.15 } },
+    { id: "guide", category: "관람 경험", name: "어린이 해설 기기", icon: "🎧", cost: 260, desc: "개관할 때 평판 +2", effect: { repDaily: 2 } },
+    { id: "shop", category: "수익 시설", name: "작은 미술관 상점", icon: "🛍️", cost: 360, desc: "운영 수입 +25%", effect: { incomeMult: 0.25 } },
+    { id: "lab", category: "작품 보호", name: "손상 예방 설비", icon: "🌡️", cost: 480, desc: "실수할 때 오르는 위험 -35%", effect: { riskReduction: 0.35 } },
+    { id: "climate", category: "작품 보호", name: "온도·습도 자동 조절", icon: "🌬️", cost: 650, desc: "복원 위험 -10% · 전시 매력 +5%", effect: { riskReduction: 0.1, appealMult: 0.05 } },
+    { id: "lounge", category: "관람 경험", name: "관람객 쉼터", icon: "🛋️", cost: 800, desc: "예상 관람객 +15%", effect: { visitorMult: 0.15 } },
+    { id: "archive", category: "관람 경험", name: "열린 복원 기록실", icon: "🗄️", cost: 950, desc: "개관할 때 평판 +3", effect: { repDaily: 3 } },
+    { id: "garden", category: "전시 환경", name: "실내 조각 정원", icon: "🌿", cost: 1150, desc: "전시 매력도 +12%", effect: { appealMult: 0.12 } },
+    { id: "cafe", category: "수익 시설", name: "미술관 카페", icon: "☕", cost: 1400, desc: "운영 수입 +18%", effect: { incomeMult: 0.18 } },
+    { id: "studio", category: "작품 보호", name: "유리 복원 작업실", icon: "🔬", cost: 1700, desc: "복원 지원금 +12%", effect: { restorationRewardMult: 0.12 } },
+    { id: "facade", category: "전시 환경", name: "시민 미술관 새 외관", icon: "🏮", cost: 2100, desc: "관람객 +25% · 전시대 1칸", effect: { visitorMult: 0.25, displaySlots: 1 } },
+    { id: "grandHall", category: "수익 시설", name: "큰 전시실 넓히기", icon: "🏛️", cost: 2600, desc: "수입 +30% · 전시 매력 +10% · 전시대 1칸", effect: { incomeMult: 0.3, appealMult: 0.1, displaySlots: 1 } },
+    { id: "lightingStudio", tier: 2, unlockDay: 15, requires: "lighting", category: "15일차 시설 개선", name: "집중 조명 연출실", icon: "✨", cost: 1800, desc: "전시 매력도 +8%", effect: { appealMult: 0.08 } },
+    { id: "guideNetwork", tier: 2, unlockDay: 15, requires: "guide", category: "15일차 시설 개선", name: "전관 해설 방송망", icon: "📡", cost: 2100, desc: "관람객 +5% · 개관할 때 평판 +2", effect: { visitorMult: 0.05, repDaily: 2 } },
+    { id: "shopWorkshop", tier: 2, unlockDay: 15, requires: "shop", category: "15일차 시설 개선", name: "체험형 미술관 상점", icon: "🎁", cost: 2400, desc: "운영 수입 +12%", effect: { incomeMult: 0.12 } },
+    { id: "labSensors", tier: 2, unlockDay: 15, requires: "lab", category: "15일차 시설 개선", name: "작품 상태 감지망", icon: "📟", cost: 2700, desc: "복원 지원금 +8%", effect: { restorationRewardMult: 0.08 } },
+    { id: "climateNetwork", tier: 2, unlockDay: 15, requires: "climate", category: "15일차 시설 개선", name: "전관 온도·습도 연결망", icon: "🍃", cost: 3000, desc: "관람객 +5% · 전시 매력 +5%", effect: { visitorMult: 0.05, appealMult: 0.05 } },
+    { id: "familyLounge", tier: 2, unlockDay: 15, requires: "lounge", category: "15일차 시설 개선", name: "가족 관람 쉼터", icon: "🧸", cost: 3300, desc: "예상 관람객 +10%", effect: { visitorMult: 0.1 } },
+    { id: "archiveLab", tier: 2, unlockDay: 15, requires: "archive", category: "15일차 시설 개선", name: "디지털 복원 기록실", icon: "🖥️", cost: 3600, desc: "개관할 때 평판 +2 · 복원 지원금 +5%", effect: { repDaily: 2, restorationRewardMult: 0.05 } },
+    { id: "sculptureCourtyard", tier: 2, unlockDay: 15, requires: "garden", category: "15일차 시설 개선", name: "사계절 조각 정원", icon: "🌳", cost: 3900, desc: "전시 매력도 +8%", effect: { appealMult: 0.08 } },
+    { id: "cafeTerrace", tier: 2, unlockDay: 15, requires: "cafe", category: "15일차 시설 개선", name: "미술관 카페 테라스", icon: "🍰", cost: 4200, desc: "운영 수입 +10%", effect: { incomeMult: 0.1 } },
+    { id: "conservationCenter", tier: 2, unlockDay: 15, requires: "studio", category: "15일차 시설 개선", name: "통합 복원 센터", icon: "🔭", cost: 4600, desc: "복원 지원금 +10%", effect: { restorationRewardMult: 0.1 } },
+    { id: "landmarkFacade", tier: 2, unlockDay: 15, requires: "facade", category: "15일차 시설 개선", name: "미술관 대표 외관", icon: "🎀", cost: 5000, desc: "관람객 +12% · 전시 매력 +4%", effect: { visitorMult: 0.12, appealMult: 0.04 } },
+    { id: "specialExhibitionWing", tier: 2, unlockDay: 15, requires: "grandHall", category: "15일차 시설 개선", name: "특별 기획 전시실", icon: "🎪", cost: 5600, desc: "운영 수입 +15% · 전시 매력 +6%", effect: { incomeMult: 0.15, appealMult: 0.06 } }
+  ];
+  const ADVANCED_UPGRADE_UNLOCK_DAY = 15;
+  const BASE_UPGRADES = UPGRADES.filter(upgrade => upgrade.tier !== 2);
+  const ADVANCED_UPGRADES = UPGRADES.filter(upgrade => upgrade.tier === 2);
+  const ANNEX_FACILITY_IDS = new Set(["lounge", "shop", "garden", "cafe", "grandHall"]);
+  const ANNEX_PROGRAMS = {
+    lounge: [
+      { id: "family-rest", icon: "👨‍👩‍👧", name: "가족 휴식 안내", copy: "유아 동반 관람객에게 쉬어 갈 자리를 안내합니다.", effect: { visitorBonus: 6 }, result: "가족 관람객이 편하게 쉬며 전시를 더 둘러봤습니다." },
+      { id: "quiet-hour", icon: "🤫", name: "조용한 감상 시간", copy: "대화를 줄이고 작품에 집중하는 휴식 시간을 운영합니다.", effect: { repBonus: 2 }, result: "차분한 감상 환경이 좋은 평가를 받았습니다." },
+      { id: "story-table", icon: "💬", name: "작품 이야기 테이블", copy: "관람객끼리 기억과 느낌을 나누는 테이블을 엽니다.", effect: { visitorBonus: 3, repBonus: 1 }, result: "관람객의 작품 이야기가 쉼터를 채웠습니다." }
+    ],
+    shop: [
+      { id: "postcard", icon: "💌", name: "오늘의 작품 엽서", copy: "현재 전시의 대표 작품을 엽서 진열대 맨 앞에 둡니다.", effect: { incomeBonus: 40 }, result: "대표 작품 엽서가 오늘의 인기 기념품이 됐습니다." },
+      { id: "care-kit", icon: "🧰", name: "어린이 작품 보호 꾸러미", copy: "작품을 함부로 고치지 않고 안전하게 지키는 방법을 배우는 체험 꾸러미를 둡니다.", effect: { incomeBonus: 25, repBonus: 1 }, result: "어린이 작품 보호 꾸러미가 수입과 교육 평가를 함께 높였습니다." },
+      { id: "mystery-pack", icon: "🎁", name: "깜짝 미술 봉투", copy: "작품 스티커와 작은 설명 카드가 든 봉투를 판매합니다.", effect: { incomeBonus: 55 }, result: "깜짝 미술 봉투가 빠르게 모두 팔렸습니다." }
+    ],
+    garden: [
+      { id: "sculpture-walk", icon: "🚶", name: "조각 산책 안내", copy: "식물을 따라 조각을 천천히 보는 짧은 길을 엽니다.", effect: { appealBonus: 4, visitorBonus: 5 }, result: "조각 산책길에 관람객의 발길이 이어졌습니다." },
+      { id: "quiet-sketch", icon: "✏️", name: "고요한 스케치 시간", copy: "작품을 만지지 않고 관찰해 그리는 시간을 운영합니다.", effect: { visitorBonus: 3, repBonus: 1 }, result: "스케치 시간이 작품을 오래 관찰하는 계기가 됐습니다." },
+      { id: "plant-care", icon: "🌿", name: "작품에 안전한 식물 정리", copy: "향과 꽃가루가 적은 식물로 전시 공간을 정리합니다.", effect: { appealBonus: 8 }, result: "정돈된 식물이 작품과 공간을 더 돋보이게 했습니다." }
+    ],
+    cafe: [
+      { id: "signature-latte", icon: "☕", name: "달항아리 라테", copy: "오늘의 대표 작품을 본뜬 특별 음료를 선보입니다.", effect: { incomeBonus: 35, visitorBonus: 4 }, result: "달항아리 라테가 관람 뒤의 즐거운 기억이 됐습니다." },
+      { id: "family-set", icon: "🥪", name: "가족 관람 세트", copy: "간단한 음료와 간식을 묶어 가족 관람객에게 제공합니다.", effect: { incomeBonus: 22, visitorBonus: 7 }, result: "가족 관람 세트 덕분에 체류 시간이 길어졌습니다." },
+      { id: "quiet-menu", icon: "🍵", name: "무향 감상 메뉴", copy: "전시장에 향이 퍼지지 않는 차와 간식을 준비합니다.", effect: { incomeBonus: 18, repBonus: 1 }, result: "작품을 배려한 무향 메뉴가 좋은 평가를 받았습니다." }
+    ],
+    grandHall: [
+      { id: "restorer-talk", icon: "🎤", name: "복원가 이야기 시간", copy: "오늘 고친 작품에서 무엇을 보고 어떻게 판단했는지 알려 줍니다.", effect: { visitorBonus: 10, repBonus: 3 }, result: "복원가 이야기가 작품을 지키는 과정을 전시의 주인공으로 만들었습니다." },
+      { id: "night-curator", icon: "🌙", name: "야간 전시 해설", copy: "조명과 걷는 길을 바꾼 예약제 저녁 해설을 엽니다.", effect: { incomeBonus: 70, visitorBonus: 5 }, result: "야간 전시 해설이 특별한 관람 경험을 만들었습니다." },
+      { id: "citizen-night", icon: "🏘️", name: "시민 기증자의 밤", copy: "작품을 지켜 온 시민의 이야기를 무대에서 나눕니다.", effect: { appealBonus: 5, visitorBonus: 12, repBonus: 2 }, result: "시민의 기억이 작품과 미술관을 더 가깝게 이어 줬습니다." }
+    ]
+  };
+
+  const PRACTICE_CHALLENGES = [
+    { id: "spot", artId: "moon-jar", icon: "🔦", difficulty: "탐색", title: "사광 손상 조사", copy: "둥근 옆빛을 직접 움직여 어둠 속에 숨은 손상과 작품을 만들 때 생긴 흔적을 구별합니다.", step: step("사광 손상 조사", "둥근 옆빛을 움직여 손상을 밝힌 뒤 정확한 지점을 눌러 기록하세요.", "magnifier", "한 방향의 빛만으로 단정하지 않고 옆빛 안에서 들뜬 곳과 금의 경계를 확인합니다.", [[34, 34], [63, 39], [49, 69]]) },
+    { id: "choice", artId: "sunset-painting", icon: "🧪", difficulty: "관찰·판단", difficultyLevel: 2, title: "시험구 안전 판정", copy: "세 작은 시험 자리를 직접 확인한 뒤 안전 기준에 맞는 결과를 선택합니다.", step: step("시험구 비교", "작은 시험 자리를 하나씩 눌러 반응을 확인한 뒤 안전한 결과를 선택하세요.", "testSwab", "안전한 작업은 색이 묻어나지 않고 표면 빛과 들뜬 곳이 모두 안전 범위 안에 있어야 합니다.", [[32, 38], [61, 43], [48, 67]]) },
+    { id: "trace", artId: "spring-scroll", icon: "🖌️", difficulty: "손놀림", title: "결 따라 표면 정리", copy: "마우스나 손가락을 붓으로 삼아 세 개의 곡선 결을 직접 따라 그립니다.", step: step("표면 먼지 정리", "붓을 시작점에 대고 초록 결을 따라 직접 그어 주세요.", "softBrush", "화면의 결 방향을 따라 짧게 작업해 약한 표면에 반복 마찰이 쌓이지 않도록 합니다.", [[30, 42], [57, 51], [70, 66]]) },
+    { id: "drag", artId: "moon-jar", icon: "🧩", difficulty: "기억·퍼즐", title: "파편 가접합", copy: "해체하기 전 완성된 배치를 기록한 뒤, 모양과 이어지는 무늬를 기억해 깨진 조각 네 개를 맞춥니다.", step: step("파편 건식 맞춤", "먼저 원래 배치를 눈에 담고, 가려진 뒤 깨진 조각을 기억한 빈자리로 끌어다 놓으세요.", "reversibleAdhesive", "해체 전 배치를 기록하고 접착 전에 미리 맞추면 잘못 붙이거나 다시 고치는 일을 줄일 수 있습니다.", [[29, 40], [58, 43], [47, 69]]) },
+    { id: "stability", artId: "spring-scroll", icon: "🌡️", difficulty: "조절", title: "환경 안정화 조절", copy: "흔들리는 온도·습도 수치를 안전 범위에 붙잡아 일정 시간 유지합니다.", step: step("간접 가습 안정화", "조절 버튼으로 온도·습도 수치를 초록 범위 안에 유지하세요.", "humidityPack", "습기를 갑자기 늘리지 않고 천천히 바꾸어 종이의 실이 뒤틀리거나 당겨지는 일을 줄입니다.", [[35, 34], [62, 48], [48, 70]]) },
+    { id: "precision", artId: "moon-jar", icon: "🎯", difficulty: "양 조절", title: "결손 충전량 조절", copy: "주걱으로 채우는 양을 조절해 빈 곳 안의 안전 범위를 세 번 맞춥니다.", step: step("결손 충전량 조절", "채우는 양을 올리다가 초록 범위에서 손을 떼세요.", "fillSpatula", "빈 곳 밖의 원래 표면을 덮지 않도록 꼭 필요한 양만 채웁니다.", [[31, 39], [61, 50], [47, 69]]) },
+    { id: "sequence", artId: "sunset-painting", icon: "📋", difficulty: "상황 판단", difficultyLevel: 2, title: "처리 절차 판단", copy: "숫자 순서 대신 세 가지 돌발 상황을 읽고 작품에 가장 안전한 다음 행동을 고릅니다.", step: step("보존 상황 판단", "현재 작품 반응을 읽고 가장 안전한 다음 행동을 선택하세요.", "testSwab", "시험 중 이상 반응이 나타나면 정해 둔 순서보다 중단과 재평가가 우선입니다.", [[35, 38], [58, 49], [47, 70]]) },
+    { id: "rhythm", artId: "moon-jar", icon: "💧", difficulty: "집중 타이밍", title: "접착제 점적 타이밍", copy: "큰 원이 점점 좁아져 가운데 원과 정확히 겹치는 순간 세 번 한 방울씩 떨어뜨립니다.", step: step("가역 접착제 점적", "줄어드는 원이 가운데 목표 원과 겹치는 순간 눌러 주세요.", "reversibleAdhesive", "조각을 붙이는 선 안에 꼭 필요한 양만 써야 접착제가 넘치거나 다시 고치기 어려워지는 일을 줄일 수 있습니다.", [[32, 42], [61, 46], [50, 70]]) },
+    { id: "tone", artId: "sunset-painting", icon: "🎨", difficulty: "색·형태", difficultyLevel: 2, title: "식별 가능한 보색", copy: "빈 곳의 모양과 주변색을 함께 비교해 가까이서 구별되는 복원 색 보기 카드를 고릅니다.", step: step("결손부 보색", "빈 곳의 모양과 가장 가까운 색·붓자국 조합을 함께 고르세요.", "retouchBrush", "복원 색은 감상 흐름을 돕되 가까이에서는 원래 그림과 구별되어야 합니다.", [[34, 39], [62, 49], [48, 68]]) },
+    { id: "align", artId: "moon-jar", icon: "🧭", difficulty: "세밀하게 맞추기", difficultyLevel: 2, title: "접합면 방향 정렬", copy: "움직이지 않는 조각과 돌릴 조각의 이어지는 무늬·금을 비교하고 난이도에 맞는 각도로 조금씩 돌립니다.", step: step("접합면 정렬", "금빛 무늬와 어두운 금이 끊김 없이 이어질 때까지 좌우로 조금씩 돌리세요.", "reversibleAdhesive", "힘을 주기 전에 맞닿는 면, 만든 흔적, 금이 이어지는지 확인하면 비뚤게 붙거나 더 깨지는 일을 막을 수 있습니다.", [[31, 40], [60, 48], [48, 68]]) },
+    { id: "cleaning", artId: "book-01", icon: "🫧", difficulty: "멈춤 판단", title: "세척 강도 판단", copy: "작품을 덮은 때를 조금씩 걷어 내며 표면 변화를 읽고, 원래 작품층에 닿기 전에 멈출 때를 판단합니다.", step: step("종이 표면 오염 줄이기", "표면의 때를 조금씩 줄이고 가장 안전하다고 생각한 순간 멈추세요.", "surfaceVacuum", "선명함만 좇지 않고 종이의 실과 글씨 선이 안전하게 드러나는 지점에서 멈춥니다.", [[31, 40], [60, 48], [48, 68]]) },
+    { id: "uv", artId: "sunset-painting", icon: "🟣", difficulty: "빛 반응 읽기", difficultyLevel: 2, title: "자외선 형광 조사", copy: "자외선(UV) 조사등을 움직여 원래 재료의 고른 빛은 피하고 나중의 덧칠·접착제 흔적 세 곳을 찾습니다.", step: step("자외선 형광 조사", "빛나는 곳의 테두리와 표면 느낌을 비교해 과거에 고친 흔적만 기록하세요.", "uvLamp", "원래 투명 보호막의 고른 빛과 과거에 고친 곳의 고르지 않은 반응을 구분해 예전 작업 기록을 확인합니다.", [[35, 44], [61, 40], [47, 67]]) },
+    { id: "budget", artId: "sunset-painting", icon: "⚖️", difficulty: "우선순위", difficultyLevel: 2, title: "처리량 나누기", copy: "오늘 쓸 수 있는 작업량 100을 작품 안전과 전시 모습을 살펴 세 손상 부위에 나눕니다.", step: step("세척 작업량 나누기", "더 망가질 위험과 눈에 띄는 정도를 비교해 작업량을 나눈 뒤 진행하세요.", "varnishGel", "물감이 들뜬 곳처럼 안전에 급한 부위와 표면 먼지처럼 눈에 잘 띄는 부위를 따로 살펴 작업 순서를 정합니다.", [[31, 40], [60, 48], [48, 68]]) },
+    { id: "balance", artId: "book-01", icon: "📐", difficulty: "무게 나누기", difficultyLevel: 2, title: "받침 무게 잡기", copy: "받침을 움직여 펼친 책의 무게를 고르게 나누고, 갈라진 책등 바로 아래는 피합니다.", step: step("책등 받침 균형", "받침을 좌우로 움직여 책이 수평이 되게 하되 갈라진 책등은 누르지 마세요.", "bindingCradle", "책을 펼친 각도와 약해진 책등을 함께 살펴 힘이 한곳에 몰리지 않게 받칩니다.", [[31, 40], [60, 48], [48, 68]]) }
+  ];
+
+  const DAY_EVENTS = [
+    { text: "동네 학교에서 단체 관람을 왔어요! 아이들이 복원 기록 카드에 큰 관심을 보였습니다.", visitorBonus: 8, incomeBonus: 20, repBonus: 1 },
+    { text: "지역 신문에 ‘다시 빛난 보물’ 기사가 실렸어요. 미술관 평판이 올랐습니다.", visitorBonus: 5, incomeBonus: 0, repBonus: 3 },
+    { text: "비 오는 날이었지만 오디오 가이드를 찾는 관람객이 많았어요.", visitorBonus: -2, incomeBonus: 15, repBonus: 1 },
+    { text: "복원실 공개 해설이 좋은 반응을 얻었어요. 방문객이 처리 과정을 천천히 살펴봤습니다.", visitorBonus: 4, incomeBonus: 10, repBonus: 2 },
+    { text: "평온한 하루였어요. 작품과 공간이 제 역할을 충실히 해냈습니다.", visitorBonus: 0, incomeBonus: 0, repBonus: 1 }
+  ];
+
+  const PROLOGUE_STORY = {
+    threshold: 0,
+    label: "처음 이야기 · 관장 취임일",
+    icon: "✉️",
+    title: "봉인된 관장실의 편지",
+    paragraphs: [
+      "어느 날 도착한 등기 봉투에는 폐관 직전인 ‘반짝 복원 미술관’의 임시 관장 지명서와 오래된 황동 열쇠가 들어 있었습니다.",
+      "전임 관장 한미라는 연락을 끊기 전 마지막 문서에 관장님의 이름을 직접 적었습니다. 비서 윤슬도 이유는 모르지만, 폐관 심사까지 남은 시간은 단 30일입니다.",
+      "복원할 작품들은 지난여름 온별천 범람 때 여러 개인 수장고와 오래된 극장, 학교에서 긴급 구조된 것들입니다. 물과 먼지, 급한 운송으로 상처를 입었지만 각각 돌아갈 이야기를 품고 있습니다."
+    ],
+    emphasis: ["폐관 직전", "전임 관장 한미라", "단 30일", "온별천 범람", "긴급 구조", "관장님이 왜 선택되었는지"],
+    quote: "“관장님이 왜 선택되었는지는 한미라 관장님이 남긴 기록 속에 있을 거예요. 전시를 되살리면 봉인된 기록도 하나씩 열릴 거예요.” — 윤슬",
+    button: "첫 소장품부터 시작하기"
+  };
+
+  const STORY_CHAPTERS = [
+    { threshold: 100, icon: "🔖", title: "붉은 별표의 목록", text: "첫 전시가 관람객의 발길을 멈추자 오래된 목록의 붉은 별표가 빛납니다. 별표는 값비싼 작품이 아니라 ‘주인을 찾지 못한 구조품’을 뜻했습니다.", emphasis: ["붉은 별표", "주인을 찾지 못한 구조품"], quote: "“이 미술관은 작품을 소유하려고 모은 게 아니라, 돌아갈 곳을 찾을 때까지 지켜 주려고 만든 곳이었어요.”" },
+    { threshold: 200, icon: "🌧️", title: "폭우가 남긴 수장고", text: "복원 기록 사이에서 범람 당일의 구조 일지가 발견됩니다. 손상 작품이 많은 이유는 관리 소홀이 아니라, 도시 곳곳의 작품을 한밤중에 살리기 위해 이곳으로 옮겼기 때문이었습니다.", emphasis: ["범람 당일의 구조 일지", "관리 소홀이 아니라", "한밤중에 살리기 위해"], quote: "“흠집은 실패의 표시가 아니라 구조된 시간의 흔적입니다.” — 한미라의 기록" },
+    { threshold: 300, icon: "📦", title: "반송되지 않은 상자", text: "주소가 번져 돌아가지 못한 상자 하나가 열립니다. 안에는 학교 미술실, 작은 극장, 가족 공방에서 온 작품들의 사진과 감사 편지가 차곡차곡 들어 있습니다.", emphasis: ["돌아가지 못한 상자", "사진과 감사 편지"], quote: "“작품의 가치는 가격표보다 누가 왜 간직했는지에서 시작돼요.” — 윤슬" },
+    { threshold: 400, icon: "🗝️", title: "지하 3번 수장고", text: "관장실 열쇠가 지하의 작은 문에도 맞습니다. 그 안에는 한미라가 공개하지 못한 긴급 복원 계획과, 관장님에게 보내려다 멈춘 편지가 남아 있습니다.", emphasis: ["지하의 작은 문", "긴급 복원 계획", "멈춘 편지"], quote: "“완벽하게 되돌리는 사람보다, 무엇을 남겨야 하는지 묻는 사람이 필요하다.”" },
+    { threshold: 500, icon: "📼", title: "한미라의 음성 기록", text: "낡은 녹음기에서 한미라의 목소리가 흘러나옵니다. 어린 시절 깨진 오르골을 가져온 관장님이 ‘금은 가리면 기억도 사라지나요?’라고 물었던 순간부터 후계자로 마음에 두었다고 합니다.", emphasis: ["한미라의 목소리", "금은 가리면 기억도 사라지나요?", "후계자"], quote: "“상처를 숨기지 않으면서 다시 살아가게 하는 것. 그게 이 미술관의 약속이란다.”" },
+    { threshold: 600, icon: "🏷️", title: "이름을 돌려주는 전시", text: "관람객 제보로 몇몇 구조품의 옛 소장처가 확인됩니다. 전시 라벨에 작품뿐 아니라 기증자와 구조자의 이름이 함께 적히기 시작합니다.", emphasis: ["관람객 제보", "기증자와 구조자의 이름"], quote: "“관장님, 오늘은 작품이 아니라 사람들의 기억이 제자리로 돌아온 날이에요.”" },
+    { threshold: 700, icon: "📜", title: "폐관 심사 통지서", text: "심사단은 매력도와 수익만으로 미술관의 존속을 판단하겠다고 통보합니다. 윤슬은 복원 과정과 관람객의 목소리까지 모두 전시하는 ‘열린 수장고’를 제안합니다.", emphasis: ["매력도와 수익만으로", "관람객의 목소리", "열린 수장고"], quote: "“숫자는 문을 열지만, 이곳을 남게 하는 건 이야기일 거예요.”" },
+    { threshold: 800, icon: "🧵", title: "도시가 잇는 한 땀", text: "학생들은 작품 소개를 쓰고, 공방 장인들은 받침을 만들며, 주민들은 오래된 사진을 가져옵니다. 손상된 컬렉션은 도시 전체가 함께 복원하는 기억의 지도가 됩니다.", emphasis: ["도시 전체가 함께 복원", "기억의 지도"], quote: "“이제 이 미술관은 혼자 운영하는 건물이 아니라 모두의 작업실이에요.”" },
+    { threshold: 900, icon: "🌟", title: "마지막 봉인의 밤", text: "최종 심사를 하루 앞둔 밤, 한미라의 마지막 편지가 열립니다. 그녀는 관장직을 물려준 것이 아니라, 미술관의 의미를 새롭게 정의할 사람에게 질문을 맡겼다고 썼습니다.", emphasis: ["최종 심사", "한미라의 마지막 편지", "미술관의 의미를 새롭게 정의"], quote: "“이곳의 마지막 작품은 건물도 소장품도 아닌, 서로를 돌보는 마음이다.”" },
+    { threshold: 1000, icon: "🏛️", title: "마지막 이야기 · 다시 열리는 문", text: "최종 심사 날, 관람객들의 말풍선과 복원 기록이 전시장을 가득 채웁니다. 심사단은 폐관 결정을 철회하고 이곳을 ‘온별 시민 복원 미술관’으로 지정합니다. 한미라는 멀리서 보낸 짧은 편지로 정식 관장 취임을 축하합니다.", emphasis: ["폐관 결정을 철회", "온별 시민 복원 미술관", "정식 관장 취임"], quote: "“관장님, 마지막은 문을 닫는 장면이 아니네요. 우리가 지킬 다음 이야기를 향해 문을 여는 장면이에요.” — 윤슬", ending: true },
+    { threshold: 1100, icon: "🌅", title: "문을 연 뒤의 첫 아침", text: "폐관 결정이 철회된 다음 날, 문을 열기도 전에 골목 끝까지 관람객이 줄을 섭니다. 관장과 윤슬은 상처를 감추지 않고 구조 과정과 복원 기록을 함께 보여 주기로 합니다. 미술관을 살린 일은 끝이 아니라 오래 지킬 약속의 시작이었습니다.", emphasis: ["골목 끝까지 관람객이 줄", "상처를 감추지 않고", "오래 지킬 약속의 시작"], quote: "“살아남았다는 말은 이제부터 잘 돌보겠다는 약속과 같아요.” — 윤슬", epilogue: true },
+    { threshold: 1200, icon: "🗝️", title: "한미라가 돌아온 날", text: "비가 내리는 오후, 전임 관장 한미라가 평범한 관람객처럼 조용히 들어옵니다. 달라진 전시를 오래 바라본 그녀는 처음 도착했던 황동 열쇠를 관장에게 다시 건넵니다. 열쇠가 연 것은 지하 수장고가 아니라 다음 사람에게 책임을 맡길 수 있는 믿음이었습니다.", emphasis: ["전임 관장 한미라", "황동 열쇠", "책임을 맡길 수 있는 믿음"], quote: "“내가 지키던 미술관보다, 여러분이 함께 바꾼 미술관이 훨씬 좋구나.” — 한미라", epilogue: true },
+    { threshold: 1300, icon: "🌏", title: "바다 건너 온 복원 의뢰", text: "해외의 작은 미술관에서 범람으로 손상된 작품을 함께 조사해 달라는 편지가 옵니다. 유명한 작품을 들여오는 대신, 관장은 복원 기록과 배운 방법을 나누고 현지 담당자와 공동 전시를 열기로 합니다. 반짝 복원 미술관의 이름은 소유한 보물보다 나눈 지식으로 멀리 퍼집니다.", emphasis: ["함께 조사해 달라는 편지", "복원 기록과 배운 방법을 나누고", "나눈 지식"], quote: "“도움은 작품을 가져오는 일이 아니라, 그곳에서 계속 지킬 수 있게 하는 일이겠죠.” — 관장의 답장", epilogue: true },
+    { threshold: 1400, icon: "🎁", title: "어린 관람객의 기증 상자", text: "한 어린이가 할머니의 낡은 손거울과 가족 이야기가 담긴 상자를 가져옵니다. 관장은 모든 물건을 곧바로 복원하거나 소장할 필요는 없다고 설명하고, 가족이 스스로 기록하고 보관할 수 있도록 돕습니다. 미술관에는 시민의 기억을 상담하는 작은 책상이 새로 생깁니다.", emphasis: ["할머니의 낡은 손거울", "곧바로 복원하거나 소장할 필요는 없다고", "시민의 기억을 상담"], quote: "“반짝이게 만드는 것보다, 왜 소중한지 잊지 않게 돕는 일이 먼저예요.” — 윤슬", epilogue: true },
+    { threshold: 1500, icon: "✨", title: "다음 백 년의 첫날", text: "도시의 학교와 공방, 작은 전시관들이 작품을 함께 돌보는 협약에 서명합니다. 새로 온 보존 연습생들은 첫 구조품 앞에서 기록장을 펼치고, 관장과 윤슬은 활짝 열린 문 너머의 긴 줄을 바라봅니다. 오늘은 미술관이 살아남은 마지막 날이 아니라 다음 백 년을 시작하는 첫날입니다.", emphasis: ["함께 돌보는 협약", "새로 온 보존 연습생", "다음 백 년을 시작하는 첫날"], quote: "“관장님, 이제 이 문은 우리가 없어도 계속 열릴 거예요. 그래도 내일 아침도 함께 열어 볼까요?” — 윤슬", epilogue: true, finale: true }
+  ];
+
+  const FINAL_STORY_THRESHOLD = STORY_CHAPTERS[STORY_CHAPTERS.length - 1].threshold;
+
+  function step(name, instruction, tool, diagnosis, targets) {
+    return { name, instruction, tool, diagnosis, targets };
+  }
+
+  function defaultState() {
+    return {
+      started: false,
+      coins: 250,
+      reputation: 0,
+      day: 1,
+      sound: true,
+      musicVolume: 70,
+      fontSize: 1,
+      difficultyFiveCueSeen: false,
+      alwaysShowSafeZones: false,
+      extendedPuzzlePreview: false,
+      directorName: "서리",
+      museumName: "반짝 복원 미술관",
+      onboardingComplete: false,
+      assistantSeen: false,
+      assistantNotice: true,
+      introStorySeen: false,
+      tutorialComplete: false,
+      tutorialStep: "story",
+      storyMilestone: 0,
+      endingSeen: false,
+      storyCompletionDay: 0,
+      activeArtworkId: null,
+      activeRestorationElapsedMs: 0,
+      restored: {},
+      records: [],
+      upgrades: {},
+      facilityPlans: {},
+      investmentBudget: 0,
+      museumIncomeEarned: 0,
+      gallerySelection: [],
+      galleryNextSlot: 0,
+      practiceBest: {},
+      lastDayVisitors: 0,
+      totalVisitors: 0,
+      lastOpeningRestoredCount: 0,
+      repeatOpeningCount: 0,
+      rankingPlayerId: createRankingPlayerId()
+    };
+  }
+
+  let state = loadState();
+  let session = null;
+  let pointerDown = false;
+  let selectedTool = null;
+  let toastTimer = null;
+  let audioContext = null;
+  let synthMusicGain = null;
+  let musicTimer = null;
+  let musicBar = 0;
+  let musicStarting = false;
+  let musicBlocked = false;
+  let musicSource = "none";
+  let activeMusicView = "storage";
+  let lastGuidedArtworkId = null;
+  let guideSpeechTimer = null;
+  const musicNodes = new Set();
+  const sfxPools = new Map();
+  const sfxPoolCursors = new Map();
+  const lastSfxTimes = new Map();
+  let storageVisibleCount = STORAGE_PAGE_SIZE;
+  let currentMechanic = "spot";
+  let dragState = null;
+  let dragPreviewState = null;
+  let timingState = null;
+  let memoryState = null;
+  let rhythmState = null;
+  let cleaningState = null;
+  let layerCleaningState = null;
+  let budgetState = null;
+  let balanceState = null;
+  let restorationPaused = false;
+  let restorationTimerId = null;
+  let mechanicAnimationFrame = null;
+  let nearMissFeedbackTimer = null;
+  const mechanicTimers = new Set();
+  let assistantActionView = "storage";
+  let storyQueue = [];
+  let storyReturnToAssistant = false;
+  let currentStoryThreshold = null;
+  let museumDayAnimating = false;
+  let tutorialLabPhase = "tool";
+  let tutorialTargetElement = null;
+  let tutorialRenderTimer = null;
+  let tutorialDimTimer = null;
+  let practiceMode = false;
+  let practiceMechanicId = null;
+  let practiceReturnSession = null;
+  let artworkSvgRenderSequence = 0;
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+  const el = {
+    titleScreen: $("#titleScreen"),
+    gameScreen: $("#gameScreen"),
+    startButton: $("#startButton"),
+    continueButton: $("#continueButton"),
+    coinValue: $("#coinValue"),
+    repValue: $("#repValue"),
+    dayValue: $("#dayValue"),
+    totalVisitorValue: $("#totalVisitorValue"),
+    soundButton: $("#soundButton"),
+    bgmAudio: $("#bgmAudio"),
+    assistantButton: $("#assistantButton"),
+    assistantPanel: $("#assistantPanel"),
+    assistantCloseButton: $("#assistantCloseButton"),
+    assistantGreeting: $("#assistantGreeting"),
+    assistantMessage: $("#assistantMessage"),
+    assistantBriefing: $("#assistantBriefing"),
+    assistantProfileForm: $("#assistantProfileForm"),
+    assistantDirectorName: $("#assistantDirectorName"),
+    assistantMuseumName: $("#assistantMuseumName"),
+    assistantProfileStatus: $("#assistantProfileStatus"),
+    assistantActionButton: $("#assistantActionButton"),
+    alwaysShowSafeZones: $("#alwaysShowSafeZones"),
+    extendedPuzzlePreview: $("#extendedPuzzlePreview"),
+    tutorialGuide: $("#tutorialGuide"),
+    tutorialProgress: $("#tutorialProgress"),
+    tutorialTitle: $("#tutorialTitle"),
+    tutorialMessage: $("#tutorialMessage"),
+    tutorialTip: $("#tutorialTip"),
+    tutorialSkipButton: $("#tutorialSkipButton"),
+    tutorialFocusButton: $("#tutorialFocusButton"),
+    tutorialDimmer: $("#tutorialDimmer"),
+    tutorialSpotlight: $("#tutorialSpotlight"),
+    labView: $("#labView"),
+    artworkGrid: $("#artworkGrid"),
+    artworkSearch: $("#artworkSearch"),
+    materialFilter: $("#materialFilter"),
+    statusFilter: $("#statusFilter"),
+    collectionSummary: $("#collectionSummary"),
+    loadMoreArtworks: $("#loadMoreArtworks"),
+    restoredCount: $("#restoredCount"),
+    totalCount: $("#totalCount"),
+    labEmpty: $("#labEmpty"),
+    labWorkspace: $("#labWorkspace"),
+    labMaterial: $("#labMaterial"),
+    labTitle: $("#labTitle"),
+    labSubtitle: $("#labSubtitle"),
+    stepCounter: $("#stepCounter"),
+    labTimer: $("#labTimer"),
+    streakHud: $("#streakHud"),
+    streakValue: $("#streakValue"),
+    streakBest: $("#streakBest"),
+    riskFill: $("#riskFill"),
+    riskValue: $("#riskValue"),
+    labUpgradeBadge: $("#labUpgradeBadge"),
+    artStage: $("#artStage"),
+    stepName: $("#stepName"),
+    stepInstruction: $("#stepInstruction"),
+    nearMissFeedback: $("#nearMissFeedback"),
+    nearMissTitle: $("#nearMissTitle"),
+    nearMissPercent: $("#nearMissPercent"),
+    nearMissComparison: $("#nearMissComparison"),
+    nearMissTarget: $("#nearMissTarget"),
+    nearMissActual: $("#nearMissActual"),
+    difficultyFiveNotice: $("#difficultyFiveNotice"),
+    difficultyFiveNoticeClose: $("#difficultyFiveNoticeClose"),
+    restartStepButton: $("#restartStepButton"),
+    minigameFormalName: $("#minigameFormalName"),
+    minigameMaterialBadge: $("#minigameMaterialBadge"),
+    minigameEasyText: $("#minigameEasyText"),
+    minigameImpactText: $("#minigameImpactText"),
+    diagnosisText: $("#diagnosisText"),
+    labArtworkInfoButton: $("#labArtworkInfoButton"),
+    labArtworkEra: $("#labArtworkEra"),
+    labArtworkArtist: $("#labArtworkArtist"),
+    labArtworkStory: $("#labArtworkStory"),
+    toolGrid: $("#toolGrid"),
+    toolHint: $("#toolHint"),
+    returnToStorage: $("#returnToStorage"),
+    gallerySlots: $("#gallerySlots"),
+    galleryFacilityLayer: $("#galleryFacilityLayer"),
+    galleryAnnexLayer: $("#galleryAnnexLayer"),
+    galleryAnnexStatus: $("#galleryAnnexStatus"),
+    gallerySceneCard: $(".gallery-scene-card"),
+    visitorLayer: $("#visitorLayer"),
+    visitorEstimate: $("#visitorEstimate"),
+    incomeEstimate: $("#incomeEstimate"),
+    appealValue: $("#appealValue"),
+    freshnessValue: $("#freshnessValue"),
+    storyProgressText: $("#storyProgressText"),
+    storyProgressFill: $("#storyProgressFill"),
+    storyNextText: $("#storyNextText"),
+    storyArchiveProgress: $("#storyArchiveProgress"),
+    storyArchiveNext: $("#storyArchiveNext"),
+    storyArchiveHint: $("#storyArchiveHint"),
+    storyChapterList: $("#storyChapterList"),
+    bgmStatus: $("#bgmStatus"),
+    bgmTrackTitle: $("#bgmTrackTitle"),
+    bgmVolume: $("#bgmVolume"),
+    bgmVolumeValue: $("#bgmVolumeValue"),
+    bgmTestButton: $("#bgmTestButton"),
+    upgradeList: $("#upgradeList"),
+    practiceMenu: $("#practiceMenu"),
+    practiceList: $("#practiceList"),
+    practiceResult: $("#practiceResult"),
+    practiceSummary: $("#practiceSummary"),
+    practiceArenaHost: $("#practiceArenaHost"),
+    openMuseumButton: $("#openMuseumButton"),
+    recordList: $("#recordList"),
+    rankingSummary: $("#rankingSummary"),
+    rankingConnectionBadge: $("#rankingConnectionBadge"),
+    rankingStatus: $("#rankingStatus"),
+    submitRankingButton: $("#submitRankingButton"),
+    viewRankingButton: $("#viewRankingButton"),
+    exportSaveButton: $("#exportSaveButton"),
+    importSaveButton: $("#importSaveButton"),
+    importSaveInput: $("#importSaveInput"),
+    resetButton: $("#resetButton"),
+    modalBackdrop: $("#modalBackdrop"),
+    resultModal: $("#resultModal"),
+    dayModal: $("#dayModal"),
+    storyModal: $("#storyModal"),
+    storyIcon: $("#storyIcon"),
+    storyChapterLabel: $("#storyChapterLabel"),
+    storyAppealBadge: $("#storyAppealBadge"),
+    storyTitle: $("#storyTitle"),
+    storyText: $("#storyText"),
+    storyQuote: $("#storyQuote"),
+    storyConfirmButton: $("#storyConfirmButton"),
+    artInfoModal: $("#artInfoModal"),
+    artInfoCloseButton: $("#artInfoCloseButton"),
+    artInfoVisual: $("#artInfoVisual"),
+    artInfoLabel: $("#artInfoLabel"),
+    artInfoTitle: $("#artInfoTitle"),
+    artInfoEra: $("#artInfoEra"),
+    artInfoArtist: $("#artInfoArtist"),
+    artInfoType: $("#artInfoType"),
+    artInfoOrigin: $("#artInfoOrigin"),
+    artInfoValue: $("#artInfoValue"),
+    artInfoStory: $("#artInfoStory"),
+    directorModal: $("#directorModal"),
+    directorNameInput: $("#directorNameInput"),
+    museumNameInput: $("#museumNameInput"),
+    directorNameStatus: $("#directorNameStatus"),
+    directorConfirmButton: $("#directorConfirmButton"),
+    rankingPreviewModal: $("#rankingPreviewModal"),
+    rankingPreviewCloseButton: $("#rankingPreviewCloseButton"),
+    rankingPreviewConfirmButton: $("#rankingPreviewConfirmButton"),
+    rankingPreviewLabel: $("#rankingPreviewLabel"),
+    rankingPreviewTitle: $("#rankingPreviewTitle"),
+    rankingPreviewMessage: $("#rankingPreviewMessage"),
+    rankingPreviewRestored: $("#rankingPreviewRestored"),
+    rankingPreviewAccuracy: $("#rankingPreviewAccuracy"),
+    rankingPreviewRisk: $("#rankingPreviewRisk"),
+    rankingPreviewIncome: $("#rankingPreviewIncome"),
+    rankingPreviewVisitors: $("#rankingPreviewVisitors"),
+    rankingPreviewStory: $("#rankingPreviewStory"),
+    rankingPreviewScore: $("#rankingPreviewScore"),
+    resultArt: $("#resultArt"),
+    resultTitle: $("#resultTitle"),
+    resultSummary: $("#resultSummary"),
+    resultAccuracy: $("#resultAccuracy"),
+    resultTime: $("#resultTime"),
+    resultRep: $("#resultRep"),
+    resultCoins: $("#resultCoins"),
+    resultAccuracyReward: $("#resultAccuracyReward"),
+    resultGrade: $("#resultGrade"),
+    resultBonusTitle: $("#resultBonusTitle"),
+    resultBonusText: $("#resultBonusText"),
+    resultSpeedReward: $("#resultSpeedReward"),
+    resultSpeedTitle: $("#resultSpeedTitle"),
+    resultSpeedText: $("#resultSpeedText"),
+    resultEthics: $("#resultEthics"),
+    resultConfirm: $("#resultConfirm"),
+    dayVisitors: $("#dayVisitors"),
+    dayIncome: $("#dayIncome"),
+    dayRep: $("#dayRep"),
+    dayEventText: $("#dayEventText"),
+    dayConfirm: $("#dayConfirm"),
+    scrollTopButton: $("#scrollTopButton"),
+    toast: $("#toast")
+  };
+
+  init();
+
+  function init() {
+    initializeSoundEffects();
+    bindEvents();
+    el.continueButton.classList.toggle("is-hidden", !state.started);
+    el.startButton.textContent = state.started ? "새 미술관 시작" : "미술관 열기";
+    updateSoundButton();
+    applyFontSize();
+    applySafetyRangePreference();
+    applyPuzzlePreviewPreference();
+    updateAssistantNotice();
+    el.bgmVolume.value = String(state.musicVolume);
+    applyMusicVolume();
+    renderBgmStatus();
+    populateMaterialFilter();
+    el.totalCount.textContent = ARTWORKS.length;
+    updateScrollTopButton();
+
+    if (state.started) {
+      el.continueButton.classList.remove("is-hidden");
+    }
+  }
+
+  function initializeSoundEffects() {
+    Object.entries(SFX_FILES).forEach(([type, source]) => {
+      const pool = Array.from({ length: 3 }, () => {
+        const audio = new Audio(new URL(source, document.baseURI).href);
+        audio.preload = "auto";
+        audio.volume = type === "click" ? .72 : .9;
+        return audio;
+      });
+      sfxPools.set(type, pool);
+      sfxPoolCursors.set(type, 0);
+    });
+  }
+
+  function updateScrollTopButton() {
+    const isNeeded = window.scrollY > 160;
+    const tutorialVisible = !el.tutorialGuide.classList.contains("is-hidden");
+    const liftAboveTutorial = tutorialVisible && window.innerWidth <= 680;
+    const tutorialRect = liftAboveTutorial ? el.tutorialGuide.getBoundingClientRect() : null;
+
+    el.scrollTopButton.classList.toggle("is-needed", isNeeded);
+    el.scrollTopButton.classList.toggle("is-above-tutorial", tutorialVisible);
+    el.scrollTopButton.disabled = !isNeeded;
+    if (tutorialRect) {
+      const liftedBottom = Math.max(10, Math.ceil(window.innerHeight - tutorialRect.top + 10));
+      el.scrollTopButton.style.setProperty("--scroll-top-offset", `${liftedBottom}px`);
+    } else {
+      el.scrollTopButton.style.removeProperty("--scroll-top-offset");
+    }
+  }
+
+  function bindEvents() {
+    el.startButton.addEventListener("click", () => {
+      if (state.started && !window.confirm("현재 저장을 지우고 새로 시작할까요?")) return;
+      state = defaultState();
+      state.started = true;
+      saveState();
+      enterGame();
+    });
+
+    el.continueButton.addEventListener("click", enterGame);
+
+    $$(".tab-button").forEach(button => {
+      button.addEventListener("click", () => switchView(button.dataset.view));
+    });
+
+    $$('[data-go-view]').forEach(button => {
+      button.addEventListener("click", () => switchView(button.dataset.goView));
+    });
+
+    el.returnToStorage.addEventListener("click", () => {
+      if (practiceMode) {
+        exitPracticeChallenge();
+        return;
+      }
+      if (session && session.hitTargets > 0 && !window.confirm("현재 단계의 진행을 보류할까요? 진행 중인 단계는 다시 시작합니다.")) return;
+      clearMechanicTimers();
+      stopRestorationTimerTicker();
+      session = null;
+      state.activeArtworkId = null;
+      state.activeRestorationElapsedMs = 0;
+      saveState();
+      renderLab();
+      switchView("storage");
+    });
+    el.restartStepButton.addEventListener("click", restartCurrentStep);
+
+    $$('[data-font-size]').forEach(button => {
+      button.addEventListener("click", () => {
+        state.fontSize = Math.max(1, Math.min(3, Number(button.dataset.fontSize) || 1));
+        applyFontSize();
+        saveState();
+        showToast(`설명 글씨를 ${state.fontSize}단계로 조절했습니다.`);
+        playTone("click");
+      });
+    });
+
+    el.alwaysShowSafeZones?.addEventListener("change", () => {
+      state.alwaysShowSafeZones = el.alwaysShowSafeZones.checked;
+      applySafetyRangePreference();
+      saveState();
+      if (session && ["stability", "precision", "rhythm"].includes(currentMechanic)
+        && mechanicDifficulty(getArtwork(session.artId)) === 5) {
+        renderCurrentStep();
+      }
+      showToast(state.alwaysShowSafeZones
+        ? "숙련 단계에서도 초록 안전 범위를 표시합니다."
+        : "숙련 단계에서는 재료 상태 변화로 판단합니다.");
+      playTone("click");
+    });
+    el.extendedPuzzlePreview?.addEventListener("change", () => {
+      state.extendedPuzzlePreview = el.extendedPuzzlePreview.checked;
+      applyPuzzlePreviewPreference();
+      saveState();
+      if (dragPreviewState && !dragPreviewState.complete) {
+        const nextDuration = dragPreviewDurationMs(mechanicDifficulty(getArtwork(session?.artId)));
+        dragPreviewState.durationMs = nextDuration;
+        dragPreviewState.remainingMs = state.extendedPuzzlePreview
+          ? nextDuration
+          : Math.min(dragPreviewState.remainingMs, nextDuration);
+        updateDragPreviewDisplay();
+      }
+      showToast(state.extendedPuzzlePreview
+        ? "파편의 원래 배치를 5초 동안 보여 줍니다."
+        : "파편 미리보기 시간을 난이도에 맞춥니다.");
+      playTone("click");
+    });
+    el.difficultyFiveNoticeClose?.addEventListener("click", () => {
+      el.difficultyFiveNotice.classList.add("is-hidden");
+      playTone("click");
+    });
+
+    el.soundButton.addEventListener("click", () => {
+      if (state.sound && musicBlocked) {
+        void startMusic(true);
+        return;
+      }
+      state.sound = !state.sound;
+      updateSoundButton();
+      saveState();
+      if (state.sound) {
+        void startMusic(true);
+      } else {
+        stopMusic();
+      }
+    });
+    el.bgmVolume.addEventListener("input", () => {
+      state.musicVolume = Number(el.bgmVolume.value);
+      applyMusicVolume();
+      renderBgmStatus();
+    });
+    el.bgmVolume.addEventListener("change", saveState);
+    el.bgmTestButton.addEventListener("click", () => {
+      state.sound = true;
+      musicBlocked = false;
+      stopMusic();
+      saveState();
+      void startMusic(true);
+    });
+    el.bgmAudio.addEventListener("playing", () => {
+      musicSource = "file";
+      musicBlocked = false;
+      updateSoundButton();
+      renderBgmStatus();
+    });
+    el.bgmAudio.addEventListener("pause", () => {
+      if (musicSource === "file") musicSource = "none";
+      updateSoundButton();
+      renderBgmStatus();
+    });
+    el.bgmAudio.addEventListener("error", () => {
+      if (musicSource !== "synth") {
+        musicBlocked = true;
+        renderBgmStatus("음원 파일을 불러오지 못했습니다.");
+      }
+    });
+    el.assistantButton.addEventListener("click", toggleAssistantPanel);
+    el.assistantCloseButton.addEventListener("click", closeAssistantPanel);
+    el.assistantProfileForm.addEventListener("submit", event => {
+      event.preventDefault();
+      saveAssistantProfile();
+    });
+    [el.assistantDirectorName, el.assistantMuseumName].forEach(input => {
+      input.addEventListener("input", () => {
+        input.removeAttribute("aria-invalid");
+        setNameStatus(el.assistantProfileStatus, "욕설·혐오표현·연락처는 이름으로 사용할 수 없어요.");
+      });
+    });
+    el.assistantActionButton.addEventListener("click", () => {
+      closeAssistantPanel();
+      switchView(assistantActionView);
+    });
+    el.tutorialFocusButton.addEventListener("click", () => {
+      if (state.tutorialStep === "complete") finishFirstRotationTutorial(false);
+      else focusTutorialTarget();
+    });
+    el.tutorialSkipButton.addEventListener("click", () => {
+      if (!window.confirm("첫 운영 안내를 건너뛸까요? 게임은 그대로 계속할 수 있어요.")) return;
+      finishFirstRotationTutorial(true);
+    });
+    el.scrollTopButton.addEventListener("click", () => {
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+      el.scrollTopButton.blur();
+      playTone("click");
+    });
+    window.addEventListener("resize", updateTutorialSpotlight);
+    window.addEventListener("resize", updateScrollTopButton);
+    window.addEventListener("scroll", updateTutorialSpotlight, true);
+    window.addEventListener("scroll", updateScrollTopButton, { passive: true });
+    new ResizeObserver(updateScrollTopButton).observe(el.tutorialGuide);
+    el.directorConfirmButton.addEventListener("click", confirmDirectorOnboarding);
+    [el.directorNameInput, el.museumNameInput].forEach(input => {
+      input.addEventListener("input", () => {
+        input.removeAttribute("aria-invalid");
+        setNameStatus(el.directorNameStatus, "한글·영문·숫자 이름을 사용할 수 있으며 욕설과 연락처는 제한됩니다.");
+      });
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter") confirmDirectorOnboarding();
+      });
+    });
+    el.artInfoCloseButton.addEventListener("click", closeArtworkInfo);
+    el.labArtworkInfoButton.addEventListener("click", () => {
+      const art = session ? getArtwork(session.artId) : getArtwork(state.activeArtworkId);
+      if (art) openArtworkInfo(art.id);
+    });
+
+    el.artworkSearch.addEventListener("input", resetStorageWindow);
+    el.materialFilter.addEventListener("change", resetStorageWindow);
+    el.statusFilter.addEventListener("change", resetStorageWindow);
+    el.loadMoreArtworks.addEventListener("click", () => {
+      storageVisibleCount += STORAGE_PAGE_SIZE;
+      renderStorage();
+    });
+
+    el.exportSaveButton.addEventListener("click", exportSaveFile);
+    el.importSaveButton.addEventListener("click", () => el.importSaveInput.click());
+    el.importSaveInput.addEventListener("change", importSaveFile);
+    el.submitRankingButton.addEventListener("click", submitCurrentRanking);
+    el.viewRankingButton.addEventListener("click", openLeaderboard);
+    el.rankingPreviewCloseButton.addEventListener("click", closeRankingPreview);
+    el.rankingPreviewConfirmButton.addEventListener("click", closeRankingPreview);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        pauseRestoration();
+        stopMusic();
+      } else if (!el.gameScreen.classList.contains("is-hidden")) {
+        resumeRestoration();
+        void startMusic();
+      }
+    });
+    window.addEventListener("pagehide", pauseRestoration);
+    window.addEventListener("blur", () => {
+      pauseRestoration();
+      stopMusic();
+    });
+    window.addEventListener("focus", () => {
+      if (!document.hidden) {
+        resumeRestoration();
+        if (state.sound && !el.gameScreen.classList.contains("is-hidden")) void startMusic();
+      }
+    });
+    const retryMusicFromGesture = () => {
+      if (state.sound && !el.gameScreen.classList.contains("is-hidden") && !isMusicPlaying()) {
+        void startMusic();
+      }
+    };
+    document.addEventListener("click", event => {
+      const button = event.target instanceof Element ? event.target.closest("button") : null;
+      if (button && !button.disabled) playTone("click");
+    }, { capture: true });
+    document.addEventListener("pointerdown", retryMusicFromGesture, { capture: true });
+    document.addEventListener("keydown", retryMusicFromGesture, { capture: true });
+
+    el.artStage.addEventListener("pointerdown", onPointerDown);
+    el.artStage.addEventListener("pointermove", onPointerMove);
+    el.artStage.addEventListener("pointerup", onPointerUp);
+    el.artStage.addEventListener("pointercancel", onPointerUp);
+    el.artStage.addEventListener("pointerleave", onPointerLeave);
+
+    el.openMuseumButton.addEventListener("click", runMuseumDay);
+    el.resultConfirm.addEventListener("click", closeResultModal);
+    el.dayConfirm.addEventListener("click", closeDayModal);
+    el.storyConfirmButton.addEventListener("click", closeStoryModal);
+
+    el.resetButton.addEventListener("click", () => {
+      if (!window.confirm("모든 진행 상황을 삭제할까요?")) return;
+      localStorage.removeItem(SAVE_KEY);
+      stopMusic();
+      state = defaultState();
+      stopRestorationTimerTicker();
+      session = null;
+      showToast("저장을 초기화했습니다.");
+      setTimeout(() => window.location.reload(), 450);
+    });
+  }
+
+  function enterGame() {
+    el.titleScreen.classList.add("is-hidden");
+    el.gameScreen.classList.remove("is-hidden");
+    reconcileTutorialAfterReload();
+    if (state.activeArtworkId && !state.restored[state.activeArtworkId]) {
+      startRestoration(state.activeArtworkId, true);
+    } else {
+      renderAll();
+      switchView("storage");
+    }
+    void startMusic(true);
+    playTone("open");
+    updateAssistant("storage");
+    if (!state.onboardingComplete) {
+      window.setTimeout(openDirectorOnboarding, 180);
+    } else if (!state.introStorySeen) {
+      storyReturnToAssistant = true;
+      window.setTimeout(() => openStoryEvent(PROLOGUE_STORY), 220);
+    } else if (isFirstRotationTutorialActive()) {
+      window.setTimeout(() => renderTutorialGuide(true), 280);
+    } else if (!state.assistantSeen) {
+      window.setTimeout(openAssistantPanel, 260);
+    }
+  }
+
+  function updateSoundButton() {
+    const enabled = Boolean(state.sound);
+    const playing = isMusicPlaying();
+    el.soundButton.textContent = !enabled ? "🔇" : musicBlocked ? "▶️" : "🎵";
+    el.soundButton.classList.toggle("is-playing", enabled && playing && !musicBlocked);
+    el.soundButton.classList.toggle("is-blocked", enabled && musicBlocked);
+    const label = !enabled
+      ? "효과음과 배경음악 켜기"
+      : musicBlocked
+        ? "배경음악 재생 다시 시도"
+        : playing
+          ? "효과음과 배경음악 끄기, 현재 재생 중"
+          : "효과음과 배경음악 시작";
+    el.soundButton.setAttribute("aria-label", label);
+    el.soundButton.title = label;
+  }
+
+  function applyFontSize() {
+    const size = Math.max(1, Math.min(3, Number(state.fontSize) || 1));
+    document.body.dataset.fontSize = String(size);
+    $$('[data-font-size]').forEach(button => {
+      const selected = Number(button.dataset.fontSize) === size;
+      button.setAttribute("aria-pressed", String(selected));
+      button.classList.toggle("is-selected", selected);
+    });
+  }
+
+  function applySafetyRangePreference() {
+    if (el.alwaysShowSafeZones) el.alwaysShowSafeZones.checked = Boolean(state.alwaysShowSafeZones);
+  }
+
+  function applyPuzzlePreviewPreference() {
+    if (el.extendedPuzzlePreview) el.extendedPuzzlePreview.checked = Boolean(state.extendedPuzzlePreview);
+  }
+
+  function populateMaterialFilter() {
+    const materials = Array.from(new Set(ARTWORKS.map(art => art.material))).sort((a, b) => a.localeCompare(b, "ko"));
+    el.materialFilter.insertAdjacentHTML("beforeend", materials.map(material => `<option value="${material}">${material}</option>`).join(""));
+  }
+
+  function resetStorageWindow() {
+    storageVisibleCount = STORAGE_PAGE_SIZE;
+    renderStorage();
+  }
+
+  function openDirectorOnboarding() {
+    el.directorNameInput.value = state.directorName || "서리";
+    el.museumNameInput.value = state.museumName || "반짝 복원 미술관";
+    el.directorNameInput.removeAttribute("aria-invalid");
+    el.museumNameInput.removeAttribute("aria-invalid");
+    setNameStatus(el.directorNameStatus, "한글·영문·숫자 이름을 사용할 수 있으며 욕설과 연락처는 제한됩니다.");
+    el.resultModal.classList.add("is-hidden");
+    el.dayModal.classList.add("is-hidden");
+    el.storyModal.classList.add("is-hidden");
+    el.artInfoModal.classList.add("is-hidden");
+    el.directorModal.classList.remove("is-hidden");
+    el.modalBackdrop.classList.remove("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "false");
+    window.setTimeout(() => el.directorNameInput.focus(), 120);
+  }
+
+  function confirmDirectorOnboarding() {
+    const validation = validateMuseumIdentity(el.directorNameInput.value, el.museumNameInput.value);
+    if (!validation.ok) {
+      validation.field === "director" ? el.directorNameInput.setAttribute("aria-invalid", "true") : el.museumNameInput.setAttribute("aria-invalid", "true");
+      setNameStatus(el.directorNameStatus, validation.message, "error");
+      showToast(validation.message);
+      return;
+    }
+    state.directorName = validation.directorName;
+    state.museumName = validation.museumName;
+    state.onboardingComplete = true;
+    saveState();
+    el.directorModal.classList.add("is-hidden");
+    el.modalBackdrop.classList.add("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "true");
+    renderTopbar();
+    updateAssistant("storage");
+    storyReturnToAssistant = true;
+    openStoryEvent(PROLOGUE_STORY);
+    showToast(`${state.museumName}의 첫 비밀 기록을 엽니다.`);
+  }
+
+  function toggleAssistantPanel() {
+    if (el.assistantPanel.classList.contains("is-hidden")) openAssistantPanel();
+    else closeAssistantPanel();
+  }
+
+  function openAssistantPanel() {
+    pauseRestoration();
+    el.assistantPanel.classList.remove("is-hidden");
+    el.assistantPanel.setAttribute("aria-hidden", "false");
+    el.assistantButton.setAttribute("aria-expanded", "true");
+    el.assistantDirectorName.value = state.directorName || "";
+    el.assistantMuseumName.value = state.museumName || "반짝 복원 미술관";
+    el.assistantDirectorName.removeAttribute("aria-invalid");
+    el.assistantMuseumName.removeAttribute("aria-invalid");
+    setNameStatus(el.assistantProfileStatus, "욕설·혐오표현·범죄 조장·연락처는 이름으로 사용할 수 없어요.");
+    state.assistantNotice = false;
+    updateAssistantNotice();
+    if (!state.assistantSeen) {
+      state.assistantSeen = true;
+    }
+    saveState();
+  }
+
+  function closeAssistantPanel() {
+    el.assistantPanel.classList.add("is-hidden");
+    el.assistantPanel.setAttribute("aria-hidden", "true");
+    el.assistantButton.setAttribute("aria-expanded", "false");
+    resumeRestoration();
+  }
+
+  function normalizeNameForModeration(value) {
+    return String(value || "")
+      .normalize("NFKC")
+      .toLocaleLowerCase("ko-KR")
+      .replace(/[!1|]/g, "i")
+      .replace(/[@4]/g, "a")
+      .replace(/3/g, "e")
+      .replace(/[0]/g, "o")
+      .replace(/[5$]/g, "s")
+      .replace(/[^\p{L}\p{N}]/gu, "");
+  }
+
+  function validateIdentityName(rawValue, label, minimum, maximum, allowEmpty = false) {
+    const value = String(rawValue || "").normalize("NFKC").replace(/\s+/g, " ").trim();
+    if (!value && allowEmpty) return { ok: true, value: "" };
+    if (value.length < minimum || value.length > maximum) return { ok: false, message: `${label}은 ${minimum}~${maximum}자로 입력해 주세요.` };
+    if (!/^[\p{L}\p{N}][\p{L}\p{N}\s·&'’-]*$/u.test(value)) return { ok: false, message: `${label}에는 한글·영문·숫자와 간단한 구분 기호만 사용할 수 있어요.` };
+    if (/(.)\1{4,}/u.test(value)) return { ok: false, message: `${label}에 같은 글자를 지나치게 반복할 수 없어요.` };
+    const compact = normalizeNameForModeration(value);
+    if (FORBIDDEN_NAME_TOKENS.some(token => compact.includes(normalizeNameForModeration(token)))) {
+      return { ok: false, message: `${label}에 욕설·혐오표현·범죄 조장 등 부적절한 단어를 사용할 수 없어요.` };
+    }
+    const digits = value.replace(/\D/g, "");
+    if (digits.length >= 7 || /(?:https?:\/\/|www\.|@)/i.test(value)) return { ok: false, message: `${label}에 전화번호·이메일·인터넷 주소를 넣을 수 없어요.` };
+    return { ok: true, value };
+  }
+
+  function validateMuseumIdentity(directorValue, museumValue) {
+    const director = validateIdentityName(directorValue, "관장 이름", 1, 12);
+    if (!director.ok) return { ...director, field: "director" };
+    const museum = validateIdentityName(museumValue, "미술관 이름", 2, 20);
+    if (!museum.ok) return { ...museum, field: "museum" };
+    return { ok: true, directorName: director.value, museumName: museum.value };
+  }
+
+  function setNameStatus(element, message, tone = "") {
+    if (!element) return;
+    element.textContent = message;
+    element.classList.toggle("is-error", tone === "error");
+    element.classList.toggle("is-success", tone === "success");
+  }
+
+  function saveAssistantProfile() {
+    const validation = validateMuseumIdentity(el.assistantDirectorName.value, el.assistantMuseumName.value);
+    if (!validation.ok) {
+      const input = validation.field === "director" ? el.assistantDirectorName : el.assistantMuseumName;
+      input.setAttribute("aria-invalid", "true");
+      input.focus();
+      setNameStatus(el.assistantProfileStatus, validation.message, "error");
+      playTone("wrong");
+      return;
+    }
+    state.directorName = validation.directorName;
+    state.museumName = validation.museumName;
+    saveState();
+    renderTopbar();
+    updateAssistant($('[data-view-panel].is-active')?.dataset.viewPanel || "storage");
+    setNameStatus(el.assistantProfileStatus, "명패를 바꿨어요. 저장 파일에도 바로 반영했습니다.", "success");
+    showToast(`${state.museumName} · ${state.directorName} 관장으로 변경했습니다.`);
+    playTone("success");
+  }
+
+  function updateAssistantNotice() {
+    const hasUnread = Boolean(state.assistantNotice);
+    el.assistantButton.classList.toggle("has-unread", hasUnread);
+    el.assistantButton.title = hasUnread ? "윤슬의 새 안내가 있어요" : "윤슬에게 운영 조언 듣기";
+  }
+
+  function updateAssistant(viewName) {
+    const restoredCount = ARTWORKS.reduce((count, art) => count + (state.restored[art.id] ? 1 : 0), 0);
+    const nextArt = ARTWORKS.find(art => !art.licenseLocked && !state.restored[art.id] && state.reputation >= art.unlockRep);
+    const currentArt = session ? getArtwork(session.artId) : getArtwork(state.activeArtworkId);
+    const estimates = getMuseumEstimates();
+    const name = state.directorName ? `${state.directorName} 관장님,` : "관장님,";
+    const briefing = [
+      ["복원 컬렉션", `${restoredCount} / ${ARTWORKS.length}`],
+      ["오늘의 평판", `${formatNumber(state.reputation)} ⭐`],
+      ["예상 관람객", `${formatNumber(estimates.visitors)}명`]
+    ];
+
+    el.assistantGreeting.textContent = name;
+    if (viewName === "lab" && currentArt) {
+      el.assistantMessage.textContent = `${currentArt.title}은 ${currentArt.era} 작품이에요. 손상 기록을 읽고, 단계마다 다른 조작을 차분히 진행해 주세요.`;
+      assistantActionView = "lab";
+      el.assistantActionButton.textContent = "복원 작업 계속하기";
+    } else if (viewName === "gallery") {
+      el.assistantMessage.textContent = restoredCount
+        ? `복원 작품 ${restoredCount}점이 관람객을 기다리고 있어요. 오늘 예상 수입과 시설 상태를 확인해 볼까요?`
+        : "전시관이 아직 비어 있어요. 첫 작품을 복원하면 제가 가장 어울리는 자리를 준비할게요.";
+      assistantActionView = restoredCount ? "gallery" : "storage";
+      el.assistantActionButton.textContent = restoredCount ? "전시 운영 확인" : "첫 작품 고르기";
+    } else if (viewName === "story") {
+      const completedChapters = STORY_CHAPTERS.filter(chapter => state.storyMilestone >= chapter.threshold).length;
+      el.assistantMessage.textContent = state.storyMilestone >= FINAL_STORY_THRESHOLD
+        ? `후일담 5편까지 모두 확인하셨군요. ${state.storyCompletionDay}일 만에 다음 백 년의 첫날을 열었어요.`
+        : state.endingSeen
+          ? `마지막 이야기 뒤의 후일담을 찾고 있어요. 지금까지 이야기 ${completedChapters}/${STORY_CHAPTERS.length}장을 열었습니다.`
+          : `중요한 이야기 ${completedChapters}/${STORY_CHAPTERS.length}장을 찾았어요. 전시 매력도를 100씩 높일 때마다 다음 이야기가 열려요.`;
+      assistantActionView = "gallery";
+      el.assistantActionButton.textContent = "전시 매력도 올리기";
+    } else if (viewName === "records") {
+      el.assistantMessage.textContent = "처리 기록은 다음 복원의 기준이 되는 미술관의 기억이에요. 중요한 진행은 저장 파일로도 백업해 두세요.";
+      assistantActionView = nextArt ? "storage" : "gallery";
+      el.assistantActionButton.textContent = nextArt ? "다음 작품 확인" : "전시관으로 이동";
+    } else if (viewName === "practice") {
+      el.assistantMessage.textContent = practiceMode
+        ? `${MECHANIC_EASY_NAMES[practiceMechanicId]} 난이도 ${mechanicDifficulty(getArtwork(session.artId))} 연습 중이에요. 점수는 남지만 재료비와 실제 작품 기록에는 영향을 주지 않아요.`
+        : `복원 전에 부담 없이 손을 풀 수 있도록 ${PRACTICE_CHALLENGES.length}가지 보존 기술을 따로 준비했어요.`;
+      assistantActionView = "practice";
+      el.assistantActionButton.textContent = practiceMode ? "연습 계속하기" : "보존 기술 고르기";
+    } else {
+      el.assistantMessage.textContent = nextArt
+        ? `지금 복원하기 좋은 작품은 ‘${nextArt.title}’이에요. 작품 이야기를 먼저 읽으면 처리 판단이 더 선명해질 거예요.`
+        : "현재 평판으로 열 수 있는 새 작품이 없어요. 전시관을 운영해 다음 소장품 의뢰를 받아 볼까요?";
+      assistantActionView = nextArt ? "storage" : "gallery";
+      el.assistantActionButton.textContent = nextArt ? "추천 작품 보기" : "미술관 개관하기";
+    }
+    el.assistantBriefing.innerHTML = briefing.map(item => `<div><span>${item[0]}</span><strong>${item[1]}</strong></div>`).join("");
+  }
+
+  function openArtworkInfo(artId) {
+    const art = getArtwork(artId);
+    if (!art) return;
+    pauseRestoration();
+    el.resultModal.classList.add("is-hidden");
+    el.dayModal.classList.add("is-hidden");
+    el.storyModal.classList.add("is-hidden");
+    el.directorModal.classList.add("is-hidden");
+    el.artInfoVisual.innerHTML = artworkSVG(art.id, state.restored[art.id] ? "finished" : "damaged", "info");
+    el.artInfoLabel.textContent = art.fictional ? "GAME COLLECTION · 가상 작품" : "COLLECTION STORY";
+    el.artInfoTitle.textContent = art.title;
+    el.artInfoEra.textContent = art.era || "시대 미상";
+    el.artInfoArtist.textContent = art.artist || "작자 미상";
+    el.artInfoType.textContent = easyCopy(art.artType || art.material);
+    el.artInfoOrigin.textContent = easyCopy(art.origin || "어디에서 왔는지 조사 중");
+    el.artInfoValue.textContent = easyCopy(art.culturalValue || art.ethics);
+    el.artInfoStory.textContent = easyCopy(art.story || art.summary);
+    el.artInfoModal.classList.remove("is-hidden");
+    el.modalBackdrop.classList.remove("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "false");
+    if (isFirstRotationTutorialActive() && art.id === "moon-jar" && state.tutorialStep === "story") {
+      state.tutorialStep = "story_read";
+      saveState();
+      scheduleTutorialGuide(true);
+    }
+    playTone("open");
+  }
+
+  function closeArtworkInfo() {
+    el.artInfoModal.classList.add("is-hidden");
+    el.modalBackdrop.classList.add("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "true");
+    if (isFirstRotationTutorialActive() && state.tutorialStep === "story_read") {
+      state.tutorialStep = "select";
+      saveState();
+      scheduleTutorialGuide(true);
+    }
+    if (el.assistantPanel.classList.contains("is-hidden")) resumeRestoration();
+  }
+
+  function storyForThreshold(threshold) {
+    const fixedChapter = STORY_CHAPTERS.find(chapter => chapter.threshold === threshold);
+    if (fixedChapter) {
+      const epilogueNumber = fixedChapter.epilogue ? threshold / 100 - 10 : 0;
+      return {
+        threshold,
+        label: fixedChapter.ending ? "마지막 이야기" : fixedChapter.epilogue ? `후일담 ${epilogueNumber}` : `이야기 ${threshold / 100}`,
+        icon: fixedChapter.icon,
+        title: fixedChapter.title,
+        paragraphs: [fixedChapter.text],
+        emphasis: fixedChapter.emphasis || [],
+        quote: fixedChapter.quote,
+        button: fixedChapter.finale ? "다음 백 년을 시작하기" : fixedChapter.ending ? "후일담으로 계속하기" : "다음 기록을 기다리기",
+        ending: Boolean(fixedChapter.ending),
+        epilogue: Boolean(fixedChapter.epilogue),
+        finale: Boolean(fixedChapter.finale)
+      };
+    }
+    return null;
+  }
+
+  function openStoryEvent(story) {
+    if (!story) return;
+    pauseRestoration();
+    currentStoryThreshold = story.threshold;
+    if (story.threshold === 0) {
+      state.introStorySeen = true;
+    } else {
+      state.storyMilestone = Math.max(state.storyMilestone, story.threshold);
+      if (story.ending) state.endingSeen = true;
+      if (story.finale && !state.storyCompletionDay) state.storyCompletionDay = state.day;
+    }
+    saveState();
+
+    el.resultModal.classList.add("is-hidden");
+    el.dayModal.classList.add("is-hidden");
+    el.storyModal.classList.add("is-hidden");
+    el.artInfoModal.classList.add("is-hidden");
+    el.directorModal.classList.add("is-hidden");
+    el.storyIcon.textContent = story.icon;
+    el.storyChapterLabel.textContent = story.label;
+    el.storyAppealBadge.textContent = story.threshold ? `전시 매력도 ${formatNumber(story.threshold)} 달성` : "관장 취임일";
+    el.storyTitle.textContent = story.title;
+    const easyEmphasis = (story.emphasis || []).map(easyCopy);
+    el.storyText.replaceChildren(...story.paragraphs.map(paragraph => createHighlightedStoryParagraph(easyCopy(paragraph), easyEmphasis)));
+    el.storyQuote.textContent = easyCopy(story.quote);
+    el.storyConfirmButton.textContent = story.button;
+    el.storyModal.classList.remove("is-hidden");
+    el.modalBackdrop.classList.remove("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "false");
+    renderStoryProgress();
+    playTone(story.ending || story.finale ? "complete" : "open");
+  }
+
+  function createHighlightedStoryParagraph(paragraph, emphasisPhrases) {
+    const node = document.createElement("p");
+    const phrases = emphasisPhrases.filter(phrase => paragraph.includes(phrase));
+    let cursor = 0;
+    while (cursor < paragraph.length) {
+      let nextIndex = paragraph.length;
+      let nextPhrase = "";
+      phrases.forEach(phrase => {
+        const index = paragraph.indexOf(phrase, cursor);
+        if (index >= 0 && index < nextIndex) {
+          nextIndex = index;
+          nextPhrase = phrase;
+        }
+      });
+      if (!nextPhrase) {
+        node.append(document.createTextNode(paragraph.slice(cursor)));
+        break;
+      }
+      if (nextIndex > cursor) node.append(document.createTextNode(paragraph.slice(cursor, nextIndex)));
+      const strong = document.createElement("strong");
+      strong.className = "story-highlight";
+      strong.textContent = nextPhrase;
+      node.append(strong);
+      cursor = nextIndex + nextPhrase.length;
+    }
+    return node;
+  }
+
+  function closeStoryModal() {
+    el.storyModal.classList.add("is-hidden");
+    currentStoryThreshold = null;
+    if (storyQueue.length) {
+      const nextStory = storyQueue.shift();
+      window.setTimeout(() => openStoryEvent(nextStory), 120);
+      return;
+    }
+    if (checkStoryProgress()) return;
+    el.modalBackdrop.classList.add("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "true");
+    if (storyReturnToAssistant) {
+      storyReturnToAssistant = false;
+      if (isFirstRotationTutorialActive()) {
+        state.tutorialStep = "story";
+        saveState();
+        closeAssistantPanel();
+        switchView("storage");
+        scheduleTutorialGuide(true);
+      } else {
+        openAssistantPanel();
+      }
+    }
+    if (el.assistantPanel.classList.contains("is-hidden")) resumeRestoration();
+  }
+
+  function checkStoryProgress() {
+    if (!state.introStorySeen || !el.storyModal.classList.contains("is-hidden")) return false;
+    const appeal = getMuseumEstimates().appeal;
+    const reachedMilestone = Math.min(FINAL_STORY_THRESHOLD, Math.floor(appeal / 100) * 100);
+    if (reachedMilestone <= state.storyMilestone) return false;
+    storyQueue = [];
+    for (let threshold = state.storyMilestone + 100; threshold <= reachedMilestone; threshold += 100) {
+      storyQueue.push(storyForThreshold(threshold));
+    }
+    const nextStory = storyQueue.shift();
+    if (!nextStory) return false;
+    openStoryEvent(nextStory);
+    return true;
+  }
+
+  function renderStoryProgress() {
+    if (!el.storyProgressText) return;
+    const appeal = getMuseumEstimates().appeal;
+    if (state.storyMilestone >= FINAL_STORY_THRESHOLD) {
+      el.storyProgressText.textContent = `${formatNumber(FINAL_STORY_THRESHOLD)} / ${formatNumber(FINAL_STORY_THRESHOLD)}`;
+      el.storyProgressFill.style.width = "100%";
+      el.storyNextText.textContent = `후일담 5편까지 모두 열었습니다. · ${formatNumber(state.storyCompletionDay)}일 완주`;
+      return;
+    }
+    const nextThreshold = Math.max(100, state.storyMilestone + 100);
+    const segmentStart = nextThreshold - 100;
+    const segmentProgress = Math.max(0, Math.min(100, appeal - segmentStart));
+    const nextStory = storyForThreshold(nextThreshold);
+    el.storyProgressText.textContent = `${formatNumber(appeal)} / ${formatNumber(nextThreshold)}`;
+    el.storyProgressFill.style.width = `${segmentProgress}%`;
+    el.storyNextText.textContent = state.endingSeen
+      ? `다음 후일담 ‘${nextStory.title}’까지 전시 매력 ${Math.max(0, nextThreshold - appeal)}`
+      : `다음 이야기 ‘${nextStory.title}’까지 ${Math.max(0, nextThreshold - appeal)}`;
+  }
+
+  function renderStoryArchive() {
+    if (!el.storyChapterList) return;
+    const appeal = getMuseumEstimates().appeal;
+    const completedChapters = STORY_CHAPTERS.filter(chapter => state.storyMilestone >= chapter.threshold).length;
+    const storiesComplete = state.storyMilestone >= FINAL_STORY_THRESHOLD;
+    const nextThreshold = storiesComplete ? FINAL_STORY_THRESHOLD : Math.max(100, state.storyMilestone + 100);
+    const nextStory = state.introStorySeen ? (storyForThreshold(nextThreshold) || STORY_CHAPTERS[STORY_CHAPTERS.length - 1]) : PROLOGUE_STORY;
+    const remainingAppeal = state.introStorySeen && !storiesComplete ? Math.max(0, nextThreshold - appeal) : 0;
+
+    el.storyArchiveProgress.textContent = `매력도 ${formatNumber(appeal)} · 이야기 ${completedChapters}/${STORY_CHAPTERS.length}`;
+    el.storyArchiveNext.textContent = storiesComplete ? "모든 이야기 완주" : nextStory.title;
+    el.storyArchiveHint.textContent = storiesComplete
+      ? `${formatNumber(state.storyCompletionDay)}일 만에 후일담 5편까지 모두 열었습니다.`
+      : state.introStorySeen
+      ? `다음 기록까지 전시 매력도가 ${formatNumber(remainingAppeal)} 더 필요합니다.`
+      : "관장이 된 날의 첫 이야기를 확인하면 다음 기록이 열려요.";
+
+    const archiveEntries = [
+      {
+        threshold: 0,
+        label: "처음 이야기",
+        icon: PROLOGUE_STORY.icon,
+        title: PROLOGUE_STORY.title,
+        summary: "갑작스러운 관장 지명과 손상된 구조품의 기원",
+        unlocked: state.introStorySeen
+      },
+      ...STORY_CHAPTERS.map(chapter => ({
+        threshold: chapter.threshold,
+        label: chapter.ending
+          ? "마지막 이야기 · 1000"
+          : chapter.epilogue
+            ? `후일담 ${chapter.threshold / 100 - 10} · ${chapter.threshold}`
+            : `이야기 ${chapter.threshold / 100} · ${chapter.threshold}`,
+        icon: chapter.icon,
+        title: chapter.title,
+        summary: chapter.text,
+        unlocked: state.storyMilestone >= chapter.threshold,
+        ending: Boolean(chapter.ending || chapter.finale)
+      }))
+    ];
+
+    el.storyChapterList.innerHTML = archiveEntries.map(entry => {
+      const isNext = !entry.unlocked && (entry.threshold === nextThreshold || (entry.threshold === 0 && !state.introStorySeen));
+      const classes = [
+        "story-chapter-card",
+        entry.unlocked ? "is-unlocked" : "is-locked",
+        isNext ? "is-next" : "",
+        entry.ending ? "is-ending" : ""
+      ].filter(Boolean).join(" ");
+      const content = `
+        <span class="story-chapter-icon">${entry.unlocked ? entry.icon : "🔒"}</span>
+        <span class="story-chapter-copy">
+          <small>${entry.label}</small>
+          <strong>${entry.title}</strong>
+          <span>${entry.unlocked ? easyCopy(entry.summary) : isNext ? "다음에 열릴 이야기" : "아직 열리지 않은 기록"}</span>
+        </span>`;
+      return entry.unlocked
+        ? `<button type="button" class="${classes}" data-story-replay="${entry.threshold}">${content}</button>`
+        : `<div class="${classes}">${content}</div>`;
+    }).join("");
+
+    $$("[data-story-replay]", el.storyChapterList).forEach(button => {
+      button.addEventListener("click", () => {
+        const threshold = Number(button.dataset.storyReplay);
+        storyReturnToAssistant = false;
+        openStoryEvent(threshold === 0 ? PROLOGUE_STORY : storyForThreshold(threshold));
+      });
+    });
+    renderBgmStatus();
+  }
+
+  function renderAll() {
+    renderTopbar();
+    renderStorage();
+    if (!practiceMode) renderLab();
+    renderGallery();
+    renderStoryArchive();
+    renderRecords();
+    renderPractice();
+  }
+
+  function renderTopbar() {
+    el.coinValue.textContent = formatNumber(state.coins);
+    el.repValue.textContent = formatNumber(state.reputation);
+    el.dayValue.textContent = `${state.day}일`;
+    el.totalVisitorValue.textContent = `${formatNumber(state.totalVisitors)}명`;
+    updateAssistantNotice();
+    const brandName = $(".brand-mini span:last-child");
+    if (brandName) brandName.textContent = state.museumName || "반짝! 복원 미술관";
+  }
+
+  function switchView(viewName) {
+    const labWasActive = $('[data-view-panel="lab"]')?.classList.contains("is-active");
+    const practiceWasActive = $('[data-view-panel="practice"]')?.classList.contains("is-active");
+    if (practiceMode && viewName !== "practice") exitPracticeChallenge(false);
+    if ((labWasActive && viewName !== "lab") || (practiceWasActive && practiceMode && viewName !== "practice")) pauseRestoration();
+    $$(".tab-button").forEach(btn => btn.classList.toggle("is-active", btn.dataset.view === viewName));
+    $$('[data-view-panel]').forEach(panel => panel.classList.toggle("is-active", panel.dataset.viewPanel === viewName));
+    if (viewName === "gallery") renderGallery();
+    if (viewName === "story") renderStoryArchive();
+    if (viewName === "records") renderRecords();
+    if (viewName === "storage") renderStorage();
+    if (viewName === "lab") resumeRestoration();
+    if (viewName === "practice") {
+      renderPractice();
+      resumeRestoration();
+    }
+    setMusicTheme(viewName);
+    updateAssistant(viewName);
+    if (isFirstRotationTutorialActive()) scheduleTutorialGuide(false);
+    playTone("click");
+  }
+
+  function renderStorage() {
+    const query = el.artworkSearch.value.trim().toLocaleLowerCase("ko-KR");
+    const material = el.materialFilter.value;
+    const status = el.statusFilter.value;
+    const knownRestoredCount = ARTWORKS.reduce((count, art) => count + (state.restored[art.id] ? 1 : 0), 0);
+    const filteredArts = ARTWORKS.filter(art => {
+      const isRestored = Boolean(state.restored[art.id]);
+      const unlocked = !art.licenseLocked && (state.reputation >= art.unlockRep || isRestored);
+      const matchesQuery = !query || `${art.title} ${art.material} ${art.rarity} ${art.era || ""} ${art.artist || ""} ${art.sourceReference || ""}`.toLocaleLowerCase("ko-KR").includes(query);
+      const matchesMaterial = material === "all" || art.material === material;
+      const matchesStatus = status === "all"
+        || (status === "restored" && isRestored)
+        || (status === "available" && unlocked && !isRestored && !art.licenseLocked)
+        || (status === "locked" && (!unlocked || art.licenseLocked));
+      return matchesQuery && matchesMaterial && matchesStatus;
+    });
+    const visibleArts = filteredArts.slice(0, storageVisibleCount);
+    const remainingCount = Math.max(0, filteredArts.length - visibleArts.length);
+
+    el.restoredCount.textContent = knownRestoredCount;
+    el.collectionSummary.textContent = `전체 ${ARTWORKS.length}개 · 검색 결과 ${filteredArts.length}개`;
+    el.loadMoreArtworks.classList.toggle("is-hidden", remainingCount === 0);
+    el.loadMoreArtworks.textContent = remainingCount > 0
+      ? `작품 더 보기 · ${Math.min(STORAGE_PAGE_SIZE, remainingCount)}개`
+      : "모든 작품을 불러왔어요";
+
+    if (!visibleArts.length) {
+      el.artworkGrid.innerHTML = `<div class="collection-empty">조건에 맞는 작품이 없습니다.<br />검색어나 필터를 바꿔 보세요.</div>`;
+      return;
+    }
+
+    el.artworkGrid.innerHTML = visibleArts.map(art => {
+      const isRestored = Boolean(state.restored[art.id]);
+      const unlocked = !art.licenseLocked && (state.reputation >= art.unlockRep || isRestored);
+      let actionHtml = "";
+      if (isRestored) {
+        actionHtml = `<button class="button button-ghost" data-view-record="${art.id}">기록 보기</button>`;
+      } else if (art.licenseLocked) {
+        actionHtml = `<div class="lock-message">🔒 아트 방향 권리 검토 중</div>`;
+      } else if (!unlocked) {
+        actionHtml = `<div class="lock-message">🔒 평판 ${art.unlockRep} 필요</div>`;
+      } else {
+        actionHtml = `<button class="button button-primary" data-start-art="${art.id}">복원실로 옮기기 · ${art.supplyCost}🪙</button>`;
+      }
+      return `
+        <article class="art-card ${isRestored ? "is-restored" : ""} ${!unlocked ? "is-locked" : ""}" style="--card-a:${art.colors[0]};--card-b:${art.colors[1]}">
+          ${isRestored ? '<span class="restored-stamp">복원 완료</span>' : ""}
+          <div class="art-thumb">${artworkSVG(art.id, isRestored ? "finished" : "damaged", "thumb")}</div>
+          <div class="art-card-body">
+            <div class="art-card-topline">
+              <span class="material-tag">${art.material}</span>
+              <span class="rarity-tag">✦ ${art.rarity}</span>
+            </div>
+            <h3>${art.title}</h3>
+            <div class="art-facts"><span>${art.era || "시대 미상"}</span><i></i><span>${art.artist || "작자 미상"}</span></div>
+            <p>${easyCopy(art.damage)}</p>
+            <div class="card-stats">
+              <div class="card-stat">전시 매력<strong>${art.appeal}</strong></div>
+              <div class="card-stat">평판 보상<strong>+${art.rewardRep}</strong></div>
+            </div>
+            <div class="card-actions">
+              <button class="button button-soft" data-art-info="${art.id}">작품 이야기</button>
+              ${actionHtml}
+            </div>
+          </div>
+        </article>`;
+    }).join("");
+
+    $$('[data-start-art]', el.artworkGrid).forEach(btn => {
+      btn.addEventListener("click", () => startRestoration(btn.dataset.startArt));
+    });
+
+    $$('[data-view-record]', el.artworkGrid).forEach(btn => {
+      btn.addEventListener("click", () => {
+        switchView("records");
+        const card = document.querySelector(`[data-record-id="${btn.dataset.viewRecord}"]`);
+        card?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
+
+    $$('[data-art-info]', el.artworkGrid).forEach(btn => {
+      btn.addEventListener("click", () => openArtworkInfo(btn.dataset.artInfo));
+    });
+  }
+
+  function startRestoration(artId, resume = false) {
+    const art = getArtwork(artId);
+    if (!art || state.restored[artId]) return;
+    if (art.licenseLocked) {
+      showToast("이 후보는 권리 검토가 끝날 때까지 복원할 수 없습니다.");
+      return;
+    }
+
+    if (!resume) {
+      if (state.reputation < art.unlockRep) {
+        showToast(`평판 ${art.unlockRep}점이 필요합니다.`);
+        return;
+      }
+      if (state.coins < art.supplyCost) {
+        showToast("복원 재료비가 부족합니다. 전시관을 운영해 수입을 모아 주세요.");
+        return;
+      }
+      state.coins -= art.supplyCost;
+      state.activeArtworkId = artId;
+      state.activeRestorationElapsedMs = 0;
+      saveState();
+    }
+
+    session = createRestorationSession(artId, true, resume ? state.activeRestorationElapsedMs : 0);
+    startRestorationTimerTicker();
+    if (isFirstRotationTutorialActive() && artId === "moon-jar") {
+      state.tutorialStep = "lab";
+      tutorialLabPhase = "tool";
+      saveState();
+    }
+    renderTopbar();
+    renderLab();
+    switchView("lab");
+    showToast(`${art.title} 복원을 시작합니다.`);
+  }
+
+  function createRestorationSession(artId, timed = true, elapsedMs = 0) {
+    return {
+      artId,
+      stepIndex: 0,
+      risk: 0,
+      mistakes: 0,
+      hitTargets: 0,
+      targetIds: [],
+      streak: 0,
+      maxStreak: 0,
+      streakStepIndex: -1,
+      streakRecordedStepIndex: -1,
+      stepHadMistake: false,
+      cleaningRerolls: {},
+      cleaningResults: [],
+      balanceRerolls: {},
+      uvHistoryConfirmed: false,
+      uvFindingLabel: "",
+      budgetResults: [],
+      practiceDifficulty: null,
+      timed,
+      activeElapsedMs: timed ? Math.max(0, Number(elapsedMs) || 0) : 0,
+      timerRunningSince: timed ? performance.now() : null
+    };
+  }
+
+  function restorationElapsedMs(workSession = session) {
+    if (!workSession?.timed) return 0;
+    const running = workSession.timerRunningSince == null ? 0 : performance.now() - workSession.timerRunningSince;
+    return Math.max(0, workSession.activeElapsedMs + running);
+  }
+
+  function pauseRestorationClock() {
+    if (!session?.timed || session.timerRunningSince == null) return;
+    session.activeElapsedMs += Math.max(0, performance.now() - session.timerRunningSince);
+    session.timerRunningSince = null;
+    state.activeRestorationElapsedMs = Math.round(session.activeElapsedMs);
+    saveState();
+    updateRestorationTimer();
+  }
+
+  function resumeRestorationClock() {
+    if (!session?.timed || session.timerRunningSince != null) return;
+    session.timerRunningSince = performance.now();
+  }
+
+  function finishRestorationClock() {
+    pauseRestorationClock();
+    stopRestorationTimerTicker();
+    return Math.max(1, Math.round(restorationElapsedMs() / 1000));
+  }
+
+  function formatRestorationTime(seconds, showTenths = false) {
+    const safeSeconds = Math.max(0, Number(seconds) || 0);
+    const minutes = Math.floor(safeSeconds / 60);
+    const wholeSeconds = Math.floor(safeSeconds % 60);
+    const tenths = Math.floor((safeSeconds % 1) * 10);
+    return `${String(minutes).padStart(2, "0")}:${String(wholeSeconds).padStart(2, "0")}${showTenths ? `.${tenths}` : ""}`;
+  }
+
+  function updateRestorationTimer() {
+    if (!el.labTimer) return;
+    if (!session?.timed || practiceMode) {
+      el.labTimer.textContent = practiceMode ? "복원 작업 시간 · 연습 모드" : "복원 작업 시간 · 00:00.0";
+      return;
+    }
+    el.labTimer.textContent = `복원 작업 시간 · ${formatRestorationTime(restorationElapsedMs() / 1000, true)}`;
+  }
+
+  function startRestorationTimerTicker() {
+    stopRestorationTimerTicker();
+    updateRestorationTimer();
+    if (session?.timed) restorationTimerId = window.setInterval(updateRestorationTimer, 100);
+  }
+
+  function stopRestorationTimerTicker() {
+    if (restorationTimerId) window.clearInterval(restorationTimerId);
+    restorationTimerId = null;
+  }
+
+  function renderLab() {
+    if (practiceMode) return;
+    const art = session ? getArtwork(session.artId) : getArtwork(state.activeArtworkId);
+    if (!art || state.restored[art.id]) {
+      el.labEmpty.classList.remove("is-hidden");
+      el.labWorkspace.classList.add("is-hidden");
+      return;
+    }
+
+    if (!session) {
+      session = createRestorationSession(art.id, true, state.activeRestorationElapsedMs);
+      startRestorationTimerTicker();
+    }
+
+    el.labEmpty.classList.add("is-hidden");
+    el.labWorkspace.classList.remove("is-hidden");
+    el.labMaterial.textContent = art.material.toUpperCase();
+    el.labTitle.textContent = art.title;
+    el.labSubtitle.textContent = easyCopy(art.damage);
+    el.labArtworkEra.textContent = `${art.era || "시대 미상"} · ${art.artType || art.material}`;
+    el.labArtworkArtist.textContent = art.artist || "작자 미상";
+    el.labArtworkStory.textContent = easyCopy(art.story || art.summary);
+    const riskReduction = upgradeEffectTotal("riskReduction");
+    el.labWorkspace.classList.toggle("has-upgrade-lab", riskReduction > 0);
+    el.labUpgradeBadge.classList.toggle("is-hidden", riskReduction <= 0);
+    el.labUpgradeBadge.textContent = `🌡️ 손상 예방 설비 · 위험 -${Math.round(Math.min(0.6, riskReduction) * 100)}%`;
+    el.returnToStorage.textContent = "작업 보류";
+    updateRestorationTimer();
+    renderCurrentStep();
+  }
+
+  function renderCurrentStep() {
+    const art = getArtwork(session.artId);
+    const practice = practiceMode ? getPracticeChallenge(practiceMechanicId) : null;
+    const current = practice ? practice.step : art.steps[session.stepIndex];
+    if (!current) return practiceMode ? completePracticeChallenge() : completeRestoration();
+
+    clearMechanicTimers();
+    if (session.streakStepIndex !== session.stepIndex) {
+      session.streakStepIndex = session.stepIndex;
+      session.stepHadMistake = false;
+    }
+    updateStreakHud();
+    hideNearMissFeedback();
+    selectedTool = null;
+    pointerDown = false;
+    dragState = null;
+    session.hitTargets = 0;
+    session.mechanicComplete = false;
+    currentMechanic = practice ? practice.id : mechanicPlanForArtwork(art)[session.stepIndex];
+    session.expertCueMode = usesExpertMaterialCues(art, currentMechanic);
+    el.toolHint.textContent = `${easyCopy(mechanicDisplayName(current.tool, currentMechanic))} 예정`;
+    const mechanicTargets = current.targets;
+    session.targetIds = ["spot", "uv"].includes(currentMechanic)
+      ? mechanicTargets.map((_, index) => `${currentMechanic}-target-${session.stepIndex}-${index}`)
+      : [];
+
+    el.stepCounter.textContent = practice
+      ? `보존 연습 · 난이도 ${mechanicDifficulty(art)} · 보상 없음`
+      : `${session.stepIndex + 1} / ${art.steps.length} 단계`;
+    el.stepName.textContent = easyCopy(current.name);
+    el.stepInstruction.textContent = easyCopy(current.instruction);
+    const mechanicGuide = mechanicGuideForArtwork(currentMechanic, art, current.tool);
+    el.minigameFormalName.textContent = mechanicDisplayName(current.tool, currentMechanic);
+    el.minigameMaterialBadge.textContent = mechanicGuide.materialLabel;
+    el.minigameEasyText.textContent = easyCopy(mechanicGuide.easy);
+    el.minigameImpactText.textContent = easyCopy(mechanicGuide.impact);
+    el.diagnosisText.textContent = easyCopy(current.diagnosis);
+    updateRisk();
+    updateWorkflowStrip(practice ? MECHANIC_IDS.indexOf(practice.id) % 5 : session.stepIndex, practice ? 5 : art.steps.length);
+
+    const progressClass = progressClassForStep(art, session.stepIndex);
+    el.artStage.innerHTML = `
+      ${artworkSVG(art.id, progressClass, "stage")}
+      <div id="toolCursor" class="tool-cursor" aria-hidden="true"></div>
+      <div id="mechanicLayer" class="mechanic-layer is-locked">
+        ${easyCopy(renderMechanicMarkup(art, current, mechanicTargets))}
+        <div class="mechanic-pause-overlay" role="status" aria-hidden="true">
+          <span aria-hidden="true">⏸</span>
+          <strong>복원 작업 일시정지</strong>
+          <small>복원실로 돌아오면 현재 단계부터 안전하게 이어집니다.</small>
+        </div>
+      </div>
+    `;
+    $("#mechanicLayer", el.artStage).dataset.mechanic = currentMechanic;
+    el.artStage.classList.toggle("has-four-choice", currentMechanic === "choice" && session.choiceSampleCount === 4);
+    el.artStage.classList.toggle("has-budget", currentMechanic === "budget");
+    el.artStage.classList.toggle("has-balance", currentMechanic === "balance");
+    renderDifficultyFiveNotice(art, currentMechanic);
+
+    const toolChoices = buildToolChoices(current.tool, session.stepIndex);
+    el.toolGrid.innerHTML = toolChoices.map(toolId => {
+      const tool = TOOLS[toolId];
+      return `<button class="tool-button" data-tool="${toolId}" title="${tool.desc}" aria-pressed="false">
+        <span class="tool-icon">${tool.icon}</span>
+        <span class="tool-name">${tool.name}</span>
+      </button>`;
+    }).join("");
+
+    $$('[data-tool]', el.toolGrid).forEach(button => {
+      button.addEventListener("click", () => selectTool(button.dataset.tool, current.tool, button));
+    });
+    bindMechanicControls();
+    if (!practiceMode && isFirstRotationTutorialActive() && state.tutorialStep === "lab") {
+      scheduleTutorialGuide(true);
+    }
+  }
+
+  function restartCurrentStep() {
+    if (!session) return;
+    const hasProgress = session.hitTargets > 0 || session.mechanicComplete;
+    if (hasProgress && !window.confirm("현재 단계의 조작만 처음부터 다시 할까요? 이미 생긴 위험도와 실수는 유지됩니다.")) return;
+    session.streak = 0;
+    session.maxStreak = 0;
+    session.streakStepIndex = -1;
+    session.streakRecordedStepIndex = -1;
+    session.stepHadMistake = false;
+    if (currentMechanic === "cleaning") {
+      session.cleaningRerolls[session.stepIndex] = (session.cleaningRerolls[session.stepIndex] || 0) + 1;
+      session.cleaningResults = (session.cleaningResults || []).filter(result => result.stepIndex !== session.stepIndex);
+    }
+    if (currentMechanic === "uv") {
+      session.uvHistoryConfirmed = false;
+      session.uvFindingLabel = "";
+    }
+    if (currentMechanic === "budget") {
+      session.budgetResults = (session.budgetResults || []).filter(result => result.stepIndex !== session.stepIndex);
+    }
+    if (currentMechanic === "balance") {
+      session.balanceRerolls ||= {};
+      session.balanceRerolls[session.stepIndex] = (session.balanceRerolls[session.stepIndex] || 0) + 1;
+    }
+    clearMechanicTimers();
+    restorationPaused = false;
+    renderCurrentStep();
+    showToast("현재 복원 단계를 다시 시작했습니다.");
+    playTone("open");
+  }
+
+  function mechanicCandidatesForTool(toolId) {
+    const safeMappings = {
+      magnifier: ["spot", "uv"],
+      uvLamp: ["uv"],
+      testSwab: ["choice", "sequence"],
+      softBrush: ["trace"],
+      paperPatch: ["align"],
+      reversibleAdhesive: ["drag", "align", "rhythm"],
+      fillSpatula: ["precision"],
+      retouchBrush: ["tone"],
+      microPick: ["trace", "cleaning", "budget"],
+      stabilizer: ["stability"],
+      protectiveWax: ["precision"],
+      humidityPack: ["stability"],
+      varnishGel: ["precision", "cleaning", "budget"],
+      surfaceVacuum: ["trace", "cleaning", "budget"],
+      fiberTweezers: ["precision"],
+      supportStitch: ["rhythm"],
+      consolidant: ["stability"],
+      glassSupport: ["drag", "balance"],
+      resinFill: ["precision"],
+      supportMount: ["drag", "balance"],
+      photoSleeve: ["sequence", "balance"],
+      bindingCradle: ["precision", "balance"],
+      sootSponge: ["precision", "cleaning", "budget"],
+      groutTool: ["drag"],
+      isolationLayer: ["precision"]
+    };
+    return safeMappings[toolId] || ["sequence"];
+  }
+
+  function mechanicDisplayName(toolId, mechanic) {
+    const names = {
+      magnifier: { spot: "사광 손상 조사", uv: "자외선 형광 조사" },
+      uvLamp: { uv: "자외선 형광 조사" },
+      testSwab: { choice: "시험 결과 안전 판정", sequence: "시험 중단·처리 판단" },
+      softBrush: { trace: "결 따라 붓 청소" },
+      paperPatch: { align: "찢김 섬유 방향 정렬" },
+      reversibleAdhesive: { drag: "파편 건식 맞춤", align: "접합면 각도 정렬", rhythm: "아주 적은 양의 접착제 점적" },
+      fillSpatula: { precision: "결손 충전량 조절" },
+      retouchBrush: { tone: "식별 가능한 보색" },
+      microPick: { trace: "부식 경계 미세 제거", cleaning: "부식 생성물 제거 판단", budget: "부식 처리량 나누기" },
+      stabilizer: { stability: "부식 안정화 반응 조절" },
+      protectiveWax: { precision: "보호막 두께 조절" },
+      humidityPack: { stability: "간접 가습 안정화" },
+      varnishGel: { precision: "세척 겔 접촉량 조절", cleaning: "변색 니스 세척 판단", budget: "세척 작업량 나누기" },
+      surfaceVacuum: { trace: "보호망 위 자극이 적은 흡입", cleaning: "표면 오염층 세척 판단", budget: "먼지 정리량 나누기" },
+      fiberTweezers: { precision: "섬유 장력 미세 조절" },
+      supportStitch: { rhythm: "지지 바느질 간격 맞추기" },
+      consolidant: { stability: "안정화제 침투 조절" },
+      glassSupport: { drag: "유리 지지점 배치", balance: "유리 받침 무게 잡기" },
+      resinFill: { precision: "투명 보완재 양 조절" },
+      supportMount: { drag: "맞춤 받침 배치", balance: "맞춤 받침 무게 잡기" },
+      photoSleeve: { sequence: "사진 안전 포장 판단", balance: "사진 받침 무게 잡기" },
+      bindingCradle: { precision: "책 펼침 각도 조절", balance: "책등 받침 무게 잡기" },
+      sootSponge: { precision: "그을음 흡착 압력 조절", cleaning: "그을음 제거 중단 판단", budget: "그을음 정리량 나누기" },
+      groutTool: { drag: "바탕층 빈틈 지지" },
+      isolationLayer: { precision: "격리층 두께 조절" }
+    };
+    return names[toolId]?.[mechanic] || MECHANIC_NAMES[mechanic];
+  }
+
+  function hashText(text) {
+    let hash = 2166136261;
+    for (const character of String(text)) {
+      hash ^= character.charCodeAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function shuffledIndices(size) {
+    const indices = Array.from({ length: size }, (_, index) => index);
+    for (let index = indices.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [indices[index], indices[swapIndex]] = [indices[swapIndex], indices[index]];
+    }
+    return indices;
+  }
+
+  function mechanicPlanForArtwork(art) {
+    if (art.id === "moon-jar") return ["spot", "choice", "rhythm", "precision", "tone"];
+    if (art.id === "sunset-painting") return ["spot", "uv", "trace", "cleaning", "tone"];
+    const seed = hashText(art.id);
+    return art.steps.map((current, stepIndex) => {
+      const semantic = mechanicCandidatesForTool(current.tool);
+      const preferred = preferredMechanicForStep(current, seed + stepIndex);
+      return semantic.includes(preferred) ? preferred : semantic[(seed + stepIndex) % semantic.length];
+    });
+  }
+
+  function preferredMechanicForStep(current, seed) {
+    if (current.tool === "magnifier") return seed % 4 === 0 ? "uv" : "spot";
+    if (current.tool === "testSwab") return seed % 3 === 0 ? "sequence" : "choice";
+    if (current.tool === "reversibleAdhesive") return ["drag", "align", "rhythm"][seed % 3];
+    if (BALANCE_MECHANIC_TOOLS.has(current.tool)) {
+      const candidates = mechanicCandidatesForTool(current.tool);
+      return candidates[seed % candidates.length];
+    }
+    if (CLEANING_MECHANIC_TOOLS.has(current.tool)) {
+      const candidates = mechanicCandidatesForTool(current.tool);
+      return candidates[seed % candidates.length];
+    }
+    return mechanicCandidatesForTool(current.tool)[0];
+  }
+
+  function mechanicDifficulty(art) {
+    const practiceDifficulty = practiceMode
+      ? Number(session?.practiceDifficulty || getPracticeChallenge(practiceMechanicId)?.difficultyLevel)
+      : 0;
+    if (practiceDifficulty >= 2 && practiceDifficulty <= 5) return practiceDifficulty;
+    const complexTools = new Set([
+      "testSwab", "reversibleAdhesive", "microPick", "stabilizer", "humidityPack",
+      "varnishGel", "consolidant", "resinFill", "groutTool", "isolationLayer"
+    ]);
+    const complexSteps = art.steps.reduce((count, current) => count + (complexTools.has(current.tool) ? 1 : 0), 0);
+    const damageSignals = (art.damage.match(/박락|부식|균열|안료|들뜸|산화|변색|취약|찢김/g) || []).length;
+    const baseDifficulty = 2 + Math.floor((complexSteps + damageSignals) / 2);
+    const restoredCount = practiceMode ? 0 : Object.keys(state.restored).length;
+    const campaignBoost = restoredCount >= 18 ? 2 : restoredCount >= 6 ? 1 : 0;
+    const catalogIndex = ARTWORKS.findIndex(item => item.id === art.id);
+    const catalogBoost = !practiceMode && catalogIndex >= 250 ? 1 : 0;
+    return Math.max(2, Math.min(5, baseDifficulty + Math.min(2, campaignBoost + catalogBoost)));
+  }
+
+  function choiceDifficultyParameters(art, difficulty, stepIndex = 0) {
+    const level = Math.max(2, Math.min(5, Number(difficulty) || 2));
+    const sampleCount = level === 5 ? 4 : 3;
+    const seed = hashText(`${art.id}-${stepIndex}`);
+    const noSafeSample = level === 5 ? seed % 2 === 0 : seed % 4 === 0;
+    const profiles = {
+      2: {
+        safe: { color: 3, pigment: "없음", gloss: 2, note: "오염만 완만하게 감소" },
+        unsafe: [
+          { color: 17, pigment: "있음", gloss: 12, note: "원래 색까지 함께 이동" },
+          { color: 8, pigment: "없음", gloss: 19, note: "표면 광택이 급격히 증가" },
+          { color: 4, pigment: "있음", gloss: 3, note: "면봉에 안료가 뚜렷하게 묻어남" }
+        ],
+        mistakeRisk: 8
+      },
+      3: {
+        safe: { color: 4, pigment: "없음", gloss: 3, note: "표면 반응이 기준 안에서 안정됨" },
+        unsafe: [
+          { color: 7, pigment: "없음", gloss: 5, note: "색 변화만 기준을 조금 넘어섬" },
+          { color: 5, pigment: "없음", gloss: 7, note: "광택 변화가 기준을 조금 넘어섬" },
+          { color: 4, pigment: "미량", gloss: 4, note: "아주 적은 안료 이동이 확인됨" }
+        ],
+        mistakeRisk: 9
+      },
+      4: {
+        safe: { color: 4, pigment: "없음", gloss: 5, note: "경계값 안에서 표면이 유지됨" },
+        unsafe: [
+          { color: 6, pigment: "없음", gloss: 5, note: "색 변화가 기준보다 1% 큼" },
+          { color: 5, pigment: "없음", gloss: 6, note: "광택 변화가 기준보다 1% 큼" },
+          { color: 5, pigment: "미량", gloss: 4, note: "수치는 가깝지만 안료가 미량 이동함" }
+        ],
+        mistakeRisk: 10
+      },
+      5: {
+        safe: { color: 5, pigment: "없음", gloss: 5, note: "세 기준이 모두 경계 안에 머묾" },
+        unsafe: [
+          { color: 6, pigment: "없음", gloss: 5, note: "색 변화만 경계를 아주 조금 벗어남" },
+          { color: 5, pigment: "없음", gloss: 6, note: "광택 변화만 경계를 아주 조금 벗어남" },
+          { color: 5, pigment: "미량", gloss: 5, note: "수치는 같지만 미세한 안료 이동이 있음" },
+          { color: 6, pigment: "없음", gloss: 4, note: "광택은 안정하지만 색 변화가 경계를 넘음" }
+        ],
+        mistakeRisk: 12
+      }
+    };
+    return {
+      ...profiles[level],
+      level,
+      sampleCount,
+      noSafeSample,
+      correctIndex: noSafeSample ? -1 : (hashText(art.id) + stepIndex * 2) % sampleCount
+    };
+  }
+
+  function sequenceDifficultyParameters(difficulty) {
+    const level = Math.max(2, Math.min(5, Number(difficulty) || 2));
+    return {
+      level,
+      scenarioCount: level === 5 ? 4 : 3,
+      plausibleWrongCount: level <= 2 ? 0 : level === 3 ? 1 : 2
+    };
+  }
+
+  function toneDifficultyParameters(difficulty) {
+    const level = Math.max(2, Math.min(5, Number(difficulty) || 2));
+    return ({
+      2: { hueOffsets: [-38, 34, -22, 28], saturation: 58, lightness: [50, 58, 66, 74], fineComparison: false, stripeDeltas: [4, -3, 5, -4] },
+      3: { hueOffsets: [-24, 22, -18, 20], saturation: 53, lightness: [58, 63, 72, 65], fineComparison: false, stripeDeltas: [3, -3, 4, -4] },
+      4: { hueOffsets: [-13, 12, -9, 10], saturation: 49, lightness: [63, 66, 71, 68], fineComparison: true, stripeDeltas: [3, -2, 2, -3] },
+      5: { hueOffsets: [-7, 6, -5, 8], saturation: 47, lightness: [66, 67, 70, 68], fineComparison: true, stripeDeltas: [1, -1, 2, -2] }
+    })[level];
+  }
+
+  function alignDifficultyParameters(difficulty) {
+    const level = Math.max(2, Math.min(5, Number(difficulty) || 2));
+    return ({
+      2: { level, rotationStep: 5, tolerance: 2.5, nearThreshold: 15, pieceCount: 3, initialAngles: [55, -70, 85] },
+      3: { level, rotationStep: 3, tolerance: 2, nearThreshold: 9, pieceCount: 3, initialAngles: [42, -51, 60] },
+      4: { level, rotationStep: 2, tolerance: 1.25, nearThreshold: 6, pieceCount: 3, initialAngles: [30, -38, 46] },
+      5: { level, rotationStep: 1, tolerance: .75, nearThreshold: 4, pieceCount: 4, initialAngles: [16, -21, 27, -19] }
+    })[level];
+  }
+
+  function uvDifficultyParameters(difficulty) {
+    const level = Math.max(2, Math.min(5, Number(difficulty) || 2));
+    return ({
+      2: { level, originalCount: 2, revealScale: 1, targetContrast: 1, beamSize: 154 },
+      3: { level, originalCount: 3, revealScale: .94, targetContrast: .86, beamSize: 144 },
+      4: { level, originalCount: 4, revealScale: .84, targetContrast: .73, beamSize: 128 },
+      5: { level, originalCount: 5, revealScale: .7, targetContrast: .61, beamSize: 108 }
+    })[level];
+  }
+
+  function uvPresentation(art) {
+    const material = `${art?.material || ""} ${art?.artType || ""}`;
+    if (/유화|회화|캔버스/.test(material)) {
+      return {
+        theme: "painting", title: "후대 덧칠·보수 니스 판독",
+        description: "고르게 번지는 원본 니스 형광은 피하고, <b>경계가 불규칙한 어두운 덧칠과 흰빛 보수 흔적</b>만 기록하세요.",
+        originalLabel: "고른 원본 니스 형광", retouchLabel: "탁한 후대 덧칠", adhesiveLabel: "밝은 보수 니스",
+        originalMistake: "고르게 이어진 형광은 원본 니스 반응입니다. 경계가 끊기거나 질감이 다른 후대 보수만 기록하세요.",
+        finding: "후대 덧칠과 보수 니스 이력이 확인된 작품"
+      };
+    }
+    if (/도자|토기|자기|옹기/.test(material)) {
+      return {
+        theme: "ceramic", title: "과거 접합부 판독",
+        description: "유약의 넓고 고른 반응은 피하고, <b>금 주변의 각진 흰빛 접착 흔적과 탁한 메움 자국</b>만 기록하세요.",
+        originalLabel: "고른 원본 유약 반응", retouchLabel: "탁한 후대 메움", adhesiveLabel: "밝은 접착 보수",
+        originalMistake: "둥글고 고르게 이어진 반응은 원본 유약 영역입니다. 금을 따라 끊기는 보수 경계를 다시 살펴보세요.",
+        finding: "과거 접합과 메움 이력이 확인된 작품"
+      };
+    }
+    if (/책|종이|문서|사진|채색/.test(material)) {
+      return {
+        theme: "paper", title: "후대 보수지·처리 흔적 판독",
+        description: "종이 섬유의 잔잔한 반응은 피하고, <b>직선 경계의 보수지와 얼룩처럼 끊기는 처리 흔적</b>만 기록하세요.",
+        originalLabel: "잔잔한 원본 섬유 반응", retouchLabel: "탁한 처리 흔적", adhesiveLabel: "밝은 후대 보수지",
+        originalMistake: "잔점이 고르게 이어진 부분은 원본 종이 섬유입니다. 직선 경계나 다른 섬유 결을 찾아보세요.",
+        finding: "후대 보수지와 표면 처리 이력이 확인된 작품"
+      };
+    }
+    if (/벽화/.test(material)) {
+      return {
+        theme: "mural", title: "과거 보강재 도포 흔적 판독",
+        description: "광물 바탕의 넓은 반응은 피하고, <b>붓자국 경계가 남은 탁한 보강재와 밝은 주입 흔적</b>만 기록하세요.",
+        originalLabel: "고른 원본 광물 반응", retouchLabel: "탁한 보강재 도포", adhesiveLabel: "밝은 주입 보강",
+        originalMistake: "넓고 거친 입자가 이어진 곳은 원래 벽화 바탕입니다. 붓자국이나 주입점 경계를 확인하세요.",
+        finding: "과거 보강재 도포 이력이 확인된 작품"
+      };
+    }
+    if (/금속|청동|철|은제/.test(material)) {
+      return {
+        theme: "metal", title: "후대 코팅 보수 판독",
+        description: "금속 표면의 잔잔한 반사는 피하고, <b>닦인 경계가 있는 탁한 코팅과 밝은 국부 보수</b>만 기록하세요.",
+        originalLabel: "잔잔한 원본 표면 반사", retouchLabel: "탁한 후대 코팅", adhesiveLabel: "밝은 국부 보수",
+        originalMistake: "미세한 점광이 고르게 이어진 곳은 원래 금속 표면입니다. 닦인 경계나 다른 코팅 질감을 찾으세요.",
+        finding: "후대 코팅 보수 이력이 확인된 작품"
+      };
+    }
+    return {
+      theme: "mixed", title: "후대 보수 재료 판독",
+      description: "원본 재료의 고른 반응은 피하고, <b>경계·질감·깜빡임이 다른 후대 보수 흔적</b>만 기록하세요.",
+      originalLabel: "고른 원본 재료 반응", retouchLabel: "탁한 후대 보수", adhesiveLabel: "밝은 접착 보수",
+      originalMistake: "고르게 이어진 반응은 원본 재료입니다. 경계와 표면 질감이 달라지는 지점을 다시 살펴보세요.",
+      finding: "과거 보수 이력이 확인된 작품"
+    };
+  }
+
+  function uvOriginalFluorescencePoints(targets, count, seed) {
+    const points = [];
+    for (let attempt = 0; points.length < count && attempt < 90; attempt += 1) {
+      const x = 15 + (hashText(`${seed}-uv-original-x-${attempt}`) % 71);
+      const y = 18 + (hashText(`${seed}-uv-original-y-${attempt}`) % 61);
+      const farFromTargets = targets.every(([targetX, targetY]) => Math.hypot(x - targetX, y - targetY) >= 16);
+      const farFromOriginals = points.every(([pointX, pointY]) => Math.hypot(x - pointX, y - pointY) >= 13);
+      if (farFromTargets && farFromOriginals) points.push([x, y]);
+    }
+    return points;
+  }
+
+  function expandTraceTargets(targets) {
+    const expanded = [];
+    targets.forEach((point, index) => {
+      const next = targets[(index + 1) % targets.length];
+      expanded.push(point);
+      expanded.push([
+        Math.round((point[0] * 2 + next[0]) / 3),
+        Math.round((point[1] * 2 + next[1]) / 3)
+      ]);
+      expanded.push([
+        Math.round((point[0] + next[0] * 2) / 3),
+        Math.round((point[1] + next[1] * 2) / 3)
+      ]);
+    });
+    return expanded;
+  }
+
+  function cleaningPresentation(art, toolId) {
+    const material = `${art.material || ""} ${art.artType || ""}`;
+    if (/유화|회화|캔버스/.test(material)) {
+      return {
+        theme: "painting", title: "변색 니스 제거", action: "표면을 가볍게 세척하기",
+        description: "누렇게 변한 표면층을 한 겹씩 걷어 냅니다. <b>원래 붓결이 고르게 살아났다고 판단한 순간</b> 멈추세요.",
+        meanThreshold: 61, originalA: "#d98369", originalB: "#598f92", grimeA: "#9a7a46", grimeB: "#6f5f3f", damageA: "#ef7780", damageB: "#8b4d62",
+        cueLow: "탁하고 끈적여 보이는 붓결", cueSafe: "결이 고르게 살아난 은은한 표면", cueHigh: "색이 날카롭게 뜨고 긁힌 붓결",
+        under: "안전하게 멈췄지만 변색된 표면층이 조금 남았습니다.", optimal: "원래 붓결과 색이 안정적으로 드러난 지점에서 멈췄습니다.", over: "원래 채색층이 드러날 만큼 지나치게 세척했습니다."
+      };
+    }
+    if (/도자|토기|석기/.test(material)) {
+      return {
+        theme: "ceramic", title: "표면 고착 오염 제거", action: "오염을 한 겹 걷어 내기",
+        description: "표면에 굳은 오염을 조금씩 덜어 냅니다. <b>유약의 잔잔한 결이 끊기지 않고 보일 때</b> 멈추세요.",
+        meanThreshold: 66, originalA: "#f2d2aa", originalB: "#95c9b0", grimeA: "#93775d", grimeB: "#6c6055", damageA: "#dc7770", damageB: "#b44f5c",
+        cueLow: "얼룩이 남은 거친 표면", cueSafe: "유약 결이 이어지는 차분한 표면", cueHigh: "유약이 끊기고 날이 선 테두리",
+        under: "작품은 안전하지만 고착 오염이 조금 남았습니다.", optimal: "유약과 표면 결을 지키며 오염만 알맞게 걷어 냈습니다.", over: "유약층까지 닿아 원래 표면에 손상이 생겼습니다."
+      };
+    }
+    if (/책|종이|문서|사진|채색/.test(material)) {
+      return {
+        theme: "paper", title: "종이 얼룩 제거", action: "얼룩을 한 겹 줄이기",
+        description: "종이의 얼룩을 한 번씩 줄여 갑니다. <b>섬유 결이 편안하게 이어지고 글·선이 또렷해질 때</b> 멈추세요.",
+        meanThreshold: 55, originalA: "#ead9ad", originalB: "#af7f74", grimeA: "#958567", grimeB: "#756b58", damageA: "#f7eee0", damageB: "#ce6e72",
+        cueLow: "얼룩 사이로 뭉친 섬유 결", cueSafe: "결이 이어진 차분한 종이 면", cueHigh: "보풀이 일고 가장자리가 헤진 면",
+        under: "섬유는 안전하지만 얼룩이 조금 남아 결과가 탁합니다.", optimal: "종이 섬유와 기록선을 지키며 얼룩을 알맞게 줄였습니다.", over: "종이 섬유가 일어날 만큼 지나치게 세척했습니다."
+      };
+    }
+    if (/벽화/.test(material) || toolId === "sootSponge") {
+      return {
+        theme: "mural", title: "그을음 제거", action: "그을음을 짧게 걷어 내기",
+        description: "검게 앉은 그을음을 한 겹씩 걷어 냅니다. <b>안료 알갱이와 바탕의 거친 결이 함께 보일 때</b> 멈추세요.",
+        meanThreshold: 58, originalA: "#c78465", originalB: "#ddba79", grimeA: "#625b56", grimeB: "#403d3b", damageA: "#e8d4be", damageB: "#a94f55",
+        cueLow: "검고 막힌 거친 면", cueSafe: "안료 알갱이가 남은 고른 면", cueHigh: "안료가 비고 테두리가 부스러진 면",
+        under: "바탕은 안전하지만 그을음이 조금 남았습니다.", optimal: "벽화 안료와 바탕 결을 남기며 그을음만 걷어 냈습니다.", over: "안료층이 비칠 만큼 지나치게 세척했습니다."
+      };
+    }
+    if (/금속/.test(material) || toolId === "microPick") {
+      return {
+        theme: "metal", title: "부식 생성물 제거", action: "불안정한 표면을 한 겹 덜기",
+        description: "가루처럼 들뜬 부식 생성물을 조금씩 덜어 냅니다. <b>제작 흔적은 남고 분말성 표면만 잦아들 때</b> 멈추세요.",
+        meanThreshold: 63, originalA: "#7fa690", originalB: "#b28a58", grimeA: "#527062", grimeB: "#43554d", damageA: "#f2b65d", damageB: "#a94f51",
+        cueLow: "가루가 남은 울퉁불퉁한 표면", cueSafe: "제작 흔적이 남은 차분한 무광", cueHigh: "금속심이 번쩍이고 긁힌 테두리",
+        under: "안전하게 멈췄지만 불안정한 부식물이 조금 남았습니다.", optimal: "제작 흔적을 남기며 불안정한 부식물만 제거했습니다.", over: "안정한 표면과 제작 흔적까지 건드렸습니다."
+      };
+    }
+    return {
+      theme: "surface", title: "표면 오염 제거", action: "오염층을 한 겹 걷어 내기",
+      description: "표면 오염을 한 겹씩 줄이며 <b>원래 질감이 고르게 드러나는 순간</b> 멈추세요.",
+      meanThreshold: 60, originalA: "#d9ab88", originalB: "#83ada5", grimeA: "#7c7162", grimeB: "#5c574f", damageA: "#e37a75", damageB: "#9b4c59",
+      cueLow: "탁하고 거친 표면", cueSafe: "질감이 고르게 드러난 표면", cueHigh: "번들거리고 테두리가 상한 표면",
+      under: "작품은 안전하지만 오염층이 조금 남았습니다.", optimal: "원래 표면을 지키며 오염만 알맞게 제거했습니다.", over: "원본층이 드러날 만큼 지나치게 세척했습니다."
+    };
+  }
+
+  function budgetDifficultyParameters(difficulty) {
+    const level = Math.max(2, Math.min(5, Number(difficulty) || 2));
+    return ({
+      2: { level, regionCount: 3, needs: [34, 26, 18], showNeeds: true, summary: "세 곳을 모두 돌볼 만큼 작업량이 넉넉합니다." },
+      3: { level, regionCount: 4, needs: [34, 27, 19, 12], showNeeds: true, summary: "안전과 겉모습을 함께 생각해 네 곳에 나누세요." },
+      4: { level, regionCount: 4, needs: [38, 30, 25, 18], showNeeds: true, summary: "모든 곳을 충분히 돌보기 어려워 우선순위가 필요합니다." },
+      5: { level, regionCount: 4, needs: [43, 35, 31, 25], showNeeds: false, summary: "작업량이 부족해 한 곳 이상을 미뤄야 합니다. 단서를 보고 고르세요." }
+    })[level];
+  }
+
+  function budgetPresentation(art) {
+    const material = `${art?.material || ""} ${art?.artType || ""}`;
+    if (/벽화/.test(material)) {
+      return {
+        theme: "mural", title: "벽화 손상에 작업량 나누기",
+        areas: [
+          { name: "들뜬 그림층", copy: "벽에서 떨어지기 시작한 색층", risk: 5, visible: 3 },
+          { name: "그을음", copy: "앞면을 어둡게 가리는 검은 때", risk: 2, visible: 5 },
+          { name: "바탕 균열", copy: "그림 아래 바탕까지 이어진 금", risk: 4, visible: 2 },
+          { name: "표면 먼지", copy: "전시장 조명에서 잘 보이는 먼지", risk: 1, visible: 4 }
+        ]
+      };
+    }
+    if (/유화|회화|캔버스/.test(material)) {
+      return {
+        theme: "painting", title: "회화 손상에 작업량 나누기",
+        areas: [
+          { name: "물감 들뜬 곳", copy: "곧 떨어질 수 있는 약한 물감", risk: 5, visible: 3 },
+          { name: "변색된 보호막", copy: "그림색을 누렇게 보이게 하는 층", risk: 2, visible: 5 },
+          { name: "캔버스 처짐", copy: "뒷면에서 천을 잡아당기는 느슨함", risk: 4, visible: 2 },
+          { name: "표면 먼지", copy: "빛을 받으면 먼저 눈에 띄는 먼지", risk: 1, visible: 4 }
+        ]
+      };
+    }
+    if (/도자|토기|자기|옹기|석기/.test(material)) {
+      return {
+        theme: "ceramic", title: "도자 손상에 작업량 나누기",
+        areas: [
+          { name: "접합부", copy: "뒤에서 조각을 버티는 약한 이음", risk: 5, visible: 2 },
+          { name: "유약 금", copy: "표면을 따라 번질 수 있는 가는 금", risk: 4, visible: 3 },
+          { name: "굽 흠", copy: "아래쪽에 남은 작은 깨짐", risk: 2, visible: 2 },
+          { name: "표면 오염", copy: "앞면 무늬를 가리는 때", risk: 1, visible: 5 }
+        ]
+      };
+    }
+    if (/책|종이|문서|사진|채색/.test(material)) {
+      return {
+        theme: "paper", title: "책·종이 손상에 작업량 나누기",
+        areas: [
+          { name: "책등", copy: "낱장을 함께 잡아 주는 약한 부분", risk: 5, visible: 2 },
+          { name: "찢긴 가장자리", copy: "넘길 때 더 벌어질 수 있는 찢김", risk: 4, visible: 3 },
+          { name: "얼룩", copy: "글과 그림 가까이에 남은 자국", risk: 1, visible: 5 },
+          { name: "접힌 자국", copy: "앞면에 선처럼 보이는 접힘", risk: 2, visible: 4 }
+        ]
+      };
+    }
+    if (/금속|청동|철|은제/.test(material)) {
+      return {
+        theme: "metal", title: "금속 손상에 작업량 나누기",
+        areas: [
+          { name: "번지는 녹", copy: "주변으로 퍼지며 금속을 약하게 하는 녹", risk: 5, visible: 3 },
+          { name: "도금 벗겨짐", copy: "밝은 장식이 빠져 눈에 띄는 곳", risk: 2, visible: 5 },
+          { name: "표면 흠", copy: "빛에서 선명하게 보이는 긁힘", risk: 1, visible: 4 },
+          { name: "오염", copy: "무늬와 광택을 가리는 표면 때", risk: 1, visible: 5 }
+        ]
+      };
+    }
+    return {
+      theme: "mixed", title: "손상 부위에 작업량 나누기",
+      areas: [
+        { name: "약한 이음", copy: "겉에서는 잘 안 보이지만 작품을 버티는 곳", risk: 5, visible: 2 },
+        { name: "갈라진 경계", copy: "조금씩 더 벌어질 수 있는 금", risk: 4, visible: 3 },
+        { name: "앞면 얼룩", copy: "관람할 때 먼저 눈에 띄는 자국", risk: 1, visible: 5 },
+        { name: "표면 먼지", copy: "색과 무늬를 흐리게 보이는 먼지", risk: 1, visible: 4 }
+      ]
+    };
+  }
+
+  function budgetLevelText(value) {
+    return ["낮음", "낮음", "보통", "큼", "매우 큼"][Math.max(1, Math.min(5, Number(value) || 1)) - 1];
+  }
+
+  function balancePresentation(art, toolId) {
+    const material = `${art?.material || ""} ${art?.artType || ""}`;
+    if (toolId === "glassSupport" || /유리/.test(material)) {
+      return {
+        theme: "glass", title: "유리병 받침 놓기", artworkLabel: "기울어진 유리병", supportLabel: "유리 조각 지지대",
+        weakLabel: "금 간 곳", shapeBias: .04,
+        description: "유리병이 수평을 이루도록 지지대를 나누되, <b>금 간 곳 바로 아래</b>에는 놓지 마세요."
+      };
+    }
+    if (toolId === "bindingCradle" || /책|제본|문서/.test(material)) {
+      return {
+        theme: "book", title: "펼친 책 받침 놓기", artworkLabel: "펼친 책", supportLabel: "책등 받침대",
+        weakLabel: "갈라진 책등", shapeBias: 0,
+        description: "펼친 책의 무게를 양쪽에 나누되, <b>갈라진 책등</b>에 힘이 몰리지 않게 받치세요."
+      };
+    }
+    if (toolId === "photoSleeve" || /사진|종이|채색/.test(material)) {
+      return {
+        theme: "paper", title: "평면 작품 받침 놓기", artworkLabel: "휘어진 평면 작품", supportLabel: "사진 보존 슬리브",
+        weakLabel: "찢긴 곳", shapeBias: -.03,
+        description: "평면 작품이 휘지 않도록 받침을 나누되, <b>찢긴 곳 바로 아래</b>는 피하세요."
+      };
+    }
+    if (/도자|토기|자기|옹기|석기/.test(material)) {
+      return {
+        theme: "ceramic", title: "항아리 받침 놓기", artworkLabel: "기울어진 항아리", supportLabel: "작품 맞춤 받침",
+        weakLabel: "금 간 곳", shapeBias: 0,
+        description: "항아리의 둥근 몸통을 고르게 받치되, <b>금 간 곳에 받침이 닿지 않게</b> 놓으세요."
+      };
+    }
+    return {
+      theme: "sculpture", title: "조각 받침 놓기", artworkLabel: "무게가 한쪽에 몰린 조각", supportLabel: "작품 맞춤 받침",
+      weakLabel: "갈라진 이음", shapeBias: .08,
+      description: "무거운 쪽을 충분히 받치면서도 <b>갈라진 이음 바로 아래</b>에는 힘이 걸리지 않게 하세요."
+    };
+  }
+
+  function balanceDifficultyParameters(difficulty, seed = 0, shapeBias = 0) {
+    const level = Math.max(2, Math.min(5, Number(difficulty) || 2));
+    const profile = ({
+      2: { supportCount: 3, weakCount: 1, centerShift: .015, tiltTolerance: 2, maxGap: .43, minSpan: .54, sagTolerance: .025, weakRadius: .055, tiltScale: 32 },
+      3: { supportCount: 4, weakCount: 2, centerShift: .08, tiltTolerance: 1.6, maxGap: .35, minSpan: .58, sagTolerance: .022, weakRadius: .052, tiltScale: 34 },
+      4: { supportCount: 4, weakCount: 2, centerShift: .14, tiltTolerance: 1.2, maxGap: .32, minSpan: .61, sagTolerance: .018, weakRadius: .05, tiltScale: 36 },
+      5: { supportCount: 4, weakCount: 3, centerShift: .205, tiltTolerance: 1, maxGap: .31, minSpan: .62, sagTolerance: .018, weakRadius: .04, tiltScale: 38 }
+    })[level];
+    const direction = seed % 2 === 0 ? 1 : -1;
+    const jitter = (((seed >>> 3) % 7) - 3) / 200;
+    const materialBias = shapeBias * (level === 2 ? .2 : .65);
+    const centerOfMass = Math.max(.26, Math.min(.74, .5 + direction * profile.centerShift + materialBias + jitter));
+    const weakOffsets = level === 2 ? [0] : level === 5 ? [-.18, 0, .18] : [-.14, .14];
+    const weakPoints = weakOffsets.slice(0, profile.weakCount).map(offset => Math.max(.08, Math.min(.92, centerOfMass + offset)));
+    const initialLeft = profile.supportCount === 3 ? [.12, .29, .48] : [.08, .23, .38, .54];
+    const initialPositions = centerOfMass >= .5 ? initialLeft : initialLeft.map(value => 1 - value).reverse();
+    return { level, ...profile, centerOfMass, weakPoints, initialPositions };
+  }
+
+  function balancePhysicsForPositions(positions, parameters) {
+    const safePositions = positions.map(value => Math.max(.06, Math.min(.94, Number(value) || 0)));
+    const sortedPositions = [...safePositions].sort((a, b) => a - b);
+    const rawLoads = safePositions.map(position => .04 + Math.exp(-Math.abs(position - parameters.centerOfMass) * 5));
+    const rawTotal = rawLoads.reduce((sum, load) => sum + load, 0) || 1;
+    const loads = rawLoads.map(load => load / rawTotal);
+    const reactionCenter = safePositions.reduce((sum, position, index) => sum + position * loads[index], 0);
+    const torque = parameters.centerOfMass - reactionCenter;
+    const gaps = sortedPositions.slice(1).map((position, index) => position - sortedPositions[index]);
+    const widestGap = gaps.length ? Math.max(...gaps) : 1;
+    const span = sortedPositions.at(-1) - sortedPositions[0];
+    const sag = Math.max(0, widestGap - parameters.maxGap, parameters.minSpan - span);
+    const targetAngle = Math.max(-10, Math.min(10, torque * parameters.tiltScale));
+    const weakSupportIndexes = [];
+    safePositions.forEach((position, index) => {
+      if (parameters.weakPoints.some(weakPoint => Math.abs(position - weakPoint) <= parameters.weakRadius) && loads[index] >= .12) weakSupportIndexes.push(index);
+    });
+    const stableTilt = Math.abs(targetAngle) <= parameters.tiltTolerance;
+    const stableSpan = sag <= parameters.sagTolerance;
+    return {
+      positions: safePositions,
+      loads,
+      reactionCenter,
+      torque,
+      targetAngle,
+      sag,
+      sagPixels: Math.min(12, sag * 80),
+      weakSupportIndexes,
+      stableTilt,
+      stableSpan,
+      stable: stableTilt && stableSpan
+    };
+  }
+
+  function tracePresentationForTool(toolId) {
+    const presentations = {
+      softBrush: {
+        icon: "🖌️", action: "붓", unit: "결",
+        description: "마우스나 손가락이 <b>부드러운 붓</b>이 됩니다. 빛나는 시작점부터 초록 결을 직접 따라 그으세요.",
+        boardLabel: "부드러운 붓으로 세 개의 표면 결 따라 그리기",
+        complete: "세 구간을 결 방향으로 그어 느슨한 표면 먼지만 정리했습니다."
+      },
+      surfaceVacuum: {
+        icon: "🌬️", action: "흡입구", unit: "흡입 경로",
+        description: "마우스나 손가락으로 <b>보호망 위 자극이 적은 흡입구</b>를 움직이세요. 초록 경로를 벗어나 약한 가장자리에 닿지 않게 합니다.",
+        boardLabel: "자극이 적은 흡입구로 세 개의 안전 경로 따라가기",
+        complete: "보호망 위 세 경로를 따라 느슨한 먼지만 낮은 자극으로 흡입했습니다."
+      },
+      microPick: {
+        icon: "🪛", action: "미세 도구 끝", unit: "부식 경계",
+        description: "마우스나 손가락이 <b>미세 제거 도구</b>가 됩니다. 초록색으로 표시된 활성 부식 경계 안에서만 천천히 움직이세요.",
+        boardLabel: "미세 제거 도구로 세 개의 활성 부식 경계 따라가기",
+        complete: "세 부식 경계 안에서 가루화된 부분만 덜어 내고 안정한 표면은 남겼습니다."
+      }
+    };
+    return presentations[toolId] || presentations.softBrush;
+  }
+
+  function dragPresentationForTool(toolId) {
+    const presentations = {
+      reversibleAdhesive: {
+        theme: "fragment", item: "파편", slot: "빈자리", unit: "파편 건식 맞춤",
+        description: "해체·접착 전에 원래 배치를 기록합니다. 미리보기가 가려지면 <b>파편의 굴곡과 이어지는 금빛 무늬</b>를 떠올려 네 빈자리에 맞추세요.",
+        preview: "해체하기 전 원래 파편 배치와 이어지는 무늬를 기록하고 있습니다.",
+        boardLabel: "파편 직소퍼즐 빈자리", trayLabel: "흩어진 파편",
+        wrong: "접합면 무늬가 맞지 않습니다. 파편의 굴곡과 이어지는 표식을 다시 비교하세요.",
+        miss: "맞는 빈자리의 중심까지 파편을 정확히 옮겨 주세요.",
+        complete: "네 파편의 굴곡과 무늬가 접착 전에 안정적으로 맞물렸습니다."
+      },
+      glassSupport: {
+        theme: "support", item: "지지 블록", slot: "하중 지점", unit: "유리 지지점 배치",
+        description: "유리 조각을 움직이기 전에 원래 상태를 기록합니다. 미리보기가 가려지면 <b>유리의 굴곡과 하중 표시</b>를 떠올려 맞는 지지 블록을 네 지점에 배치하세요.",
+        preview: "유리 조각을 움직이기 전 원래 굴곡과 하중 위치를 기록하고 있습니다.",
+        boardLabel: "유리 조각 하중 지점", trayLabel: "맞춤형 유리 지지 블록",
+        wrong: "이 지지 블록의 굴곡이 하중 지점과 맞지 않습니다. 모양 표시를 다시 비교하세요.",
+        miss: "표시가 맞는 하중 지점까지 지지 블록을 옮겨 주세요.",
+        complete: "네 지지 블록을 알맞게 배치해 유리 접합선에 무게가 몰리지 않게 했습니다."
+      },
+      supportMount: {
+        theme: "mount", item: "받침 조각", slot: "하중 지점", unit: "맞춤 받침 배치",
+        description: "받침을 나누기 전에 작품의 현재 형태를 기록합니다. 미리보기가 가려지면 <b>현재 형태와 하중 표시</b>를 떠올려 맞춤 받침 조각을 네 지점에 배치하세요.",
+        preview: "받침을 나누기 전 작품의 현재 형태와 하중 위치를 기록하고 있습니다.",
+        boardLabel: "작품의 무게를 나누는 지점", trayLabel: "맞춤형 받침 조각",
+        wrong: "받침의 곡면이 이 하중 지점과 맞지 않습니다. 작품 형태 표시를 다시 보세요.",
+        miss: "맞는 하중 지점까지 받침 조각을 옮겨 주세요.",
+        complete: "네 받침 조각으로 현재 형태를 유지하면서 작품의 하중을 고르게 나눴습니다."
+      },
+      groutTool: {
+        theme: "void", item: "충전 범위", slot: "빈 공간", unit: "바탕층 빈틈 지지",
+        description: "지지 작업 전에 뒤쪽 빈 공간을 기록합니다. 미리보기가 가려지면 <b>빈 공간의 윤곽</b>을 떠올려 맞는 충전 범위로 필요한 네 곳만 지지하세요.",
+        preview: "지지 작업 전 벽화 뒤쪽 빈 공간의 윤곽과 위치를 기록하고 있습니다.",
+        boardLabel: "벽화 뒤쪽에서 받침이 필요한 빈 공간", trayLabel: "형태별 충전 범위",
+        wrong: "충전 범위가 빈 공간의 윤곽과 맞지 않습니다. 과도하게 채우지 않도록 다시 비교하세요.",
+        miss: "윤곽이 맞는 빈 공간까지 충전 범위를 옮겨 주세요.",
+        complete: "필요한 네 빈 공간만 받쳐 벽화 표면을 밀어 올리지 않았습니다."
+      }
+    };
+    return presentations[toolId] || presentations.reversibleAdhesive;
+  }
+
+  function stabilityPresentationForTool(toolId) {
+    const presentations = {
+      humidityPack: {
+        description: "간접 가습을 켰다 쉬며 환경 수치를 초록 범위에 머물게 하세요. 너무 높이면 과습 위험이 생깁니다.",
+        left: "건조", right: "과습", idle: "🌫️ 간접 가습 켜기", active: "⏸️ 가습 쉬어가기",
+        low: "건조합니다 · 가습을 켜세요", high: "습도가 상승 중입니다 · 쉬어갈 시점을 보세요",
+        overflow: "과습 위험이 생겼습니다. 잠시 쉬며 수치를 낮추세요.",
+        complete: "습도를 급격히 올리지 않고 안전 범위에서 충분히 안정화했습니다."
+      },
+      stabilizer: {
+        description: "활성 부식 지점에 안정화제를 <b>소량 적용하고 흡수 반응을 기다리며</b> 초록 범위를 유지하세요.",
+        left: "처리 부족", right: "과잉 처리", idle: "💧 안정화제 소량 적용", active: "⏸️ 흡수 반응 관찰",
+        low: "반응이 부족합니다 · 소량 적용하세요", high: "표면 반응이 상승 중입니다 · 적용을 멈추세요",
+        overflow: "안정화제가 과도하게 적용됐습니다. 즉시 멈추고 표면 반응을 관찰하세요.",
+        complete: "활성 부식 지점의 반응을 안전 범위에 유지해 손상이 더 번지지 않게 했습니다."
+      },
+      consolidant: {
+        description: "들뜬 표면에 안정화제를 <b>소량 적용하고 침투할 시간을 주며</b> 초록 범위를 유지하세요.",
+        left: "침투 부족", right: "표면 고임", idle: "💠 안정화제 소량 적용", active: "⏸️ 침투 반응 기다리기",
+        low: "침투가 부족합니다 · 소량 적용하세요", high: "표면에 고이기 전 적용을 멈추세요",
+        overflow: "안정화제가 표면에 고일 위험이 생겼습니다. 적용을 멈추고 반응을 확인하세요.",
+        complete: "안정화제가 표면에 고이지 않도록 침투 반응을 조절해 들뜬 층을 고정했습니다."
+      }
+    };
+    const materialCues = {
+      humidityPack: {
+        cueTheme: "fiber-moisture", cueLow: "메마르고 거친 섬유", cueSafe: "유연하고 고른 표면", cueHigh: "축축하게 번들거리는 섬유",
+        expertDescription: "간접 가습을 켰다 쉬며 <b>섬유가 탁하고 거친 상태에서 유연하고 고른 광택으로 바뀌는 순간</b>을 유지하세요. 번들거림이 강해지면 과습입니다."
+      },
+      stabilizer: {
+        cueTheme: "metal-reaction", cueLow: "분말이 남은 무광 표면", cueSafe: "차분하게 맺힌 금속 표면", cueHigh: "젖은 듯 번지는 반사광",
+        expertDescription: "안정화제를 소량 적용하고 기다리며 <b>분말성 무광이 차분하고 고른 금속 표면으로 바뀌는 순간</b>을 유지하세요. 젖은 반사광은 과잉 반응입니다."
+      },
+      consolidant: {
+        cueTheme: "porous-layer", cueLow: "들뜨고 가루진 표면", cueSafe: "결이 붙은 은은한 표면", cueHigh: "고임 자국이 도는 표면",
+        expertDescription: "안정화제를 소량 적용하고 침투를 기다리며 <b>들뜬 가루 결이 붙고 은은한 광택이 생기는 순간</b>을 유지하세요. 고임 무늬가 보이면 과잉입니다."
+      }
+    };
+    return { ...(presentations[toolId] || presentations.humidityPack), ...(materialCues[toolId] || materialCues.humidityPack) };
+  }
+
+  function precisionPresentationForTool(toolId) {
+    const presentations = {
+      fillSpatula: { title: "결손 충전량", description: "주걱으로 채우는 양이 올라갑니다. <b>결손 안의 초록 범위</b>에서 손을 떼세요.", idle: "충전량 올리기", holding: "결손 범위에서 놓기!", low: "충전량이 부족해 구조를 받치지 못했습니다.", high: "충전재가 결손 밖 원본 표면으로 넘칠 수 있습니다.", overflow: "결손을 넘어 과도하게 충전했습니다.", complete: "세 결손에 구조상 필요한 양만 채워 원본 표면을 덮지 않았습니다." },
+      protectiveWax: { title: "보호막 두께", description: "도포하는 보호막 두께가 올라갑니다. <b>얇고 균일한 초록 범위</b>에서 손을 떼세요.", idle: "얇게 도포하기", holding: "적정 두께에서 놓기!", low: "보호막이 너무 얇아 오염 차단 효과가 부족합니다.", high: "보호막이 두꺼워져 원래 표면의 광택이 달라질 수 있습니다.", overflow: "코팅이 과도하게 쌓여 표면과 무늬를 가릴 수 있습니다.", complete: "세 구간의 보호막 두께를 얇고 균일하게 맞췄습니다." },
+      varnishGel: { title: "세척 겔 접촉 시간", description: "세척 겔이 닿아 있는 시간이 올라갑니다. <b>시험으로 확인한 초록 범위</b>에서 손을 떼세요.", idle: "국부 접촉 시작", holding: "안전 시간에서 놓기!", low: "접촉 시간이 너무 짧아 변색층 반응을 확인하지 못했습니다.", high: "접촉 시간이 길어 원래 채색층과 광택까지 변할 수 있습니다.", overflow: "세척 겔을 너무 오래 두어 원본층이 반응할 위험이 생겼습니다.", complete: "세 시험 범위에서 세척 겔의 안전한 접촉 시간을 지켰습니다." },
+      fiberTweezers: { title: "섬유 장력", description: "핀셋으로 잡은 섬유의 장력이 올라갑니다. <b>실이 늘어나지 않는 초록 범위</b>에서 손을 떼세요.", idle: "섬유 살짝 잡기", holding: "안전 장력에서 놓기!", low: "장력이 부족해 엉킨 섬유를 제자리로 옮기지 못했습니다.", high: "장력이 강해 약한 실이 늘어나거나 끊어질 수 있습니다.", overflow: "섬유를 과도하게 당겨 조직이 벌어질 위험이 생겼습니다.", complete: "세 섬유를 당기지 않고 안전한 장력으로 원래 방향에 놓았습니다." },
+      resinFill: { title: "투명 보완재 양", description: "균열 안에 들어가는 투명 보완재 양이 올라갑니다. <b>접합선 안의 초록 범위</b>에서 손을 떼세요.", idle: "보완재 채우기", holding: "균열 범위에서 놓기!", low: "보완재가 부족해 균열을 구조적으로 지지하지 못했습니다.", high: "보완재가 균열 밖 원본 유리로 번질 수 있습니다.", overflow: "투명 보완재가 과도하게 흘러 원본 표면을 덮을 위험이 생겼습니다.", complete: "세 균열선 안에 필요한 투명 보완재만 적용했습니다." },
+      bindingCradle: { title: "안전한 펼침 각도", description: "받침을 조절하는 동안 책의 펼침 각도가 커집니다. <b>책등에 무리가 없는 초록 범위</b>에서 손을 떼세요.", idle: "받침 각도 넓히기", holding: "안전 각도에서 놓기!", low: "각도가 너무 좁아 기록 면을 안전하게 확인하기 어렵습니다.", high: "책을 과하게 펼쳐 책등과 실에 힘이 집중될 수 있습니다.", overflow: "펼침 각도가 지나쳐 책등이 갈라질 위험이 생겼습니다.", complete: "세 지점에서 책등에 무리가 없는 펼침 각도를 맞췄습니다." },
+      sootSponge: { title: "흡착 접촉 압력", description: "그을음 흡착 도구의 접촉 압력이 올라갑니다. <b>문지르지 않는 초록 범위</b>에서 손을 떼세요.", idle: "짧게 눌러 흡착", holding: "안전 압력에서 놓기!", low: "접촉이 너무 약해 느슨한 그을음을 흡착하지 못했습니다.", high: "압력이 강해 그을음이 번지거나 약한 안료가 떨어질 수 있습니다.", overflow: "도구를 너무 세게 눌러 벽화 표면이 손상될 위험이 생겼습니다.", complete: "세 구역을 문지르지 않고 안전한 압력으로 짧게 흡착했습니다." },
+      isolationLayer: { title: "격리층 두께", description: "서로 다른 재료 사이의 격리층 두께가 올라갑니다. <b>얇은 초록 범위</b>에서 손을 떼세요.", idle: "격리층 적용하기", holding: "얇은 두께에서 놓기!", low: "격리층이 너무 얇아 재료 사이의 영향을 막기 어렵습니다.", high: "격리층이 두꺼워져 작품의 외관과 움직임이 달라질 수 있습니다.", overflow: "격리층을 과도하게 적용해 원래 조립과 외관을 가릴 위험이 생겼습니다.", complete: "세 경계에 얇고 일정한 가역적 격리층을 마련했습니다." },
+      microPick: { title: "미세 제거량", description: "미세 도구로 덜어 내는 제거량이 올라갑니다. <b>활성 부식만 제거하는 초록 범위</b>에서 손을 떼세요.", idle: "미세 제거 시작", holding: "안전 제거량에서 놓기!", low: "제거량이 부족해 가루화된 활성 부식이 남았습니다.", high: "안정한 오래된 표면까지 건드릴 수 있습니다.", overflow: "과도하게 제거해 금속심과 제작 흔적이 손상될 위험이 생겼습니다.", complete: "세 지점에서 아직 번지고 있는 녹만 꼭 필요한 만큼 제거했습니다." }
+    };
+    const fallback = { title: "안전 처리 범위", description: "처리 수치가 올라갑니다. <b>초록 범위</b>에서 손을 떼세요.", idle: "조절 시작", holding: "안전 범위에서 놓기!", low: "처리 수치가 부족합니다.", high: "안전 범위를 넘었습니다.", overflow: "처리 수치가 과도해졌습니다.", complete: "세 지점의 처리 수치를 안전 범위에 맞췄습니다." };
+    const materialCues = {
+      fillSpatula: ["ceramic-fill", "푸석하고 패인 충전면", "결손과 고르게 이어진 면", "도톰하게 솟은 번들거림"],
+      protectiveWax: ["wax-film", "끊겨 보이는 무광 보호막", "얇고 균일한 비단 광택", "두껍고 미끄러운 반사광"],
+      varnishGel: ["paint-gel", "반응이 없는 탁한 겔", "고르게 맑아진 국부 표면", "색이 번지는 젖은 광택"],
+      fiberTweezers: ["fiber-tension", "느슨하고 흐트러진 실결", "반듯하고 탄력 있는 실결", "팽팽하고 날카로운 실결"],
+      resinFill: ["glass-resin", "비어 보이는 흐린 균열", "투명하게 이어진 균열선", "볼록하게 번지는 반사광"],
+      bindingCradle: ["paper-angle", "겹쳐 보여 답답한 지면", "편안하게 열린 종이 결", "책등이 팽팽한 날선 주름"],
+      sootSponge: ["soot-surface", "그을음이 남은 거친 무광", "안료 결이 살아난 차분한 면", "문질러 번진 얼룩 광택"],
+      isolationLayer: ["mixed-layer", "경계가 닿은 탁한 재료", "얇게 분리된 고른 경계", "두꺼워 떠오른 반사 테두리"],
+      microPick: ["metal-powder", "가루진 활성 부식 표면", "제작 흔적이 드러난 무광", "금속심이 번쩍이는 긁힘"]
+    };
+    const cue = materialCues[toolId] || ["neutral-treatment", "탁하고 거친 처리면", "고르게 안정된 처리면", "과하게 번들거리는 처리면"];
+    const base = presentations[toolId] || fallback;
+    return {
+      ...base,
+      cueTheme: cue[0], cueLow: cue[1], cueSafe: cue[2], cueHigh: cue[3],
+      expertDescription: `버튼을 누르면 ${base.title} 수치가 올라갑니다. <b>${cue[1]} 상태에서 ${cue[2]} 상태가 되는 순간</b> 손을 떼세요. ${cue[3]} 모습은 과잉 처리 신호입니다.`
+    };
+  }
+
+  function rhythmPresentationForTool(toolId) {
+    if (toolId === "supportStitch") {
+      return {
+        description: "큰 원이 좁아져 가운데 지지점과 겹치는 순간 누르세요. <b>천을 당기지 않는 일정한 간격</b>으로 세 땀을 놓습니다.",
+        target: "바느질점", unit: "지지 바느질점", status: "원이 겹치는 순간 한 땀 놓기",
+        actionLabel: "원이 겹칠 때 지지 바느질 한 땀 놓기",
+        complete: "세 지지점에 천을 당기지 않는 일정한 간격으로 한 땀씩 놓았습니다.",
+        nextPerfect: "정확한 간격이에요! 다음 지지점을 준비합니다.", nextGood: "안전한 간격으로 놓았습니다. 다음 지지점을 준비합니다.",
+        cueTheme: "fiber-stitch", cueLow: "느슨하고 흐린 직물 결", cueSafe: "고르게 맞닿은 교차 결", cueHigh: "당겨져 번들거리는 실결",
+        expertDescription: "원이 좁아지는 동안 <b>느슨한 직물 결이 고르게 맞닿아 은은한 교차 결이 되는 순간</b> 한 땀 놓으세요. 날카롭게 번들거리면 이미 지나쳤습니다."
+      };
+    }
+    return {
+      description: "큰 원이 박자에 맞춰 좁아집니다. <b>줄어드는 원과 가운데 접합점 원이 꼭 겹칠 때</b> 눌러 한 방울만 점적하세요.",
+      target: "접합점", unit: "접합점", status: "원이 겹치는 순간 가운데를 탭",
+      actionLabel: "원이 겹칠 때 접착제 한 방울 점적",
+      complete: "세 접합점에서 원이 겹치는 순간 한 방울씩 정확히 점적했습니다.",
+      nextPerfect: "정확히 겹쳤어요! 다음 접합점을 준비합니다.", nextGood: "안전 범위 안에 점적했습니다. 다음 원을 준비합니다.",
+      cueTheme: "adhesive-drop", cueLow: "마른 듯 탁한 접합점", cueSafe: "작고 둥근 한 방울 광택", cueHigh: "퍼져 번들거리는 접착면",
+      expertDescription: "원이 좁아지는 동안 <b>탁한 접합점에 작고 둥근 한 방울 광택이 맺히는 순간</b> 누르세요. 광택이 넓게 퍼지면 이미 지나쳤습니다."
+    };
+  }
+
+  function toneShapeNamesForArtwork(art) {
+    if (art.material === "도자기") return ["왼쪽 굽은 유약 결손", "오른쪽 굽은 유약 결손", "넓게 깨진 가장자리", "좁게 깨진 가장자리"];
+    if (art.material === "목재·칠기") return ["왼쪽 굽은 칠층 결손", "오른쪽 굽은 칠층 결손", "넓게 빠진 자개편", "좁게 빠진 자개편"];
+    if (art.material === "유화") return ["왼쪽 굽은 붓자국", "오른쪽 굽은 붓자국", "넓게 끊긴 색면", "좁게 끊긴 색면"];
+    return ["왼쪽 굽은 결손", "오른쪽 굽은 결손", "넓게 끊긴 부분", "좁게 끊긴 부분"];
+  }
+
+  function mechanicNoticeForTool(toolId, mechanic) {
+    const activeArt = getArtwork(session?.artId);
+    const difficulty = activeArt ? mechanicDifficulty(activeArt) : 2;
+    if (mechanic === "cleaning") {
+      return cleaningPresentation(getArtwork(session.artId), toolId).description.replace(/<[^>]+>/g, "");
+    }
+    if (mechanic === "budget") {
+      const presentation = budgetPresentation(getArtwork(session.artId));
+      return `${presentation.title}입니다. 더 망가질 위험과 눈에 띄는 정도를 비교해 작업량 100을 나누세요.`;
+    }
+    if (mechanic === "trace") {
+      const presentation = tracePresentationForTool(toolId);
+      return `${presentation.action}가 포인터로 표시됩니다. 빛나는 시작점부터 세 ${presentation.unit}를 따라가세요.`;
+    }
+    if (mechanic === "drag") return dragPresentationForTool(toolId).description.replace(/<[^>]+>/g, "");
+    if (["stability", "precision", "rhythm"].includes(mechanic)) {
+      const presentation = mechanic === "stability"
+        ? stabilityPresentationForTool(toolId)
+        : mechanic === "precision"
+          ? precisionPresentationForTool(toolId)
+          : rhythmPresentationForTool(toolId);
+      const description = session?.expertCueMode ? presentation.expertDescription : presentation.description;
+      return description.replace(/<[^>]+>/g, "");
+    }
+    if (mechanic === "align" && toolId === "paperPatch") return `원본의 찢김선과 가는 섬유 결이 보존용 종이로 이어지도록 ±${alignDifficultyParameters(difficulty).rotationStep}°씩 미세 조정하세요.`;
+    const choiceCount = choiceDifficultyParameters(activeArt || { id: "practice" }, difficulty, session?.stepIndex || 0).sampleCount;
+    const sequenceCount = sequenceDifficultyParameters(difficulty).scenarioCount;
+    const alignStep = alignDifficultyParameters(difficulty).rotationStep;
+    const notices = {
+      spot: "둥근 사광을 직접 움직여 빛 속에서 드러나는 실제 손상을 기록하세요.",
+      uv: "UV 조사등을 움직여 고른 원본 반응은 피하고 경계·질감이 다른 후대 보수 흔적만 기록하세요.",
+      choice: `${choiceCount}개 시험구를 먼저 관찰한 뒤 안전한 결과나 처리 중단을 선택하세요.`,
+      sequence: toolId === "photoSleeve" ? `사진층을 만지지 않는 안전한 포장 행동을 ${sequenceCount}가지 상황에서 선택하세요.` : `${sequenceCount}가지 돌발 상황을 읽고 작품에 가장 안전한 행동을 고르세요.`,
+      tone: "결손의 모양과 색, 가까이서 보이는 세필 무늬를 함께 비교하세요.",
+      align: `고정 조각의 무늬와 균열이 이어지도록 좌우 버튼으로 ±${alignStep}°씩 미세 조정하세요.`,
+      balance: "받침을 좌우로 움직여 작품을 수평으로 만들고, 표시된 약한 곳 바로 아래는 피하세요."
+    };
+    return notices[mechanic] || "화면 안내에 따라 현재 처리를 완료하세요.";
+  }
+
+  function usesExpertMaterialCues(art, mechanic = currentMechanic) {
+    return ["stability", "precision", "rhythm"].includes(mechanic)
+      && mechanicDifficulty(art) === 5
+      && !state.alwaysShowSafeZones;
+  }
+
+  function renderDifficultyFiveNotice(art, mechanic = currentMechanic) {
+    if (!el.difficultyFiveNotice) return;
+    const isNumericExpertStep = ["stability", "precision", "rhythm"].includes(mechanic)
+      && mechanicDifficulty(art) === 5;
+    const shouldShow = isNumericExpertStep && !state.difficultyFiveCueSeen;
+    el.difficultyFiveNotice.classList.toggle("is-hidden", !shouldShow);
+    if (!shouldShow) return;
+    const copy = $("p", el.difficultyFiveNotice);
+    if (copy) {
+      copy.innerHTML = state.alwaysShowSafeZones
+        ? "<strong>숙련 단계 안내</strong> 접근성 설정으로 초록 안전 범위를 유지합니다. 설정을 끄면 재료 상태만 보고 판단합니다."
+        : "<strong>숙련 단계 안내</strong> 계기판 없이 재료의 채도·광택·표면 질감 변화를 보고 판단하세요.";
+    }
+    state.difficultyFiveCueSeen = true;
+    saveState();
+  }
+
+  function expertMaterialStateMarkup(presentation) {
+    return `<div id="expertMaterialState" class="expert-material-state state-low" role="status" aria-live="polite">
+      <i aria-hidden="true">▒</i><span>${presentation.cueLow}</span>
+    </div>`;
+  }
+
+  function updateExpertMaterialState(stateName, presentation) {
+    if (!session?.expertCueMode) return;
+    const surface = $(".material-state-surface", el.artStage);
+    const badge = $("#expertMaterialState", el.artStage);
+    const labels = { low: presentation.cueLow, safe: presentation.cueSafe, high: presentation.cueHigh };
+    const icons = { low: "▒", safe: "✦", high: "≋" };
+    [surface, badge].forEach(item => {
+      if (!item) return;
+      item.classList.remove("state-low", "state-safe", "state-high");
+      item.classList.add(`state-${stateName}`);
+      item.dataset.materialState = stateName;
+    });
+    if (badge) {
+      const icon = $("i", badge);
+      const label = $("span", badge);
+      if (icon) icon.textContent = icons[stateName];
+      if (label) label.textContent = labels[stateName];
+      badge.setAttribute("aria-label", `재료 상태: ${labels[stateName]}`);
+    }
+  }
+
+  function renderMechanicMarkup(art, current, targets) {
+    const difficulty = mechanicDifficulty(art);
+    const label = `<div class="mechanic-label"><span>${mechanicDisplayName(current.tool, currentMechanic)}</span><b aria-label="난이도 ${difficulty}">${"★".repeat(difficulty)}${"☆".repeat(5 - difficulty)}</b></div>`;
+    if (currentMechanic === "spot") {
+      const decoys = targets.slice(0, Math.min(3, difficulty)).map(([x, y], index) => {
+        const decoyX = 18 + ((x + 31 + index * 17) % 64);
+        const decoyY = 18 + ((y + 23 + index * 13) % 62);
+        return `<button type="button" class="damage-decoy" data-damage-decoy style="left:${decoyX}%;top:${decoyY}%" aria-label="제작 흔적으로 보이는 의심 지점"></button>`;
+      }).join("");
+      return label
+        + `<div id="inspectionBeam" class="inspection-beam" aria-hidden="true"><i></i></div>`
+        + targets.map((point, index) => `<span id="${session.targetIds[index]}" class="damage-target" data-damage-target style="left:${point[0]}%;top:${point[1]}%"></span>`).join("")
+        + decoys
+        + `<div class="inspection-controls inspection-controls-scan"><strong id="lightModeLabel">🔦 둥근 사광 탐색</strong><small id="inspectionStatus">마우스나 손가락으로 빛을 움직인 뒤, 빛 속에서 드러난 손상을 누르세요.</small></div>`;
+    }
+    if (currentMechanic === "uv") {
+      const presentation = uvPresentation(art);
+      const parameters = uvDifficultyParameters(difficulty);
+      const seed = hashText(`${art.id}-${session.stepIndex}-uv`);
+      const originalPoints = uvOriginalFluorescencePoints(targets, parameters.originalCount, seed);
+      session.uvPresentation = presentation;
+      session.uvParameters = parameters;
+      return label + `<div class="uv-chamber is-${presentation.theme} difficulty-${difficulty}" style="--uv-beam-size:${parameters.beamSize}px;--uv-target-contrast:${parameters.targetContrast}">
+        <div id="uvInspectionBeam" class="uv-inspection-beam" aria-hidden="true"><i><b>UV</b></i></div>
+        ${targets.map((point, index) => {
+          const type = index === 1 ? "adhesive" : "retouch";
+          const labelText = type === "adhesive" ? presentation.adhesiveLabel : presentation.retouchLabel;
+          return `<span id="${session.targetIds[index]}" class="uv-finding uv-${type} variant-${1 + ((seed + index) % 3)}" data-uv-target data-uv-type="${type}" style="left:${point[0]}%;top:${point[1]}%" role="img" aria-label="${labelText}"></span>`;
+        }).join("")}
+        ${originalPoints.map(([x, y], index) => `<button type="button" class="uv-original-fluorescence variant-${1 + ((seed + index * 5) % 3)}" data-uv-original style="left:${x}%;top:${y}%" aria-label="${presentation.originalLabel}"></button>`).join("")}
+        <div class="uv-controls inspection-controls inspection-controls-scan">
+          <strong>🟣 UV 형광 판독</strong>
+          <span class="uv-legend" aria-hidden="true"><i class="is-original"></i>원본 <i class="is-retouch"></i>후대 덧칠 <i class="is-adhesive"></i>접착 보수</span>
+          <small id="uvInspectionStatus">${presentation.title} · 원본의 고른 반응은 누르지 말고 경계·질감이 다른 보수 흔적 3곳을 찾으세요.</small>
+        </div>
+      </div>`;
+    }
+    if (currentMechanic === "trace") {
+      const presentation = tracePresentationForTool(current.tool);
+      session.tracePresentation = presentation;
+      const curveShift = (hashText(art.id) % 11) - 5;
+      session.cleaningPaths = [
+        [[42, 48], [100, 42 + curveShift], [162, 51], [225, 42], [290, 53], [354, 45], [418, 56], [484, 47], [552, 54]],
+        [[42, 108], [105, 117], [166, 104 + curveShift], [228, 114], [292, 103], [356, 116], [421, 106], [486, 117], [552, 108]],
+        [[42, 174], [104, 165], [168, 177], [230, 166 + curveShift], [294, 178], [358, 166], [422, 176], [488, 165], [552, 174]]
+      ];
+      return label + `<div class="cleaning-panel is-${current.tool}">
+        <p>${presentation.description}</p>
+        <div class="cleaning-board" data-cleaning-board role="application" aria-label="${presentation.boardLabel}">
+          <svg viewBox="0 0 600 220" preserveAspectRatio="none" aria-hidden="true">
+            ${session.cleaningPaths.map((path, index) => `<polyline class="grain-guide ${index === 0 ? "is-active" : ""}" data-clean-path="${index}" points="${path.map(point => point.join(",")).join(" ")}" />`).join("")}
+            ${session.cleaningPaths.map((path, index) => `<circle class="grain-start ${index === 0 ? "is-active" : ""}" data-clean-start="${index}" cx="${path[0][0]}" cy="${path[0][1]}" r="10" />`).join("")}
+            <polyline id="cleaningStroke" class="cleaning-stroke" points="" />
+          </svg>
+          <span id="cleaningStartBrush" class="cleaning-start-brush" aria-hidden="true"><b>${presentation.icon}</b><small>여기서 시작</small></span>
+          <b id="cleaningBrushCursor" aria-hidden="true">${presentation.icon}</b>
+        </div>
+        <div class="cleaning-rounds" id="cleaningRounds">● ○ ○</div>
+        <strong id="cleaningStatus">1 / 3 ${presentation.unit} · 왼쪽의 빛나는 점에서 시작하세요.</strong>
+      </div>`;
+    }
+    if (currentMechanic === "cleaning") {
+      const presentation = cleaningPresentation(art, current.tool);
+      session.layerCleaningPresentation = presentation;
+      return label + `<div class="layer-cleaning-panel is-${presentation.theme} difficulty-${difficulty}">
+        <p>${presentation.description}</p>
+        <div class="layer-cleaning-board state-low" data-layer-cleaning-board role="application" tabindex="0" aria-label="${presentation.title}. 클릭하거나 드래그해 오염층을 한 겹씩 제거하세요.">
+          <div class="layer-cleaning-damage" aria-hidden="true"></div>
+          <canvas id="layerCleaningOriginal" width="640" height="280" aria-hidden="true"></canvas>
+          <canvas id="layerCleaningMask" width="640" height="280" aria-hidden="true"></canvas>
+          <span class="layer-cleaning-gloss" aria-hidden="true"></span>
+          <span id="layerCleaningCursor" class="layer-cleaning-cursor" aria-hidden="true">🫧</span>
+        </div>
+        <div class="layer-cleaning-readout" aria-live="polite">
+          <span id="layerCleaningPasses">세척 0회</span>
+          <strong id="layerCleaningCue">${presentation.cueLow}</strong>
+        </div>
+        <button type="button" class="layer-cleaning-stop" data-layer-cleaning-stop disabled>✋ 여기서 멈춤</button>
+        <small>한 번 걷어 낸 층은 되돌릴 수 없습니다. 밝기만 보지 말고 표면 결도 함께 살피세요.</small>
+      </div>`;
+    }
+    if (currentMechanic === "budget") {
+      const presentation = budgetPresentation(art);
+      const parameters = budgetDifficultyParameters(difficulty);
+      const areas = presentation.areas.slice(0, parameters.regionCount).map((area, index) => ({
+        ...area,
+        need: parameters.needs[index]
+      }));
+      session.budgetPresentation = presentation;
+      session.budgetParameters = parameters;
+      session.budgetAreas = areas;
+      return label + `<div class="budget-panel is-${presentation.theme} difficulty-${difficulty}">
+        <div class="budget-intro">
+          <p><b>${presentation.title}</b> · 더 망가질 위험과 눈에 띄는 정도를 비교해 작업량을 나누세요.</p>
+          <small>${parameters.summary}</small>
+        </div>
+        <div class="budget-total" role="status" aria-live="polite">
+          <span>오늘 쓸 수 있는 작업량</span>
+          <strong><b id="budgetRemaining">100</b> 남음</strong>
+          <div aria-hidden="true"><i id="budgetUsedBar"></i></div>
+        </div>
+        <div class="budget-areas" data-budget-areas>${areas.map((area, index) => `<article class="budget-area" data-budget-area="${index}">
+          <div class="budget-area-heading">
+            <span class="budget-area-number">${index + 1}</span>
+            <div><strong>${area.name}</strong><small>${area.copy}</small></div>
+            <output data-budget-value="${index}" for="budgetSlider${index}">0</output>
+          </div>
+          <div class="budget-clues">
+            <span class="is-risk" aria-label="더 망가질 위험 ${budgetLevelText(area.risk)}">안전 중요도 <b>${"●".repeat(area.risk)}${"○".repeat(5 - area.risk)}</b> ${budgetLevelText(area.risk)}</span>
+            <span class="is-visible" aria-label="눈에 띄는 정도 ${budgetLevelText(area.visible)}">눈에 띔 <b>${"◆".repeat(area.visible)}${"◇".repeat(5 - area.visible)}</b> ${budgetLevelText(area.visible)}</span>
+            ${parameters.showNeeds ? `<span class="is-need">충분히 돌볼 양 ${area.need}</span>` : '<span class="is-need is-hidden-need">충분한 양은 확정 뒤 공개</span>'}
+          </div>
+          <input id="budgetSlider${index}" type="range" min="0" max="100" step="1" value="0" data-budget-slider="${index}" aria-label="${area.name}에 나눌 작업량" aria-valuetext="작업량 0" disabled>
+        </article>`).join("")}</div>
+        <button type="button" class="budget-confirm" data-budget-confirm disabled>이대로 진행</button>
+        <div id="budgetResults" class="budget-results is-hidden" role="status" aria-live="polite"></div>
+      </div>`;
+    }
+    if (currentMechanic === "balance") {
+      const presentation = balancePresentation(art, current.tool);
+      const reroll = session.balanceRerolls?.[session.stepIndex] || 0;
+      const seed = hashText(`${art.id}-${session.stepIndex}-balance-${reroll}`);
+      const parameters = balanceDifficultyParameters(difficulty, seed, presentation.shapeBias);
+      const initialPhysics = balancePhysicsForPositions(parameters.initialPositions, parameters);
+      session.balancePresentation = presentation;
+      session.balanceParameters = parameters;
+      session.balanceSupportPositions = [...parameters.initialPositions];
+      return label + `<div class="balance-panel is-${presentation.theme} difficulty-${difficulty}">
+        <div class="balance-intro">
+          <p><b>${presentation.title}</b> · ${presentation.description}</p>
+          <small>받침 사이가 너무 벌어지면 작품 가운데도 처집니다. 무게와 약한 곳을 함께 살피세요.</small>
+        </div>
+        <div class="balance-board" data-balance-board role="application" aria-label="${presentation.artworkLabel} 아래에 ${parameters.supportCount}개의 ${presentation.supportLabel} 배치하기">
+          <div id="balanceArtwork" class="balance-artwork-wrap" style="--balance-angle:${initialPhysics.targetAngle.toFixed(2)}deg;--balance-sag:${initialPhysics.sagPixels.toFixed(1)}px;--balance-center:${(parameters.centerOfMass * 100).toFixed(1)}%">
+            <div class="balance-artwork" aria-label="${presentation.artworkLabel}">
+              <span class="balance-weight" aria-hidden="true"></span>
+              ${parameters.weakPoints.map((point, index) => `<i class="balance-weak-point" data-balance-weak="${index}" style="left:${(point * 100).toFixed(1)}%"><b aria-hidden="true">⚡</b><span>${presentation.weakLabel}</span></i>`).join("")}
+            </div>
+          </div>
+          <div class="balance-ground" aria-hidden="true"></div>
+          <div class="balance-supports" aria-label="움직일 받침 목록">${parameters.initialPositions.map((position, index) => `<button type="button" role="slider" aria-valuemin="6" aria-valuemax="94" aria-valuenow="${Math.round(position * 100)}" class="balance-support" data-balance-support="${index}" style="--support-x:${(position * 100).toFixed(1)}%" aria-label="${index + 1}번 ${presentation.supportLabel}. 좌우로 끌어서 옮기세요." disabled><i></i><span>${index + 1}</span><small data-balance-load="${index}">하중 0%</small></button>`).join("")}</div>
+        </div>
+        <div class="balance-readout" aria-live="polite">
+          <span id="balanceTilt">작품 기울기 계산 중</span>
+          <span id="balanceSag">받침 간격 확인 중</span>
+          <strong id="balanceStatus">도구를 고른 뒤 받침을 좌우로 움직이세요.</strong>
+        </div>
+        <button type="button" class="balance-confirm" data-balance-confirm disabled>이대로 고정</button>
+      </div>`;
+    }
+    if (currentMechanic === "choice") {
+      const parameters = choiceDifficultyParameters(art, difficulty, session.stepIndex);
+      session.correctChoice = parameters.correctIndex;
+      session.choiceSampleCount = parameters.sampleCount;
+      session.choiceMistakeRisk = parameters.mistakeRisk;
+      const choiceNames = ["시험구 A", "시험구 B", "시험구 C", "시험구 D"].slice(0, parameters.sampleCount);
+      let unsafeIndex = 0;
+      return label + `<div class="test-analysis">
+        <div class="safety-rule"><strong>안전 판정 기준</strong><span>색 변화 0~5%: 기준 이내</span><span>안료 이동: 없어야 함</span><span>광택 변화 0~5%: 기준 이내</span></div>
+        <p id="testChoiceStatus">먼저 ${choiceNames.map(name => name.at(-1)).join("·")}를 한 번씩 눌러 숨은 반응을 모두 확인하세요.</p>
+        <div class="test-choice-panel choice-count-${parameters.sampleCount}">${choiceNames.map((name, index) => {
+          const reading = !parameters.noSafeSample && index === parameters.correctIndex ? parameters.safe : parameters.unsafe[unsafeIndex++ % parameters.unsafe.length];
+          return `<button class="test-choice" data-test-choice="${index}" style="--sample-a:${art.colors[index % 2]};--sample-b:${index === parameters.correctIndex ? "#d8f2df" : "#f7d2c8"}" disabled>
+            <strong>${name}</strong>
+            <span class="reading-row">색 변화 <b>${reading.color}% · ${reading.color <= 5 ? "기준 이내" : "5% 초과"}</b></span>
+            <span class="reading-row">안료 이동 <b>${reading.pigment} · ${reading.pigment === "없음" ? "통과" : "위험"}</b></span>
+            <span class="reading-row">광택 변화 <b>${reading.gloss}% · ${reading.gloss <= 5 ? "기준 이내" : "5% 초과"}</b></span>
+            <small>${reading.note}</small>
+            <em>눌러 반응 보기</em>
+          </button>`;
+        }).join("")}<button class="test-abort" data-test-choice="-1" disabled>⛔ 안전한 시험구 없음 · 처리 중단</button></div>
+      </div>`;
+    }
+    if (currentMechanic === "drag") {
+      const presentation = dragPresentationForTool(current.tool);
+      session.dragPresentation = presentation;
+      session.puzzlePieceCount = 4;
+      const pieceOrder = shuffledIndices(4);
+      const pieceTilts = shuffledIndices(4).map((value, index) => (value - 1.5) * 5 + (index % 2 ? 2 : -2));
+      return label + `<div class="drag-workbench is-${presentation.theme} is-awaiting-tool">
+        <p>${presentation.description}</p>
+        <div class="drag-preview" data-drag-preview aria-live="polite">
+          <span class="drag-preview-label">해체 전 배치 기록</span>
+          <p class="drag-preview-copy">${presentation.preview}</p>
+          <div class="puzzle-board drag-preview-board" aria-label="${presentation.boardLabel} 완성 배치 미리보기">
+            <div class="drag-slots">${[0, 1, 2, 3].map(index => `<div class="drag-slot is-filled puzzle-shape-${index}"><div class="drag-preview-piece puzzle-shape-${index}"><i></i><span>${presentation.item}</span></div></div>`).join("")}</div>
+          </div>
+          <div class="drag-preview-timer"><span id="dragPreviewLabel">도구를 고르면 원래 배치 기록을 시작합니다.</span><div aria-hidden="true"><i id="dragPreviewProgress"></i></div></div>
+        </div>
+        <div class="drag-play-area is-concealed" data-drag-play aria-hidden="true">
+          <div class="puzzle-board" aria-label="${presentation.boardLabel}">
+            <div class="drag-slots">${[0, 1, 2, 3].map(index => `<div class="drag-slot puzzle-shape-${index}" data-drag-slot="${index}"><i></i><span>${presentation.slot}</span></div>`).join("")}</div>
+          </div>
+          <div class="drag-pieces" aria-label="${presentation.trayLabel}">${pieceOrder.map((pieceIndex, trayIndex) => `<div class="drag-piece puzzle-shape-${pieceIndex}" data-drag-piece="${pieceIndex}" role="button" tabindex="-1" aria-disabled="true" aria-label="${presentation.item} ${pieceIndex + 1}" style="--piece-tilt:${pieceTilts[trayIndex]}deg"><i></i><span>${presentation.item}</span></div>`).join("")}</div>
+          <strong id="puzzleStatus">0 / 4 ${presentation.unit}</strong>
+        </div>
+      </div>`;
+    }
+    if (currentMechanic === "stability") {
+      const presentation = stabilityPresentationForTool(current.tool);
+      session.stabilityPresentation = presentation;
+      const expert = session.expertCueMode;
+      return label + `<div class="stability-panel is-${current.tool}${expert ? ` is-expert-cue cue-${presentation.cueTheme}` : ""}">
+        <p>${expert ? presentation.expertDescription : presentation.description}</p>
+        <div class="stability-readout"><span>${presentation.left}</span><b id="stabilityValue">32</b><span>${presentation.right}</span></div>
+        <div class="stability-track${expert ? " material-state-surface state-low" : ""}">${expert ? "" : '<span class="stability-safe-zone"></span>'}<i id="stabilityNeedle"></i></div>
+        ${expert ? expertMaterialStateMarkup(presentation) : ""}
+        <div class="stability-progress"><i id="stabilityProgress"></i></div>
+        <strong id="stabilityStatus">${expert ? presentation.cueLow : "안전 범위 유지 0%"}</strong>
+        <button type="button" class="stability-toggle" data-stability-toggle disabled>${presentation.idle}</button>
+      </div>`;
+    }
+    if (currentMechanic === "precision") {
+      const presentation = precisionPresentationForTool(current.tool);
+      session.precisionPresentation = presentation;
+      const expert = session.expertCueMode;
+      return label + `<div class="precision-panel is-${current.tool}${expert ? ` is-expert-cue cue-${presentation.cueTheme}` : ""}">
+        <p>${expert ? presentation.expertDescription : presentation.description}</p>
+        <div class="precision-vial${expert ? " material-state-surface state-low" : ""}" aria-label="${presentation.title}">${expert ? "" : '<span id="precisionSafeZone"></span>'}<i id="precisionFill"></i><b id="precisionNeedle"></b></div>
+        ${expert ? expertMaterialStateMarkup(presentation) : ""}
+        <div class="precision-rounds" id="precisionRounds">○ ○ ○</div>
+        <strong id="precisionStatus">1번째 ${presentation.title} · ${expert ? presentation.cueLow : "초록 범위에서 놓기"}</strong>
+        <button type="button" class="precision-hold" data-precision-hold disabled>${presentation.idle}</button>
+      </div>`;
+    }
+    if (currentMechanic === "sequence") {
+      const isPhotoPackaging = current.tool === "photoSleeve";
+      const parameters = sequenceDifficultyParameters(difficulty);
+      const countWord = parameters.scenarioCount === 4 ? "네" : "세";
+      session.sequencePresentation = isPhotoPackaging
+        ? { complete: `${countWord} 상황에서 사진층을 만지지 않는 방향·삽입·보관 판단을 내려 안전하게 포장했습니다.` }
+        : { complete: `${countWord} 돌발 상황에서 중단·보호·재평가의 안전한 판단을 내렸습니다.` };
+      return label + `<div class="procedure-panel">
+        <p>${isPhotoPackaging ? `사진층의 상태를 읽고 <b>만지지 않는 방향·삽입·보관 방법</b>을 ${countWord} 상황에서 고르세요.` : `외운 순서가 아니라 <b>작품의 현재 반응</b>을 읽는 판단 게임입니다. ${countWord} 돌발 상황에서 가장 안전한 다음 행동을 고르세요.`}</p>
+        <div class="procedure-progress" id="procedureProgress">상황 1 / ${parameters.scenarioCount}</div>
+        <div id="procedureScenario" class="procedure-scenario"></div>
+        <strong id="procedureStatus">작품 상태를 읽는 중입니다.</strong>
+      </div>`;
+    }
+    if (currentMechanic === "rhythm") {
+      const presentation = rhythmPresentationForTool(current.tool);
+      session.rhythmPresentation = presentation;
+      const expert = session.expertCueMode;
+      const hasDeadline = difficulty === 5;
+      return label + `<div class="adhesive-panel is-${current.tool}${expert ? ` is-expert-cue cue-${presentation.cueTheme}` : ""}">
+        <p>${expert ? presentation.expertDescription : presentation.description}</p>
+        <div class="adhesive-cues" id="adhesiveCues" aria-label="점적 예고 박자"><span>1</span><span>2</span><span>TAP</span></div>
+        <button type="button" class="adhesive-target-board${expert ? " material-state-surface state-low" : ""}" data-adhesive-drop aria-label="${presentation.actionLabel}" disabled>
+          <i class="adhesive-joint-line"></i>
+          ${expert ? "" : '<span id="adhesiveTargetCircle" class="adhesive-target-circle"></span>'}
+          <b id="adhesiveShrinkingRing" class="adhesive-shrinking-ring"></b>
+          <em id="adhesiveJudge">${presentation.target}</em>
+        </button>
+        ${expert ? expertMaterialStateMarkup(presentation) : ""}
+        ${hasDeadline ? `<div class="adhesive-deadline is-idle" id="adhesiveDeadline" role="status" aria-live="polite"><span id="adhesiveDeadlineLabel">첫 방울 뒤 연결 시간이 시작됩니다.</span><div aria-hidden="true"><i id="adhesiveDeadlineFill"></i></div></div>` : ""}
+        <div class="adhesive-rounds" id="adhesiveRounds">○ ○ ○</div>
+        <strong id="adhesiveStatus">1 / 3 ${presentation.unit} · ${expert ? presentation.cueLow : presentation.status}</strong>
+      </div>`;
+    }
+    if (currentMechanic === "tone") {
+      const baseHue = hashText(art.id) % 360;
+      const correctTone = (hashText(art.id) + session.stepIndex) % 4;
+      session.correctTone = correctTone;
+      const referenceShape = hashText(`${art.id}-shape`) % 4;
+      const shapeNames = toneShapeNamesForArtwork(art);
+      const wrongShapes = [1, 2, 3, 0].map(offset => (referenceShape + offset) % 4);
+      const parameters = toneDifficultyParameters(difficulty);
+      const referenceStripeGap = 8 + hashText(`${art.id}-tone-stripe`) % 2;
+      const referenceTexture = parameters.fineComparison ? " has-fine-texture" : "";
+      return label + `<div class="tone-panel difficulty-${difficulty}">
+        <p>색만 보지 말고 <b>결손의 실루엣과 세필 무늬</b>도 함께 비교하세요. ${parameters.fineComparison ? "모양의 미세한 비율과 줄무늬 간격까지 맞는 시편을 찾으세요." : "맞는 모양 중 가까이서 줄무늬가 보이는 시편이 안전합니다."}</p>
+        <div class="tone-reference"><i class="tone-swatch tone-shape-${referenceShape}${referenceTexture}" style="--tone:hsl(${baseHue} 46% 68%);--stripe-gap:${referenceStripeGap}px"></i><span>결손 모양 · ${shapeNames[referenceShape]}</span></div>
+        <div class="tone-choices">${parameters.hueOffsets.map((offset, index) => {
+          const isCorrect = index === correctTone;
+          const shape = isCorrect || parameters.fineComparison ? referenceShape : wrongShapes[index];
+          const adjustedOffset = isCorrect ? 4 : offset;
+          const stripeGap = isCorrect ? referenceStripeGap : referenceStripeGap + parameters.stripeDeltas[index];
+          const textureClass = parameters.fineComparison ? " has-fine-texture" : isCorrect ? " is-hatched" : "";
+          const shapeVariant = parameters.fineComparison && !isCorrect ? ` tone-variant-${1 + ((index + correctTone) % 3)}` : "";
+          const visibleName = parameters.fineComparison ? `미세 보색 시편 ${index + 1}` : shapeNames[shape];
+          const ariaTexture = parameters.fineComparison ? `, 세필 줄무늬 간격 ${stripeGap}` : "";
+          return `<button type="button" data-tone-choice="${index}" aria-label="보색 시편 ${index + 1}, ${shapeNames[shape]}${ariaTexture}" disabled><i class="tone-swatch tone-shape-${shape}${textureClass}${shapeVariant}" style="--tone:hsl(${baseHue + adjustedOffset} ${isCorrect ? 43 : parameters.saturation}% ${isCorrect ? 69 : parameters.lightness[index]}%);--stripe-gap:${stripeGap}px"></i><span>${visibleName}</span></button>`;
+        }).join("")}</div>
+        <strong>정답은 모양을 잇되 가까이에서 가는 세필 무늬로 복원부를 구별할 수 있는 시편입니다.</strong>
+      </div>`;
+    }
+    const alignParameters = alignDifficultyParameters(difficulty);
+    const alignSeed = hashText(`${art.id}-${session.stepIndex}-alignment`);
+    const patternAngles = [-18, 12, 27, -24].slice(0, alignParameters.pieceCount).map((angle, index) => angle + ((alignSeed + index * 7) % 3) * 5);
+    const initialAngles = alignParameters.initialAngles.map((angle, index) => {
+      const signedAngle = (alignSeed + index) % 2 ? -angle : angle;
+      return Math.round(signedAngle / alignParameters.rotationStep) * alignParameters.rotationStep;
+    });
+    const alignTheme = PAPER_ALIGNMENT_TOOLS.has(current.tool) ? "paper" : "fragment";
+    const alignNoun = alignTheme === "paper" ? "찢김" : "파편";
+    const alignCountWord = alignParameters.pieceCount === 4 ? "네" : "세";
+    session.alignTheme = alignTheme;
+    session.alignNoun = alignNoun;
+    session.alignAngles = initialAngles;
+    session.alignParameters = alignParameters;
+    const alignInstruction = alignTheme === "paper"
+      ? `고정된 왼쪽 종이의 <b>찢김선과 가는 섬유 결</b>이 오른쪽 보존용 종이로 자연스럽게 이어지도록 ±${alignParameters.rotationStep}°씩 미세 조정하세요.`
+      : `고정된 왼쪽 조각의 <b>금빛 무늬와 어두운 균열</b>이 오른쪽 조각으로 이어지도록 ±${alignParameters.rotationStep}°씩 미세 조정하세요.`;
+    return label + `<div class="align-panel is-${alignTheme} difficulty-${difficulty}">
+      <p>${alignInstruction}</p>
+      <div class="align-board piece-count-${alignParameters.pieceCount}">${initialAngles.map((angle, index) => `<article class="align-seam is-${alignTheme}" data-align-seam="${index}" style="--piece-angle:${angle}deg;--pattern-angle:${patternAngles[index]}deg">
+        <div class="align-seam-visual">
+          <span class="align-join-guide" aria-hidden="true"></span>
+          <i class="align-seam-half align-seam-fixed" aria-hidden="true"></i>
+          <button type="button" class="align-seam-half align-seam-moving" data-align-piece="${index}" data-align-delta="${alignParameters.rotationStep}" aria-label="${index + 1}번 ${alignNoun}을 오른쪽으로 ${alignParameters.rotationStep}도 회전" disabled><span class="visually-hidden">${alignNoun} 돌리기</span></button>
+        </div>
+        <div class="align-fine-controls">
+          <button type="button" data-align-adjust="${index}" data-align-delta="-${alignParameters.rotationStep}" aria-label="${index + 1}번 ${alignNoun} 왼쪽으로 ${alignParameters.rotationStep}도" disabled>↺</button>
+          <span data-align-feedback="${index}">${alignTheme === "paper" ? "찢김과 섬유 결 비교" : "무늬와 균열 비교"}</span>
+          <button type="button" data-align-adjust="${index}" data-align-delta="${alignParameters.rotationStep}" aria-label="${index + 1}번 ${alignNoun} 오른쪽으로 ${alignParameters.rotationStep}도" disabled>↻</button>
+        </div>
+      </article>`).join("")}</div>
+      <strong id="alignStatus">0 / ${alignParameters.pieceCount} ${alignNoun} 정렬 완료 · ${alignCountWord} 곳의 연결선을 확인하세요.</strong>
+    </div>`;
+  }
+
+  function prepareProcedureScenarios(scenarios, difficulty) {
+    const parameters = sequenceDifficultyParameters(difficulty);
+    return scenarios.slice(0, parameters.scenarioCount).map(scenario => {
+      let plausibleWrongUsed = 0;
+      return {
+        ...scenario,
+        options: scenario.options.map(option => {
+          if (option.correct || !option.plausibleText || plausibleWrongUsed >= parameters.plausibleWrongCount) return option;
+          plausibleWrongUsed += 1;
+          return {
+            ...option,
+            text: option.plausibleText,
+            feedback: option.plausibleFeedback || option.feedback
+          };
+        })
+      };
+    });
+  }
+
+  function procedureScenariosForTool(toolId, difficulty = 2) {
+    const toolName = TOOLS[toolId]?.name || "선택한 도구";
+    if (toolId === "photoSleeve") {
+      const scenarios = [
+        {
+          prompt: "사진을 보존 슬리브에 넣기 전 가장 먼저 해야 할 행동은?",
+          options: [
+            { icon: "🧤", text: "사진 가장자리만 안전하게 잡고 앞뒤와 들뜬 부분을 확인한다", correct: true, feedback: "이미지층과 들뜬 부분을 먼저 확인해야 넣는 방향과 손잡을 위치를 정할 수 있어요." },
+            { icon: "🤚", text: "사진 앞면을 손바닥으로 눌러 평평하게 만든다", plausibleText: "사진 앞면에 닿지 않도록 슬리브 바깥에서 들뜬 부분만 살짝 눌러 본다", correct: false, feedback: "사진 앞면을 누르면 지문과 마찰로 이미지층이 손상될 수 있어요.", plausibleFeedback: "슬리브를 사이에 두어도 상태를 확인하기 전 압력을 주면 들뜬 이미지층이 눌리거나 붙을 수 있어요." },
+            { icon: "📐", text: "휘어진 모서리를 힘으로 먼저 펴 둔다", plausibleText: "상태 기록은 나중에 하고 지지판 사이에서 모서리를 먼저 평평하게 만든다", correct: false, feedback: "강제로 펴면 약한 모서리와 사진층에 새 균열이 생길 수 있어요.", plausibleFeedback: "지지판을 쓰더라도 상태 확인과 기록보다 평탄화를 먼저 하면 취약한 모서리의 변화를 놓칠 수 있어요." }
+          ]
+        },
+        {
+          prompt: "사진 한쪽의 이미지층이 들떠 있습니다. 어느 방향으로 넣어야 할까요?",
+          options: [
+            { icon: "➡️", text: "들뜬 가장자리가 슬리브 입구에 걸리지 않는 방향으로 천천히 넣는다", correct: true, feedback: "들뜬 층이 입구에 걸리지 않는 방향을 선택하면 마찰과 박락을 줄일 수 있어요." },
+            { icon: "⬅️", text: "들뜬 가장자리부터 밀어 넣어 슬리브로 눌러 준다", plausibleText: "들뜬 면이 안쪽을 향하게 돌려 슬리브가 움직임을 잡도록 넣는다", correct: false, feedback: "들뜬 부분부터 밀면 입구에 걸려 이미지층이 더 벗겨질 수 있어요.", plausibleFeedback: "슬리브를 고정 수단으로 쓰면 들뜬 면에 지속적인 압력과 마찰이 생길 수 있어요." },
+            { icon: "⚡", text: "마찰 시간을 줄이기 위해 한 번에 빠르게 밀어 넣는다", plausibleText: "입구를 넓게 벌린 뒤 들뜬 가장자리부터 짧은 거리로 천천히 넣는다", correct: false, feedback: "빠른 삽입은 모서리가 접히거나 표면이 긁혀도 바로 멈추기 어려워요.", plausibleFeedback: "입구를 벌려도 들뜬 가장자리가 먼저 지나가면 경계가 걸릴 위험은 남습니다." }
+          ]
+        },
+        {
+          prompt: "사진이 슬리브 안에서 조금 움직입니다. 가장 안전한 마무리는?",
+          options: [
+            { icon: "📁", text: "사진 크기에 맞는 중성 지지판과 함께 수평으로 보관한다", correct: true, feedback: "맞춤 지지판은 사진 표면을 누르지 않으면서 굽힘과 이동을 줄여 줍니다." },
+            { icon: "📎", text: "움직이지 않도록 사진과 슬리브를 클립으로 집는다", plausibleText: "사진에는 닿지 않도록 슬리브 바깥 모서리만 작은 클립으로 고정한다", correct: false, feedback: "클립 압력과 금속 접촉은 눌림 자국과 변색을 만들 수 있어요.", plausibleFeedback: "바깥 모서리의 클립 압력도 슬리브와 지지판을 통해 사진에 전달될 수 있어요." },
+            { icon: "🧴", text: "슬리브 안쪽에 접착제를 발라 사진을 고정한다", plausibleText: "사진에서 떨어진 슬리브 안쪽 가장자리에 작은 접착 탭을 붙인다", correct: false, feedback: "사진에 접착제를 직접 쓰면 변색과 재처리 문제를 만들 수 있어요.", plausibleFeedback: "보관 공간 안쪽의 접착 탭은 시간이 지나며 사진과 접촉하거나 변화를 줄 수 있어요." }
+          ]
+        },
+        {
+          prompt: "삽입 도중 안정해 보이던 이미지층 가장자리가 새로 들리기 시작했습니다. 다음 판단은?",
+          options: [
+            { icon: "🛑", text: "더 움직이지 않도록 현재 위치를 지지하고 중단한 뒤 새 변화를 기록·재평가한다", correct: true, feedback: "새로운 들뜸은 포장 방법을 다시 정해야 한다는 신호입니다. 중단·지지·기록이 우선이에요." },
+            { icon: "↔️", text: "슬리브 입구를 더 벌리고 같은 방향으로 아주 천천히 끝까지 넣는다", correct: false, plausibleText: "새로 들린 부분에 닿지 않게 입구를 더 벌리고 같은 방향으로 천천히 마무리한다", feedback: "새 변화가 생긴 상태에서 계속 삽입하면 박락 범위가 커질 수 있어요." },
+            { icon: "🔄", text: "사진을 바로 빼서 반대 방향으로 돌린 뒤 다시 넣는다", correct: false, plausibleText: "마찰을 줄이기 위해 처음 위치로 천천히 되돌린 뒤 반대 방향을 시험한다", feedback: "들뜬 층이 움직이는 상태에서 즉시 방향을 바꾸면 왕복 마찰이 더해질 수 있어요." }
+          ]
+        }
+      ];
+      return prepareProcedureScenarios(scenarios, difficulty);
+    }
+    const scenarios = [
+      {
+        prompt: `작은 시험 중 ${toolName}에 작품의 원래 색이 묻어났습니다. 다음 행동은?`,
+        options: [
+          { icon: "🛑", text: "즉시 멈추고 시험 위치와 반응을 기록한다", correct: true, feedback: "이염은 원본이 함께 움직인다는 경고이므로 중단과 기록이 우선입니다." },
+          { icon: "🤏", text: "힘만 조금 줄여 같은 곳을 계속 처리한다", plausibleText: "새 도구로 접촉을 더 짧게 줄여 같은 시험구를 한 번 더 확인한다", correct: false, feedback: "힘을 줄여도 이미 이염이 확인된 방법을 계속하면 원본 손상이 커질 수 있어요.", plausibleFeedback: "원본 이동이 확인된 뒤 같은 방법을 즉시 반복하면 작은 시험구에도 손상이 누적될 수 있어요." },
+          { icon: "↗️", text: "더 넓은 곳에 적용해 반응을 다시 본다", plausibleText: "묻어난 양이 적으므로 인접한 작은 지점에서만 같은 반응인지 교차 확인한다", correct: false, feedback: "안전성이 확인되지 않은 처리를 넓히면 되돌리기 어려운 손상이 생깁니다.", plausibleFeedback: "이염이 확인된 방법을 다른 원본 지점으로 옮기기보다 먼저 중단하고 원인을 재평가해야 해요." }
+        ]
+      },
+      {
+        prompt: "시험구 자체는 안정하지만 바로 옆 그림층이 들떠 흔들립니다. 무엇을 먼저 할까요?",
+        options: [
+          { icon: "🛡️", text: "들뜬 경계를 먼저 보호하고 작업 범위를 다시 정한다", correct: true, feedback: "처리보다 취약한 경계의 안정화가 먼저입니다." },
+          { icon: "🧹", text: "시험이 안전했으니 주변까지 한 번에 처리한다", plausibleText: "들뜬 경계에 닿지 않도록 가림막을 대고 안정한 시험구 주변만 처리한다", correct: false, feedback: "같은 작품 안에서도 부위마다 상태가 달라 한 번에 넓히면 위험해요.", plausibleFeedback: "들뜬 경계가 움직이는 상태에서는 가림막 자체가 접촉 위험이 되고 작업 범위도 다시 정해야 해요." },
+          { icon: "🙈", text: "들뜬 곳을 건너뛰고 기록 없이 다음 단계로 간다", plausibleText: "들뜬 곳을 사진으로만 남기고 충분히 떨어진 안정한 부분부터 먼저 처리한다", correct: false, feedback: "건너뛴 위험도 반드시 표시하고 다음 작업자에게 남겨야 합니다.", plausibleFeedback: "사진 기록만으로는 부족합니다. 취약한 경계의 보호와 전체 작업 범위 재설정이 먼저예요." }
+        ]
+      },
+      {
+        prompt: "처리 도중 예상하지 못한 광택과 표면 변화가 나타났습니다. 가장 안전한 대응은?",
+        options: [
+          { icon: "🔎", text: "작업을 멈추고 처리 전 사진과 비교해 변화 범위를 기록한다", correct: true, feedback: "예상 밖의 변화에서는 속도보다 중단·비교·재평가가 중요합니다." },
+          { icon: "✨", text: "광택이 고르게 보이도록 나머지도 같은 상태로 만든다", plausibleText: "처리 전과 비슷한 광택이 될 때까지 변한 시험구만 국부적으로 조정한다", correct: false, feedback: "새로운 변화에 원본 전체를 맞추는 것은 최소 개입 원칙에 어긋납니다.", plausibleFeedback: "원인을 확인하기 전에 외관을 다시 맞추려 하면 변화가 겹쳐져 판단 근거를 잃을 수 있어요." },
+          { icon: "⏩", text: "마르기 전에 빠르게 끝내고 나중에 확인한다", plausibleText: "변화가 아주 작으므로 한 구간만 더 진행한 뒤 처리 전 사진과 비교한다", correct: false, feedback: "원인을 모른 채 계속하면 변화 범위가 커져 되돌리기 어려워집니다.", plausibleFeedback: "예상 밖 변화가 보인 순간이 중단 기준입니다. 한 구간을 더 진행하면 비교 기준이 흐려져요." }
+          ]
+      },
+      {
+        prompt: "같은 작품의 두 작은 시험구 중 한 곳은 안정하고 다른 곳은 미세한 변화가 있습니다. 본 처리는 어떻게 결정할까요?",
+        options: [
+          { icon: "🗺️", text: "두 반응의 위치와 경계를 기록하고 부위별 상태를 다시 평가한 뒤 범위를 정한다", correct: true, feedback: "작품 내부의 상태 차이를 지도처럼 기록해야 안전한 부위와 중단할 부위를 구분할 수 있어요." },
+          { icon: "✅", text: "안정한 시험구가 있으므로 그 결과를 작품 전체의 기준으로 삼는다", correct: false, plausibleText: "안정한 쪽과 같은 표면으로 보이는 구간에만 그 결과를 적용한다", feedback: "겉모습이 비슷해도 층 구조와 과거 처리가 달라 반응을 그대로 일반화할 수 없어요." },
+          { icon: "➗", text: "두 시험 결과의 중간 정도로 처리 강도를 정해 전체에 적용한다", correct: false, plausibleText: "변화가 있었던 쪽을 피하고 두 결과 사이의 보수적인 수준으로 처리한다", feedback: "서로 다른 반응을 평균내면 취약한 부위의 중단 신호를 무시하게 됩니다." }
+        ]
+      }
+    ];
+    return prepareProcedureScenarios(scenarios, difficulty);
+  }
+
+  function bindMechanicControls() {
+    $("[data-layer-cleaning-stop]", el.artStage)?.addEventListener("click", stopLayerCleaning);
+    $$('[data-budget-slider]', el.artStage).forEach(input => {
+      input.addEventListener("input", () => updateBudgetAllocation(input));
+      input.addEventListener("change", () => updateBudgetAllocation(input));
+    });
+    $("[data-budget-confirm]", el.artStage)?.addEventListener("click", confirmBudgetAllocation);
+    $("[data-balance-confirm]", el.artStage)?.addEventListener("click", confirmBalancePlacement);
+    $$("[data-balance-support]", el.artStage).forEach(support => {
+      support.addEventListener("keydown", event => adjustBalanceSupportFromKeyboard(support, event));
+    });
+    $$("[data-damage-decoy]", el.artStage).forEach(button => {
+      button.addEventListener("click", () => {
+        if (!selectedTool || !button.classList.contains("is-revealed") || button.classList.contains("is-dismissed")) return;
+        button.classList.add("is-dismissed");
+        addMechanicMistake(5, "이 지점은 손상이 아니라 안정한 제작 흔적입니다. 조명별로 이어지는 균열을 다시 보세요.");
+      });
+    });
+    $$("[data-uv-original]", el.artStage).forEach(button => {
+      button.addEventListener("click", event => {
+        event.stopPropagation();
+        if (!selectedTool || !button.classList.contains("is-revealed") || button.classList.contains("is-dismissed")) return;
+        button.classList.add("is-dismissed");
+        const presentation = session.uvPresentation || uvPresentation(getArtwork(session.artId));
+        const status = $("#uvInspectionStatus", el.artStage);
+        if (status) status.textContent = easyCopy(presentation.originalMistake);
+        addMechanicMistake(6 + Math.max(0, mechanicDifficulty(getArtwork(session.artId)) - 2), presentation.originalMistake);
+      });
+    });
+    $$("[data-test-choice]", el.artStage).forEach(button => {
+      button.addEventListener("click", () => handleTestChoice(button));
+    });
+    $("[data-stability-toggle]", el.artStage)?.addEventListener("click", toggleStabilityControl);
+    const precisionButton = $("[data-precision-hold]", el.artStage);
+    if (precisionButton) {
+      precisionButton.addEventListener("pointerdown", beginPrecisionHold);
+      precisionButton.addEventListener("pointerup", endPrecisionHold);
+      precisionButton.addEventListener("pointercancel", endPrecisionHold);
+      precisionButton.addEventListener("keydown", event => {
+        if ((event.key === " " || event.key === "Enter") && !event.repeat) beginPrecisionHold(event);
+      });
+      precisionButton.addEventListener("keyup", event => {
+        if (event.key === " " || event.key === "Enter") endPrecisionHold(event);
+      });
+    }
+    $("[data-adhesive-drop]", el.artStage)?.addEventListener("click", handleAdhesiveDrop);
+    $$("[data-tone-choice]", el.artStage).forEach(button => {
+      button.addEventListener("click", () => handleToneChoice(button));
+    });
+    $$("[data-align-piece]", el.artStage).forEach(button => {
+      button.addEventListener("click", () => handleAlignPiece(Number(button.dataset.alignPiece), Number(button.dataset.alignDelta)));
+    });
+    $$("[data-align-adjust]", el.artStage).forEach(button => {
+      button.addEventListener("click", () => handleAlignPiece(Number(button.dataset.alignAdjust), Number(button.dataset.alignDelta)));
+    });
+    $$("[data-drag-piece]", el.artStage).forEach(piece => {
+      piece.addEventListener("keydown", event => {
+        if (!selectedTool || !dragPreviewState?.complete || piece.classList.contains("is-placed")) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          placeDragPieceWithKeyboard(piece);
+        }
+      });
+    });
+  }
+
+  function selectTool(toolId, correctToolId, button) {
+    if (selectedTool) return;
+    playTone("click");
+    $$('[data-tool]', el.toolGrid).forEach(btn => btn.classList.remove("is-selected", "is-wrong"));
+
+    if (toolId !== correctToolId) {
+      selectedTool = null;
+      button.classList.add("is-wrong");
+      addMechanicMistake(12, "이 작품에는 맞지 않는 도구예요. 상태 기록을 다시 확인하세요.");
+      scheduleMechanicTimeout(() => button.classList.remove("is-wrong"), 480);
+      return;
+    }
+
+    selectedTool = toolId;
+    button.classList.add("is-selected");
+    button.setAttribute("aria-pressed", "true");
+    $$('[data-tool]', el.toolGrid).forEach(toolButton => { toolButton.disabled = true; });
+    const cursor = $("#toolCursor");
+    if (cursor) cursor.textContent = TOOLS[toolId].icon;
+    activateCurrentMechanic();
+    if (!practiceMode && isFirstRotationTutorialActive() && state.tutorialStep === "lab") {
+      tutorialLabPhase = "mechanic";
+      scheduleTutorialGuide(true);
+    }
+    const mechanicNotice = mechanicNoticeForTool(toolId, currentMechanic);
+    showToast(`${TOOLS[toolId].name} 선택 완료. ${mechanicNotice}`);
+  }
+
+  function activateCurrentMechanic() {
+    $("#mechanicLayer", el.artStage)?.classList.remove("is-locked");
+    $$("button:disabled, input:disabled", el.artStage).forEach(control => { control.disabled = false; });
+    if (currentMechanic === "spot") startInspectionChallenge();
+    if (currentMechanic === "uv") startUvMechanic();
+    if (currentMechanic === "choice") startTestChoiceChallenge();
+    if (currentMechanic === "trace") startCleaningChallenge();
+    if (currentMechanic === "stability") startStabilityChallenge();
+    if (currentMechanic === "precision") startPrecisionChallenge();
+    if (currentMechanic === "sequence") startProcedureChallenge();
+    if (currentMechanic === "drag") startDragPreview();
+    if (currentMechanic === "rhythm") startAdhesiveChallenge();
+    if (currentMechanic === "cleaning") startLayerCleaningMechanic();
+    if (currentMechanic === "budget") startBudgetMechanic();
+    if (currentMechanic === "balance") startBalanceMechanic();
+  }
+
+  function buildToolChoices(correctTool, stepIndex) {
+    const toolIds = Object.keys(TOOLS);
+    const alternatives = toolIds.filter(id => id !== correctTool);
+    const start = (stepIndex * 3 + ARTWORKS.findIndex(a => a.id === session.artId)) % alternatives.length;
+    const wrong = [alternatives[start], alternatives[(start + 4) % alternatives.length], alternatives[(start + 7) % alternatives.length]];
+    return shuffle([correctTool, ...wrong]).slice(0, 4);
+  }
+
+  function onPointerDown(event) {
+    if (!session || !selectedTool) {
+      showToast("먼저 알맞은 도구를 선택하세요.");
+      return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (currentMechanic === "balance") {
+      const support = target?.closest("[data-balance-support]");
+      if (support) beginBalanceSupportDrag(support, event);
+      return;
+    }
+    if (currentMechanic === "cleaning") {
+      const board = target?.closest("[data-layer-cleaning-board]");
+      if (board) beginLayerCleaning(board, event);
+      return;
+    }
+    if (currentMechanic === "drag") {
+      const piece = target?.closest("[data-drag-piece]");
+      if (dragPreviewState?.complete && piece && !piece.classList.contains("is-placed")) beginPieceDrag(piece, event);
+      return;
+    }
+    if (currentMechanic === "trace") {
+      const board = target?.closest("[data-cleaning-board]");
+      if (board) beginCleaningStroke(board, event);
+      return;
+    }
+    if (!["spot", "uv"].includes(currentMechanic)
+      || target?.closest(currentMechanic === "uv" ? "[data-uv-original]" : "[data-damage-decoy]")) return;
+    pointerDown = true;
+    session[currentMechanic === "uv" ? "uvPointerStart" : "spotPointerStart"] = { x: event.clientX, y: event.clientY };
+    el.artStage.setPointerCapture?.(event.pointerId);
+    moveInspectionLight(event);
+  }
+
+  function onPointerMove(event) {
+    if (!session || !selectedTool) return;
+    if (balanceState?.drag) {
+      moveBalanceSupport(event);
+      return;
+    }
+    if (dragState) {
+      movePieceDrag(event);
+      return;
+    }
+    if (currentMechanic === "cleaning") {
+      if (layerCleaningState?.dragging) continueLayerCleaning(event);
+      else moveLayerCleaningCursor(event);
+      return;
+    }
+    if (currentMechanic === "trace") {
+      const target = event.target instanceof Element ? event.target : null;
+      const board = target?.closest("[data-cleaning-board]");
+      if (board) moveCleaningBrush(cleaningPointFromEvent(event, board));
+      if (cleaningState?.drawing) continueCleaningStroke(event);
+      return;
+    }
+    if (["spot", "uv"].includes(currentMechanic) && (event.pointerType === "mouse" || pointerDown)) moveInspectionLight(event);
+  }
+
+  function onPointerUp(event) {
+    if (balanceState?.drag) endBalanceSupportDrag(event);
+    if (dragState) finishPieceDrag(event);
+    if (currentMechanic === "cleaning" && layerCleaningState?.dragging) endLayerCleaning(event);
+    if (currentMechanic === "trace" && cleaningState?.drawing) endCleaningStroke(event);
+    if (["spot", "uv"].includes(currentMechanic) && pointerDown) {
+      moveInspectionLight(event);
+      const start = session[currentMechanic === "uv" ? "uvPointerStart" : "spotPointerStart"] || { x: event.clientX, y: event.clientY };
+      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) < 18) hitTest(event);
+    }
+    pointerDown = false;
+    const cursor = $("#toolCursor");
+    cursor?.classList.remove("is-visible");
+    try { el.artStage.releasePointerCapture?.(event.pointerId); } catch (_) { /* no-op */ }
+  }
+
+  function onPointerLeave() {
+    if (currentMechanic === "cleaning" && !layerCleaningState?.dragging) $("#layerCleaningCursor", el.artStage)?.classList.remove("is-visible");
+    if (currentMechanic === "trace" && !cleaningState?.drawing) $("#cleaningBrushCursor", el.artStage)?.classList.remove("is-visible");
+    if (!pointerDown) $("#toolCursor")?.classList.remove("is-visible");
+  }
+
+  function startInspectionChallenge() {
+    session.spotPointerStart = null;
+    const layer = $("#mechanicLayer", el.artStage);
+    if (layer) {
+      layer.style.setProperty("--beam-x", "50%");
+      layer.style.setProperty("--beam-y", "43%");
+    }
+    updateInspectionReveal(50, 43);
+  }
+
+  function startUvMechanic() {
+    session.uvPointerStart = null;
+    const layer = $("#mechanicLayer", el.artStage);
+    if (layer) {
+      layer.style.setProperty("--beam-x", "50%");
+      layer.style.setProperty("--beam-y", "43%");
+    }
+    updateInspectionReveal(50, 43);
+  }
+
+  function moveInspectionLight(event) {
+    const layer = $("#mechanicLayer", el.artStage);
+    if (!layer) return;
+    const rect = layer.getBoundingClientRect();
+    const x = Math.max(8, Math.min(92, (event.clientX - rect.left) / rect.width * 100));
+    const y = Math.max(10, Math.min(82, (event.clientY - rect.top) / rect.height * 100));
+    layer.style.setProperty("--beam-x", `${x}%`);
+    layer.style.setProperty("--beam-y", `${y}%`);
+    const beam = $(currentMechanic === "uv" ? "#uvInspectionBeam" : "#inspectionBeam", el.artStage);
+    if (beam) {
+      beam.style.left = `${x}%`;
+      beam.style.top = `${y}%`;
+    }
+    updateInspectionReveal(x, y);
+  }
+
+  function updateInspectionReveal(xPercent, yPercent) {
+    const layer = $("#mechanicLayer", el.artStage);
+    if (!layer) return;
+    const rect = layer.getBoundingClientRect();
+    const x = rect.left + rect.width * xPercent / 100;
+    const y = rect.top + rect.height * yPercent / 100;
+    const baseRevealRadius = Math.max(62, Math.min(88, rect.width * .14));
+    const revealRadius = currentMechanic === "uv"
+      ? baseRevealRadius * (session.uvParameters?.revealScale || 1)
+      : baseRevealRadius;
+    const selector = currentMechanic === "uv"
+      ? "[data-uv-target], [data-uv-original]"
+      : "[data-damage-target], [data-damage-decoy]";
+    $$(selector, layer).forEach(mark => {
+      if (mark.classList.contains("is-hit") || mark.classList.contains("is-dismissed")) return;
+      const markRect = mark.getBoundingClientRect();
+      const distance = Math.hypot(x - (markRect.left + markRect.width / 2), y - (markRect.top + markRect.height / 2));
+      mark.classList.toggle("is-revealed", distance <= revealRadius);
+    });
+  }
+
+  function startTestChoiceChallenge() {
+    session.testedChoices = [];
+    const abort = $('[data-test-choice="-1"]', el.artStage);
+    if (abort) abort.disabled = true;
+  }
+
+  function completeTestChoiceObservation(button, choice) {
+    if (!button || session.mechanicComplete || session.testedChoices.includes(choice)) return;
+    session.testedChoices.push(choice);
+    button.classList.remove("is-testing");
+    button.classList.add("is-tested");
+    button.setAttribute("aria-expanded", "true");
+    button.disabled = false;
+    const prompt = $("em", button);
+    if (prompt) prompt.textContent = "반응 확인 완료";
+    const status = $("#testChoiceStatus", el.artStage);
+    const sampleCount = session.choiceSampleCount || 3;
+    const allTested = session.testedChoices.length >= sampleCount;
+    if (status) status.textContent = allTested ? `${sampleCount}개 반응을 모두 확인했습니다. 이제 안전한 결과를 선택하세요.` : `${session.testedChoices.length} / ${sampleCount} 시험구 확인 · 나머지도 관찰하세요.`;
+    if (allTested) {
+      $$("[data-test-choice]", el.artStage).forEach(item => {
+        item.disabled = false;
+        item.classList.add("is-ready");
+        const itemPrompt = $("em", item);
+        if (itemPrompt) itemPrompt.textContent = "이 결과 선택";
+      });
+    }
+    playTone("hit");
+  }
+
+  function handleTestChoice(button) {
+    if (!selectedTool || session.mechanicComplete) return;
+    const choice = Number(button.dataset.testChoice);
+    if (choice >= 0 && !session.testedChoices.includes(choice)) {
+      button.disabled = true;
+      button.classList.add("is-testing");
+      const status = $("#testChoiceStatus", el.artStage);
+      if (status) status.textContent = `${button.querySelector("strong")?.textContent || "시험구"}의 표면 반응을 기다리는 중…`;
+      scheduleMechanicTimeout(() => completeTestChoiceObservation(button, choice), 420);
+      return;
+    }
+    if (session.testedChoices.length < (session.choiceSampleCount || 3)) return;
+    if (choice === session.correctChoice) {
+      button.classList.add("is-correct");
+      $$("[data-test-choice]", el.artStage).forEach(item => { item.disabled = true; });
+      finishMechanicSoon(choice === -1 ? "모든 시험구가 기준을 벗어났습니다. 처리를 중단하고 반응을 기록합니다." : "안전한 시험구를 확인했습니다. 처리 범위를 기록합니다.", 620);
+    } else {
+      button.classList.add("is-wrong");
+      addMechanicMistake(session.choiceMistakeRisk || 8, "안전 기준을 하나라도 벗어난 결과예요. 수치와 안료 이동을 다시 비교해 보세요.");
+      scheduleMechanicTimeout(() => button.classList.remove("is-wrong"), 450);
+    }
+  }
+
+  function startCleaningChallenge() {
+    cleaningState = {
+      pathIndex: 0,
+      pointIndex: 0,
+      drawing: false,
+      strokePoints: [],
+      running: true
+    };
+    positionCleaningStartBrush(0);
+  }
+
+  function positionCleaningStartBrush(pathIndex, pointIndex = 0) {
+    const marker = $("#cleaningStartBrush", el.artStage);
+    const path = session?.cleaningPaths?.[pathIndex];
+    const point = path?.[Math.max(0, Math.min(path.length - 1, pointIndex))];
+    if (!marker || !point) return;
+    marker.style.left = `${point[0] / 6}%`;
+    marker.style.top = `${point[1] / 2.2}%`;
+    marker.classList.add("is-visible");
+  }
+
+  function cleaningPointFromEvent(event, board) {
+    const rect = board.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(600, (event.clientX - rect.left) / rect.width * 600)),
+      y: Math.max(0, Math.min(220, (event.clientY - rect.top) / rect.height * 220)),
+      screenX: event.clientX - rect.left,
+      screenY: event.clientY - rect.top
+    };
+  }
+
+  function moveCleaningBrush(point) {
+    const brush = $("#cleaningBrushCursor", el.artStage);
+    if (brush) {
+      brush.style.left = `${point.screenX}px`;
+      brush.style.top = `${point.screenY}px`;
+      brush.classList.add("is-visible");
+    }
+  }
+
+  function beginCleaningStroke(board, event) {
+    if (!selectedTool || !cleaningState?.running || session.mechanicComplete) return;
+    const point = cleaningPointFromEvent(event, board);
+    const path = session.cleaningPaths[cleaningState.pathIndex];
+    const resumeIndex = Math.max(0, cleaningState.pointIndex - 1);
+    const resumePoint = path[resumeIndex];
+    moveCleaningBrush(point);
+    const difficulty = mechanicDifficulty(getArtwork(session.artId));
+    const startTolerance = Math.max(31, 47 - difficulty * 3);
+    if (Math.hypot(point.x - resumePoint[0], point.y - resumePoint[1]) > startTolerance) {
+      const action = session.tracePresentation?.action || "도구 끝";
+      addMechanicMistake(3, cleaningState.pointIndex ? `마지막 ${action} 위치에서 다시 이어 주세요.` : `빛나는 시작점에 ${action}를 먼저 대 주세요.`);
+      return;
+    }
+    event.preventDefault();
+    $("#cleaningStartBrush", el.artStage)?.classList.remove("is-visible");
+    cleaningState.drawing = true;
+    cleaningState.pointerId = event.pointerId;
+    pointerDown = true;
+    board.setPointerCapture?.(event.pointerId);
+    cleaningState.strokePoints.push([point.x, point.y]);
+    if (cleaningState.pointIndex === 0) cleaningState.pointIndex = 1;
+    updateCleaningStrokeMarkup();
+  }
+
+  function continueCleaningStroke(event) {
+    const board = $("[data-cleaning-board]", el.artStage);
+    if (!board || !cleaningState?.drawing) return;
+    event.preventDefault();
+    const point = cleaningPointFromEvent(event, board);
+    moveCleaningBrush(point);
+    cleaningState.strokePoints.push([point.x, point.y]);
+    if (cleaningState.strokePoints.length > 110) cleaningState.strokePoints.shift();
+    const path = session.cleaningPaths[cleaningState.pathIndex];
+    const expected = path[cleaningState.pointIndex];
+    const difficulty = mechanicDifficulty(getArtwork(session.artId));
+    const pathTolerance = Math.max(22, 34 - difficulty * 2);
+    if (expected && Math.hypot(point.x - expected[0], point.y - expected[1]) <= pathTolerance) cleaningState.pointIndex += 1;
+    updateCleaningStrokeMarkup();
+    if (cleaningState.pointIndex >= path.length) completeCleaningPath();
+  }
+
+  function endCleaningStroke(event) {
+    const board = $("[data-cleaning-board]", el.artStage);
+    if (!cleaningState) return;
+    cleaningState.drawing = false;
+    pointerDown = false;
+    try { board?.releasePointerCapture?.(event.pointerId); } catch (_) { /* no-op */ }
+    const status = $("#cleaningStatus", el.artStage);
+    if (status && cleaningState.pointIndex > 0) status.textContent = `${cleaningState.pathIndex + 1} / 3 · ${session.tracePresentation?.action || "도구"}를 뗐다면 마지막 지점부터 이어가세요.`;
+    positionCleaningStartBrush(cleaningState.pathIndex, Math.max(0, cleaningState.pointIndex - 1));
+  }
+
+  function updateCleaningStrokeMarkup() {
+    const stroke = $("#cleaningStroke", el.artStage);
+    if (stroke && cleaningState) stroke.setAttribute("points", cleaningState.strokePoints.map(point => point.join(",")).join(" "));
+  }
+
+  function completeCleaningPath() {
+    const completedIndex = cleaningState.pathIndex;
+    $(`[data-clean-path="${completedIndex}"]`, el.artStage)?.classList.replace("is-active", "is-complete");
+    $(`[data-clean-start="${completedIndex}"]`, el.artStage)?.classList.remove("is-active");
+    cleaningState.drawing = false;
+    cleaningState.pathIndex += 1;
+    cleaningState.pointIndex = 0;
+    cleaningState.strokePoints = [];
+    updateCleaningStrokeMarkup();
+    playTone("hit");
+    const rounds = $("#cleaningRounds", el.artStage);
+    if (rounds) rounds.textContent = [0, 1, 2].map(index => index < cleaningState.pathIndex ? "●" : "○").join(" ");
+    if (cleaningState.pathIndex >= session.cleaningPaths.length) {
+      cleaningState.running = false;
+      $("#cleaningStartBrush", el.artStage)?.classList.remove("is-visible");
+      finishMechanicSoon(session.tracePresentation?.complete || "세 작업 경로를 안전하게 마쳤습니다.", 480);
+      return;
+    }
+    $(`[data-clean-path="${cleaningState.pathIndex}"]`, el.artStage)?.classList.add("is-active");
+    $(`[data-clean-start="${cleaningState.pathIndex}"]`, el.artStage)?.classList.add("is-active");
+    positionCleaningStartBrush(cleaningState.pathIndex);
+    const status = $("#cleaningStatus", el.artStage);
+    if (status) status.textContent = `${cleaningState.pathIndex + 1} / 3 ${session.tracePresentation?.unit || "경로"} · 다음 빛나는 점에서 시작하세요.`;
+  }
+
+  function startLayerCleaningMechanic() {
+    const art = getArtwork(session.artId);
+    const difficulty = mechanicDifficulty(art);
+    const presentation = session.layerCleaningPresentation || cleaningPresentation(art, selectedTool);
+    const reroll = Number(session.cleaningRerolls?.[session.stepIndex]) || 0;
+    const seed = hashText(`${art.id}-${session.stepIndex}-cleaning-${reroll}`);
+    const offsetPercent = (seed % 31) - 15;
+    const threshold = Math.max(38, Math.min(82, presentation.meanThreshold * (1 + offsetPercent / 100)));
+    const difficultySettings = {
+      2: { amount: 2, band: 14, radius: 30, maskAlpha: .22 },
+      3: { amount: 3, band: 11, radius: 33, maskAlpha: .18 },
+      4: { amount: 4, band: 8, radius: 36, maskAlpha: .15 },
+      5: { amount: 5, band: 6, radius: 39, maskAlpha: .1 }
+    }[difficulty];
+    layerCleaningState = {
+      kind: "layer-cleaning",
+      difficulty,
+      presentation,
+      threshold,
+      band: difficultySettings.band,
+      amount: difficultySettings.amount,
+      radius: difficultySettings.radius,
+      maskAlpha: difficultySettings.maskAlpha,
+      removal: 0,
+      passes: 0,
+      dragging: false,
+      paused: false,
+      pointerId: null,
+      lastPoint: null,
+      seed
+    };
+    drawLayerCleaningCanvases();
+    updateLayerCleaningState();
+  }
+
+  function drawLayerCleaningCanvases() {
+    if (!layerCleaningState) return;
+    const original = $("#layerCleaningOriginal", el.artStage);
+    const mask = $("#layerCleaningMask", el.artStage);
+    const board = $("[data-layer-cleaning-board]", el.artStage);
+    if (!original || !mask || !board) return;
+    const { presentation, difficulty, seed } = layerCleaningState;
+    const originalContext = original.getContext("2d");
+    const maskContext = mask.getContext("2d");
+    if (!originalContext || !maskContext) return;
+    const width = original.width;
+    const height = original.height;
+    originalContext.clearRect(0, 0, width, height);
+    const originalGradient = originalContext.createLinearGradient(0, 0, width, height);
+    originalGradient.addColorStop(0, presentation.originalA);
+    originalGradient.addColorStop(1, presentation.originalB);
+    originalContext.fillStyle = originalGradient;
+    originalContext.fillRect(0, 0, width, height);
+    originalContext.globalAlpha = .42;
+    originalContext.lineWidth = presentation.theme === "paper" ? 1.5 : 3;
+    originalContext.strokeStyle = "rgba(80,55,55,.46)";
+    for (let index = 0; index < 18; index += 1) {
+      const y = 20 + ((seed + index * 37) % 238);
+      originalContext.beginPath();
+      originalContext.moveTo(18, y);
+      originalContext.bezierCurveTo(160, y - 20 + index % 9, 420, y + 18 - index % 7, 622, y - 4);
+      originalContext.stroke();
+    }
+    originalContext.globalAlpha = 1;
+
+    maskContext.globalCompositeOperation = "source-over";
+    maskContext.clearRect(0, 0, width, height);
+    const grimeGradient = maskContext.createLinearGradient(width, 0, 0, height);
+    grimeGradient.addColorStop(0, presentation.grimeA);
+    grimeGradient.addColorStop(1, presentation.grimeB);
+    maskContext.fillStyle = grimeGradient;
+    maskContext.globalAlpha = difficulty === 5 ? .68 : difficulty === 4 ? .76 : .86;
+    maskContext.fillRect(0, 0, width, height);
+    maskContext.globalAlpha = difficulty === 5 ? .16 : .3;
+    maskContext.fillStyle = "#2f2928";
+    for (let index = 0; index < 70; index += 1) {
+      const x = (seed + index * 83) % width;
+      const y = (seed * 3 + index * 47) % height;
+      const radius = 2 + ((seed + index * 11) % 9);
+      maskContext.beginPath();
+      maskContext.arc(x, y, radius, 0, Math.PI * 2);
+      maskContext.fill();
+    }
+    maskContext.globalAlpha = 1;
+    board.style.setProperty("--cleaning-damage-a", presentation.damageA);
+    board.style.setProperty("--cleaning-damage-b", presentation.damageB);
+  }
+
+  function layerCleaningPointFromEvent(event, board) {
+    const rect = board.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(640, (event.clientX - rect.left) / rect.width * 640)),
+      y: Math.max(0, Math.min(280, (event.clientY - rect.top) / rect.height * 280))
+    };
+  }
+
+  function moveLayerCleaningCursor(event) {
+    const board = $("[data-layer-cleaning-board]", el.artStage);
+    const cursor = $("#layerCleaningCursor", el.artStage);
+    if (!board || !cursor) return;
+    const rect = board.getBoundingClientRect();
+    cursor.style.left = `${event.clientX - rect.left}px`;
+    cursor.style.top = `${event.clientY - rect.top}px`;
+    cursor.classList.add("is-visible");
+  }
+
+  function beginLayerCleaning(board, event) {
+    if (!selectedTool || !layerCleaningState || layerCleaningState.paused || session.mechanicComplete) return;
+    event.preventDefault();
+    layerCleaningState.dragging = true;
+    layerCleaningState.pointerId = event.pointerId;
+    layerCleaningState.lastPoint = null;
+    pointerDown = true;
+    board.setPointerCapture?.(event.pointerId);
+    moveLayerCleaningCursor(event);
+    applyLayerCleaningStamp(layerCleaningPointFromEvent(event, board));
+  }
+
+  function continueLayerCleaning(event) {
+    const board = $("[data-layer-cleaning-board]", el.artStage);
+    if (!board || !layerCleaningState?.dragging || layerCleaningState.paused) return;
+    event.preventDefault();
+    moveLayerCleaningCursor(event);
+    const point = layerCleaningPointFromEvent(event, board);
+    const last = layerCleaningState.lastPoint;
+    if (!last || Math.hypot(point.x - last.x, point.y - last.y) >= layerCleaningState.radius * .48) {
+      applyLayerCleaningStamp(point);
+    }
+  }
+
+  function endLayerCleaning(event) {
+    const board = $("[data-layer-cleaning-board]", el.artStage);
+    if (!layerCleaningState) return;
+    layerCleaningState.dragging = false;
+    layerCleaningState.pointerId = null;
+    pointerDown = false;
+    try { board?.releasePointerCapture?.(event.pointerId); } catch (_) { /* no-op */ }
+  }
+
+  function applyLayerCleaningStamp(point) {
+    if (!layerCleaningState || session.mechanicComplete) return;
+    const mask = $("#layerCleaningMask", el.artStage);
+    const original = $("#layerCleaningOriginal", el.artStage);
+    const maskContext = mask?.getContext("2d");
+    const originalContext = original?.getContext("2d");
+    if (!maskContext || !originalContext) return;
+    const stateBefore = layerCleaningState.removal;
+    layerCleaningState.lastPoint = point;
+    layerCleaningState.passes += 1;
+    layerCleaningState.removal = Math.min(120, layerCleaningState.removal + layerCleaningState.amount);
+    maskContext.save();
+    maskContext.globalCompositeOperation = "destination-out";
+    maskContext.globalAlpha = layerCleaningState.maskAlpha;
+    maskContext.beginPath();
+    maskContext.arc(point.x, point.y, layerCleaningState.radius, 0, Math.PI * 2);
+    maskContext.fill();
+    maskContext.restore();
+    const overStart = layerCleaningState.threshold + layerCleaningState.band;
+    if (layerCleaningState.removal > overStart) {
+      const crossedThisPass = stateBefore <= overStart;
+      originalContext.save();
+      originalContext.globalCompositeOperation = "destination-out";
+      originalContext.globalAlpha = crossedThisPass ? .12 : .24;
+      originalContext.beginPath();
+      originalContext.arc(point.x, point.y, layerCleaningState.radius * .72, 0, Math.PI * 2);
+      originalContext.fill();
+      originalContext.restore();
+    }
+    session.hitTargets = Math.max(1, Math.round(layerCleaningState.removal));
+    updateLayerCleaningState();
+    playTone("hit");
+  }
+
+  function updateLayerCleaningState() {
+    if (!layerCleaningState) return;
+    const { removal, threshold, band, presentation } = layerCleaningState;
+    const stateName = removal < threshold - band ? "low" : removal <= threshold + band ? "safe" : "high";
+    const board = $("[data-layer-cleaning-board]", el.artStage);
+    if (board) {
+      board.classList.remove("state-low", "state-safe", "state-high");
+      board.classList.add(`state-${stateName}`);
+      board.dataset.surfaceState = stateName;
+    }
+    const passes = $("#layerCleaningPasses", el.artStage);
+    const cue = $("#layerCleaningCue", el.artStage);
+    if (passes) passes.textContent = `세척 ${layerCleaningState.passes}회`;
+    if (cue) cue.textContent = stateName === "low" ? presentation.cueLow : stateName === "safe" ? presentation.cueSafe : presentation.cueHigh;
+  }
+
+  function stopLayerCleaning() {
+    if (!selectedTool || !layerCleaningState || layerCleaningState.paused || session.mechanicComplete) return;
+    const { removal, threshold, band, presentation } = layerCleaningState;
+    const outcome = removal < threshold - band ? "under" : removal <= threshold + band ? "optimal" : "over";
+    const previousIndex = session.cleaningResults.findIndex(result => result.stepIndex === session.stepIndex);
+    const result = { stepIndex: session.stepIndex, outcome, removal: Math.round(removal) };
+    if (previousIndex >= 0) session.cleaningResults[previousIndex] = result;
+    else session.cleaningResults.push(result);
+    layerCleaningState.dragging = false;
+    const panel = $(".layer-cleaning-panel", el.artStage);
+    panel?.classList.add(`is-${outcome}`);
+    $("[data-layer-cleaning-stop]", el.artStage)?.setAttribute("disabled", "");
+    if (outcome === "over") addMechanicMistake(10, presentation.over);
+    finishMechanicSoon(outcome === "under" ? presentation.under : outcome === "optimal" ? presentation.optimal : presentation.over, 700);
+  }
+
+  function startBudgetMechanic() {
+    const areas = Array.isArray(session.budgetAreas) ? session.budgetAreas : [];
+    budgetState = {
+      kind: "budget",
+      allocations: areas.map(() => 0),
+      locked: false,
+      paused: false
+    };
+    updateBudgetSummary();
+  }
+
+  function updateBudgetAllocation(input) {
+    if (!selectedTool || budgetState?.kind !== "budget" || budgetState.locked || budgetState.paused || session.mechanicComplete) return;
+    const index = Number(input.dataset.budgetSlider);
+    if (!Number.isInteger(index) || index < 0 || index >= budgetState.allocations.length) return;
+    const otherTotal = budgetState.allocations.reduce((sum, value, areaIndex) => areaIndex === index ? sum : sum + value, 0);
+    const requested = Math.max(0, Math.min(100, Math.round(Number(input.value) || 0)));
+    const allocation = Math.min(requested, Math.max(0, 100 - otherTotal));
+    budgetState.allocations[index] = allocation;
+    input.value = String(allocation);
+    input.setAttribute("aria-valuetext", `작업량 ${allocation}`);
+    updateBudgetSummary();
+  }
+
+  function updateBudgetSummary() {
+    if (budgetState?.kind !== "budget") return;
+    const used = budgetState.allocations.reduce((sum, value) => sum + value, 0);
+    const remaining = Math.max(0, 100 - used);
+    const remainingLabel = $("#budgetRemaining", el.artStage);
+    const usedBar = $("#budgetUsedBar", el.artStage);
+    if (remainingLabel) remainingLabel.textContent = String(remaining);
+    if (usedBar) usedBar.style.width = `${used}%`;
+    budgetState.allocations.forEach((allocation, index) => {
+      const output = $(`[data-budget-value="${index}"]`, el.artStage);
+      const area = $(`[data-budget-area="${index}"]`, el.artStage);
+      if (output) output.textContent = String(allocation);
+      area?.classList.toggle("has-allocation", allocation > 0);
+    });
+    session.hitTargets = used;
+  }
+
+  function budgetAreaResult(area, allocation) {
+    const coverage = area.need > 0 ? Math.min(1, allocation / area.need) : 1;
+    const shortage = 1 - coverage;
+    let result = "충분히 돌봄";
+    let message = "이번 작업으로 필요한 부분을 충분히 돌봤어요.";
+    let stateName = "safe";
+    if (coverage < 1) {
+      stateName = coverage >= .55 ? "partial" : "deferred";
+      result = coverage >= .55 ? "일부만 돌봄" : "이번에는 미룸";
+      if (area.risk >= 4 && coverage < .75) {
+        message = "작품 안전에 급한 일을 미뤄 손상이 더 이어질 수 있어요.";
+      } else if (area.risk >= 4) {
+        message = "안전에 급한 작업을 대부분 마쳤지만 작은 부분은 다음 작업으로 남겼어요.";
+      } else if (area.visible >= 4) {
+        message = "작품은 더 위험해지지 않지만 눈에 띄는 자국이 전시에 남아요.";
+      } else {
+        message = "덜 급한 부분을 다음 작업으로 미루고 선택 내용을 기록했어요.";
+      }
+    }
+    const structuralShortage = area.risk >= 4 && coverage < .75
+      ? (.75 - coverage) / .75 * area.risk
+      : 0;
+    const appearanceShortage = area.visible >= 4 && shortage > 0
+      ? shortage * area.visible
+      : 0;
+    return { coverage, shortage, result, message, stateName, structuralShortage, appearanceShortage };
+  }
+
+  function confirmBudgetAllocation() {
+    if (!selectedTool || budgetState?.kind !== "budget" || budgetState.locked || budgetState.paused || session.mechanicComplete) return;
+    const areas = Array.isArray(session.budgetAreas) ? session.budgetAreas : [];
+    const outcomes = areas.map((area, index) => ({
+      ...area,
+      allocation: budgetState.allocations[index] || 0,
+      ...budgetAreaResult(area, budgetState.allocations[index] || 0)
+    }));
+    const riskAdded = Math.min(16, Math.round(outcomes.reduce((sum, outcome) => sum + outcome.structuralShortage * 3, 0)));
+    const appealPenalty = Math.min(8, Math.round(outcomes.reduce((sum, outcome) => sum + outcome.appearanceShortage, 0)));
+    const result = {
+      stepIndex: session.stepIndex,
+      difficulty: mechanicDifficulty(getArtwork(session.artId)),
+      allocations: [...budgetState.allocations],
+      riskAdded,
+      appealPenalty
+    };
+    const previousIndex = (session.budgetResults || []).findIndex(item => item.stepIndex === session.stepIndex);
+    if (previousIndex >= 0) session.budgetResults[previousIndex] = result;
+    else session.budgetResults.push(result);
+
+    budgetState.locked = true;
+    $(".budget-panel", el.artStage)?.classList.add("is-complete");
+    $$('[data-budget-slider], [data-budget-confirm]', el.artStage).forEach(control => { control.disabled = true; });
+    $$(".budget-area", el.artStage).forEach((areaElement, index) => areaElement.classList.add(`is-${outcomes[index].stateName}`));
+    const results = $("#budgetResults", el.artStage);
+    if (results) {
+      results.classList.remove("is-hidden");
+      results.innerHTML = `<h3>무엇을 돌보고 무엇을 미뤘는지</h3>
+        <div>${outcomes.map(outcome => `<article class="is-${outcome.stateName}">
+          <strong>${outcome.name} · ${outcome.allocation}/${outcome.need}</strong>
+          <span>${outcome.result}</span>
+          <small>${outcome.message}</small>
+        </article>`).join("")}</div>
+        <p>${riskAdded ? `작품 안전 위험 +${riskAdded}` : "작품 안전 위험 없음"} · ${appealPenalty ? `전시 매력 -${appealPenalty}` : "전시 매력 유지"}</p>`;
+    }
+    if (riskAdded > 0) addMechanicMistake(riskAdded, "작품 안전에 급한 부위의 작업량이 부족했습니다. 미룬 안전 작업을 기록에 남깁니다.");
+    const finishMessage = riskAdded && appealPenalty
+      ? "작품 안전을 미룬 곳과 전시에 남은 자국을 함께 기록했습니다."
+      : riskAdded
+        ? "작품 안전을 미룬 곳을 기록하고 다음 작업으로 넘겼습니다."
+        : appealPenalty
+          ? "작품 안전은 지켰지만 전시에 남은 자국을 기록했습니다."
+          : "작품 안전과 전시 모습을 모두 충분히 돌봤습니다.";
+    finishMechanicSoon(finishMessage, 2300);
+  }
+
+  function startBalanceMechanic() {
+    const parameters = session.balanceParameters;
+    const positions = Array.isArray(session.balanceSupportPositions)
+      ? [...session.balanceSupportPositions]
+      : [...(parameters?.initialPositions || [])];
+    if (!parameters || !positions.length) return;
+    const physics = balancePhysicsForPositions(positions, parameters);
+    balanceState = {
+      kind: "balance",
+      positions,
+      physics,
+      targetAngle: physics.targetAngle,
+      angle: physics.targetAngle,
+      velocity: 0,
+      lastTime: performance.now(),
+      drag: null,
+      paused: false,
+      locked: false
+    };
+    updateBalancePhysicsTarget();
+    renderBalancePhysics();
+  }
+
+  function updateBalancePhysicsTarget() {
+    if (balanceState?.kind !== "balance") return;
+    balanceState.physics = balancePhysicsForPositions(balanceState.positions, session.balanceParameters);
+    balanceState.targetAngle = balanceState.physics.targetAngle;
+    renderBalancePhysics();
+    requestBalancePhysicsFrame();
+  }
+
+  function requestBalancePhysicsFrame() {
+    if (balanceState?.kind !== "balance" || balanceState.paused || balanceState.locked) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      balanceState.angle = balanceState.targetAngle;
+      balanceState.velocity = 0;
+      renderBalancePhysics();
+      return;
+    }
+    if (mechanicAnimationFrame) return;
+    balanceState.lastTime = performance.now();
+    mechanicAnimationFrame = requestAnimationFrame(updateBalancePhysicsFrame);
+  }
+
+  function updateBalancePhysicsFrame(now) {
+    mechanicAnimationFrame = null;
+    if (balanceState?.kind !== "balance" || balanceState.paused || balanceState.locked || session.mechanicComplete) return;
+    const elapsed = Math.min(.04, Math.max(.001, (now - balanceState.lastTime) / 1000));
+    balanceState.lastTime = now;
+    const acceleration = (balanceState.targetAngle - balanceState.angle) * 28 - balanceState.velocity * 12;
+    balanceState.velocity += acceleration * elapsed;
+    balanceState.angle += balanceState.velocity * elapsed;
+    const settled = Math.abs(balanceState.targetAngle - balanceState.angle) < .015 && Math.abs(balanceState.velocity) < .025;
+    if (settled) {
+      balanceState.angle = balanceState.targetAngle;
+      balanceState.velocity = 0;
+    }
+    renderBalancePhysics();
+    if (!settled || balanceState.drag) mechanicAnimationFrame = requestAnimationFrame(updateBalancePhysicsFrame);
+  }
+
+  function renderBalancePhysics() {
+    if (balanceState?.kind !== "balance") return;
+    const physics = balanceState.physics;
+    const artwork = $("#balanceArtwork", el.artStage);
+    if (artwork) {
+      artwork.style.setProperty("--balance-angle", `${balanceState.angle.toFixed(2)}deg`);
+      artwork.style.setProperty("--balance-sag", `${physics.sagPixels.toFixed(1)}px`);
+    }
+    balanceState.positions.forEach((position, index) => {
+      const support = $(`[data-balance-support="${index}"]`, el.artStage);
+      const load = physics.loads[index] || 0;
+      if (support) {
+        support.style.setProperty("--support-x", `${(position * 100).toFixed(1)}%`);
+        support.classList.toggle("is-dragging", balanceState.drag?.index === index);
+        support.classList.toggle("is-danger", physics.weakSupportIndexes.includes(index));
+        support.setAttribute("aria-valuenow", String(Math.round(position * 100)));
+        support.setAttribute("aria-valuetext", `가로 위치 ${Math.round(position * 100)}%, 받는 무게 ${Math.round(load * 100)}%`);
+      }
+      const loadLabel = $(`[data-balance-load="${index}"]`, el.artStage);
+      if (loadLabel) loadLabel.textContent = `하중 ${Math.round(load * 100)}%`;
+    });
+    $$("[data-balance-weak]", el.artStage).forEach((mark, index) => {
+      const weakPoint = session.balanceParameters.weakPoints[index];
+      const loaded = balanceState.positions.some((position, supportIndex) => Math.abs(position - weakPoint) <= session.balanceParameters.weakRadius && (physics.loads[supportIndex] || 0) >= .12);
+      mark.classList.toggle("is-loaded", loaded);
+    });
+    const tilt = $("#balanceTilt", el.artStage);
+    const sag = $("#balanceSag", el.artStage);
+    const status = $("#balanceStatus", el.artStage);
+    const confirm = $("[data-balance-confirm]", el.artStage);
+    if (tilt) tilt.textContent = physics.stableTilt
+      ? "↔ 기울기 안정"
+      : physics.targetAngle > 0 ? "↘ 오른쪽이 무거움" : "↙ 왼쪽이 무거움";
+    if (sag) sag.textContent = physics.stableSpan ? "━ 받침 간격 안정" : "⌄ 받침 사이가 넓어 가운데가 처짐";
+    if (status) status.textContent = !physics.stableSpan
+      ? "받침 사이가 너무 넓어요. 간격을 조금씩 줄여 보세요."
+      : !physics.stableTilt
+        ? "작품이 기울어져 있어요. 무거운 쪽으로 받침을 옮겨 보세요."
+        : physics.weakSupportIndexes.length
+          ? "수평은 맞지만 약한 곳을 누르고 있어요. 다른 자리도 찾아볼 수 있어요."
+          : "무게가 고르게 나뉘고 약한 곳도 피했습니다. 이제 고정할 수 있어요.";
+    const ready = physics.stable && !balanceState.locked && !balanceState.paused;
+    if (confirm) confirm.disabled = !ready;
+    $(".balance-panel", el.artStage)?.classList.toggle("is-ready", ready);
+  }
+
+  function beginBalanceSupportDrag(support, event) {
+    if (!selectedTool || balanceState?.kind !== "balance" || balanceState.locked || balanceState.paused || session.mechanicComplete) return;
+    event.preventDefault();
+    const index = Number(support.dataset.balanceSupport);
+    if (!Number.isInteger(index)) return;
+    balanceState.drag = { index, pointerId: event.pointerId };
+    el.artStage.setPointerCapture?.(event.pointerId);
+    moveBalanceSupport(event);
+  }
+
+  function moveBalanceSupport(event) {
+    if (balanceState?.kind !== "balance" || !balanceState.drag || balanceState.drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const board = $("[data-balance-board]", el.artStage);
+    if (!board) return;
+    const rect = board.getBoundingClientRect();
+    const position = Math.max(.06, Math.min(.94, (event.clientX - rect.left) / Math.max(1, rect.width)));
+    balanceState.positions[balanceState.drag.index] = position;
+    session.balanceSupportPositions = [...balanceState.positions];
+    updateBalancePhysicsTarget();
+  }
+
+  function endBalanceSupportDrag(event) {
+    if (balanceState?.kind !== "balance" || !balanceState.drag || balanceState.drag.pointerId !== event.pointerId) return;
+    const support = $(`[data-balance-support="${balanceState.drag.index}"]`, el.artStage);
+    support?.classList.remove("is-dragging");
+    balanceState.drag = null;
+    try { el.artStage.releasePointerCapture?.(event.pointerId); } catch (_) { /* no-op */ }
+    updateBalancePhysicsTarget();
+  }
+
+  function adjustBalanceSupportFromKeyboard(support, event) {
+    if (!selectedTool || balanceState?.kind !== "balance" || balanceState.locked || balanceState.paused) return;
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const index = Number(support.dataset.balanceSupport);
+    const stepSize = session.balanceParameters.level === 5 ? .0125 : .025;
+    const next = event.key === "Home" ? .06
+      : event.key === "End" ? .94
+        : balanceState.positions[index] + (event.key === "ArrowLeft" ? -stepSize : stepSize);
+    balanceState.positions[index] = Math.max(.06, Math.min(.94, next));
+    session.balanceSupportPositions = [...balanceState.positions];
+    updateBalancePhysicsTarget();
+  }
+
+  function confirmBalancePlacement() {
+    if (!selectedTool || balanceState?.kind !== "balance" || balanceState.locked || balanceState.paused || session.mechanicComplete) return;
+    const physics = balanceState.physics;
+    if (!physics.stable) return;
+    balanceState.locked = true;
+    cancelMechanicSchedules();
+    $$("[data-balance-support], [data-balance-confirm]", el.artStage).forEach(control => { control.disabled = true; });
+    $(".balance-panel", el.artStage)?.classList.add("is-complete");
+    const status = $("#balanceStatus", el.artStage);
+    if (physics.weakSupportIndexes.length) {
+      const riskyLoad = physics.weakSupportIndexes.reduce((sum, index) => sum + (physics.loads[index] || 0), 0);
+      const riskAdded = Math.max(6, Math.min(16, Math.round(riskyLoad * (13 + session.balanceParameters.level * 2))));
+      if (status) status.textContent = "수평은 맞췄지만 약한 곳에 힘이 걸렸어요. 이 위험을 기록합니다.";
+      addMechanicMistake(riskAdded, "받침이 약한 곳 바로 아래를 눌러 금이나 갈라진 이음에 힘이 걸렸습니다.");
+      finishMechanicSoon("기울기는 바로잡았지만 약한 곳에 걸린 힘을 복원 기록에 남겼습니다.", 1350);
+      return;
+    }
+    if (status) status.textContent = "작품의 무게를 고르게 나누고 약한 곳을 피해 안전하게 고정했습니다.";
+    finishMechanicSoon("작품의 무게를 고르게 나누고 약한 곳을 피해 받침을 고정했습니다.", 1050);
+  }
+
+  function startStabilityChallenge() {
+    const difficulty = mechanicDifficulty(getArtwork(session.artId));
+    const safeWidth = Math.max(18, 28 - difficulty * 2);
+    timingState = {
+      kind: "stability",
+      position: 30,
+      active: false,
+      safeStart: 48,
+      safeEnd: 48 + safeWidth,
+      safeHeld: 0,
+      goal: 1700 + difficulty * 170,
+      lastTime: performance.now(),
+      running: true,
+      overMoistureReady: true
+    };
+    const zone = $(".stability-safe-zone", el.artStage);
+    if (zone) {
+      zone.style.left = `${timingState.safeStart}%`;
+      zone.style.width = `${safeWidth}%`;
+    }
+    mechanicAnimationFrame = requestAnimationFrame(updateStabilityChallenge);
+  }
+
+  function toggleStabilityControl() {
+    if (!selectedTool || timingState?.kind !== "stability" || session.mechanicComplete) return;
+    timingState.active = !timingState.active;
+    const button = $("[data-stability-toggle]", el.artStage);
+    const presentation = session.stabilityPresentation || stabilityPresentationForTool("humidityPack");
+    if (button) {
+      button.classList.toggle("is-active", timingState.active);
+      button.textContent = easyCopy(timingState.active ? presentation.active : presentation.idle);
+    }
+    playTone("click");
+  }
+
+  function updateStabilityChallenge(now) {
+    if (timingState?.kind !== "stability" || !timingState.running || session.mechanicComplete) return;
+    const elapsedMs = Math.min(50, now - timingState.lastTime);
+    timingState.lastTime = now;
+    timingState.position += (timingState.active ? 18 : -8) * (elapsedMs / 1000);
+    timingState.position = Math.max(4, Math.min(98, timingState.position));
+    const inSafeZone = timingState.position >= timingState.safeStart && timingState.position <= timingState.safeEnd;
+    if (inSafeZone) timingState.safeHeld += elapsedMs;
+    if (timingState.position >= 94 && timingState.overMoistureReady) {
+      const failedPosition = timingState.position;
+      timingState.overMoistureReady = false;
+      timingState.position = 76;
+      timingState.active = false;
+      const button = $("[data-stability-toggle]", el.artStage);
+      const presentation = session.stabilityPresentation || stabilityPresentationForTool("humidityPack");
+      if (button) {
+        button.classList.remove("is-active");
+        button.textContent = easyCopy(presentation.idle);
+      }
+      addMechanicMistake(10, presentation.overflow, {
+        label: "환경 안정화 수치",
+        actual: failedPosition,
+        targetStart: timingState.safeStart,
+        targetEnd: timingState.safeEnd,
+        unit: "%"
+      });
+      scheduleMechanicTimeout(() => {
+        if (timingState?.kind === "stability") timingState.overMoistureReady = true;
+      }, 900);
+    }
+    const needle = $("#stabilityNeedle", el.artStage);
+    const value = $("#stabilityValue", el.artStage);
+    const progress = $("#stabilityProgress", el.artStage);
+    const status = $("#stabilityStatus", el.artStage);
+    const presentation = session.stabilityPresentation || stabilityPresentationForTool("humidityPack");
+    const materialState = timingState.position < timingState.safeStart ? "low" : timingState.position <= timingState.safeEnd ? "safe" : "high";
+    updateExpertMaterialState(materialState, presentation);
+    if (needle) needle.style.left = `${timingState.position}%`;
+    if (value) value.textContent = String(Math.round(timingState.position));
+    const progressValue = Math.min(100, timingState.safeHeld / timingState.goal * 100);
+    if (progress) progress.style.width = `${progressValue}%`;
+    if (status) status.textContent = session.expertCueMode
+      ? `${materialState === "low" ? presentation.cueLow : materialState === "safe" ? presentation.cueSafe : presentation.cueHigh} · 안정화 ${Math.round(progressValue)}%`
+      : inSafeZone ? `안전 범위 유지 ${Math.round(progressValue)}%` : timingState.position < timingState.safeStart ? presentation.low : presentation.high;
+    if (timingState.safeHeld >= timingState.goal) {
+      timingState.running = false;
+      finishMechanicSoon(presentation.complete, 500);
+      return;
+    }
+    mechanicAnimationFrame = requestAnimationFrame(updateStabilityChallenge);
+  }
+
+  function startPrecisionChallenge() {
+    timingState = { kind: "precision", hits: 0, position: 0, holding: false, running: true, lastTime: 0 };
+    configurePrecisionRound();
+  }
+
+  function configurePrecisionRound() {
+    if (timingState?.kind !== "precision" || session.mechanicComplete) return;
+    const difficulty = mechanicDifficulty(getArtwork(session.artId));
+    const width = Math.max(12, 21 - difficulty * 2);
+    const seed = hashText(`${session.artId}-${session.stepIndex}-${timingState.hits}-${session.mistakes}`);
+    timingState.safeStart = 48 + (seed % 22);
+    timingState.safeEnd = timingState.safeStart + width;
+    timingState.position = 0;
+    timingState.holding = false;
+    timingState.speed = 38 + difficulty * 6 + timingState.hits * 4;
+    const zone = $("#precisionSafeZone", el.artStage);
+    const fill = $("#precisionFill", el.artStage);
+    const needle = $("#precisionNeedle", el.artStage);
+    const button = $("[data-precision-hold]", el.artStage);
+    const status = $("#precisionStatus", el.artStage);
+    const presentation = session.precisionPresentation || precisionPresentationForTool("microPick");
+    if (zone) {
+      zone.style.left = `${timingState.safeStart}%`;
+      zone.style.width = `${width}%`;
+    }
+    if (fill) fill.style.width = "0%";
+    if (needle) needle.style.left = "0%";
+    if (button) {
+      button.disabled = false;
+      button.classList.remove("is-holding");
+      button.textContent = easyCopy(presentation.idle);
+    }
+    if (status) status.textContent = `${timingState.hits + 1}번째 ${presentation.title} · 초록 범위에서 손을 떼세요`;
+    if (session.expertCueMode) {
+      if (status) status.textContent = `${timingState.hits + 1}번째 ${presentation.title} · ${presentation.cueLow}`;
+      updateExpertMaterialState("low", presentation);
+    }
+  }
+
+  function beginPrecisionHold(event) {
+    if (!selectedTool || timingState?.kind !== "precision" || timingState.holding || session.mechanicComplete) return;
+    event.preventDefault();
+    timingState.holding = true;
+    timingState.lastTime = performance.now();
+    event.currentTarget?.classList.add("is-holding");
+    if (event.pointerId !== undefined) event.currentTarget?.setPointerCapture?.(event.pointerId);
+    const button = $("[data-precision-hold]", el.artStage);
+    if (button) button.textContent = easyCopy((session.precisionPresentation || precisionPresentationForTool("microPick")).holding);
+    mechanicAnimationFrame = requestAnimationFrame(updatePrecisionDose);
+  }
+
+  function updatePrecisionDose(now) {
+    if (timingState?.kind !== "precision" || !timingState.holding || session.mechanicComplete) return;
+    const elapsed = Math.min(.05, (now - timingState.lastTime) / 1000);
+    timingState.lastTime = now;
+    timingState.position += timingState.speed * elapsed;
+    const fill = $("#precisionFill", el.artStage);
+    const needle = $("#precisionNeedle", el.artStage);
+    if (fill) fill.style.width = `${Math.min(100, timingState.position)}%`;
+    if (needle) needle.style.left = `${Math.min(100, timingState.position)}%`;
+    const presentation = session.precisionPresentation || precisionPresentationForTool("microPick");
+    const materialState = timingState.position < timingState.safeStart ? "low" : timingState.position <= timingState.safeEnd ? "safe" : "high";
+    updateExpertMaterialState(materialState, presentation);
+    const status = $("#precisionStatus", el.artStage);
+    if (session.expertCueMode && status) status.textContent = `${timingState.hits + 1}번째 ${presentation.title} · ${materialState === "low" ? presentation.cueLow : materialState === "safe" ? presentation.cueSafe : presentation.cueHigh}`;
+    if (timingState.position >= 100) {
+      judgePrecisionDose(true);
+      return;
+    }
+    mechanicAnimationFrame = requestAnimationFrame(updatePrecisionDose);
+  }
+
+  function endPrecisionHold(event) {
+    if (timingState?.kind !== "precision" || !timingState.holding || session.mechanicComplete) return;
+    event.preventDefault();
+    judgePrecisionDose(false);
+  }
+
+  function judgePrecisionDose(overflow) {
+    if (timingState?.kind !== "precision" || !timingState.holding) return;
+    timingState.holding = false;
+    if (mechanicAnimationFrame) cancelAnimationFrame(mechanicAnimationFrame);
+    mechanicAnimationFrame = null;
+    const button = $("[data-precision-hold]", el.artStage);
+    if (button) {
+      button.disabled = true;
+      button.classList.remove("is-holding");
+      button.textContent = "판정 중…";
+    }
+    const success = !overflow && timingState.position >= timingState.safeStart && timingState.position <= timingState.safeEnd;
+    const presentation = session.precisionPresentation || precisionPresentationForTool("microPick");
+    if (success) {
+      timingState.hits += 1;
+      playTone("hit");
+      const rounds = $("#precisionRounds", el.artStage);
+      if (rounds) rounds.textContent = [0, 1, 2].map(index => index < timingState.hits ? "●" : "○").join(" ");
+      if (timingState.hits >= 3) {
+        finishMechanicSoon(presentation.complete, 500);
+        return;
+      }
+    } else {
+      const message = overflow ? presentation.overflow : timingState.position < timingState.safeStart ? presentation.low : presentation.high;
+      addMechanicMistake(overflow ? 11 : 8, message, {
+        label: presentation.title,
+        actual: timingState.position,
+        targetStart: timingState.safeStart,
+        targetEnd: timingState.safeEnd,
+        unit: "%"
+      });
+    }
+    scheduleMechanicTimeout(configurePrecisionRound, 520);
+  }
+
+  function startProcedureChallenge() {
+    const art = getArtwork(session.artId);
+    const difficulty = mechanicDifficulty(art);
+    const toolId = practiceMode ? getPracticeChallenge(practiceMechanicId)?.step.tool : art?.steps[session.stepIndex]?.tool;
+    memoryState = {
+      kind: "procedure",
+      scenarioIndex: 0,
+      scenarios: procedureScenariosForTool(toolId, difficulty)
+    };
+    renderProcedureScenario();
+  }
+
+  function renderProcedureScenario() {
+    if (memoryState?.kind !== "procedure" || session.mechanicComplete) return;
+    const scenario = memoryState.scenarios[memoryState.scenarioIndex];
+    const host = $("#procedureScenario", el.artStage);
+    const progress = $("#procedureProgress", el.artStage);
+    const status = $("#procedureStatus", el.artStage);
+    if (!scenario || !host) return;
+    const order = [0, 1, 2].sort((a, b) => {
+      const seedA = hashText(`${session.artId}-${session.stepIndex}-${memoryState.scenarioIndex}-${a}`) % 19;
+      const seedB = hashText(`${session.artId}-${session.stepIndex}-${memoryState.scenarioIndex}-${b}`) % 19;
+      return seedA - seedB;
+    });
+    if (progress) progress.textContent = `상황 ${memoryState.scenarioIndex + 1} / ${memoryState.scenarios.length}`;
+    if (status) status.textContent = "선택 결과에 따라 작품의 위험도가 달라집니다.";
+    host.innerHTML = `<div class="procedure-prompt"><span>갑자기 생긴 상황</span><strong>${easyCopy(scenario.prompt)}</strong></div><div class="procedure-cards">${order.map(optionIndex => {
+      const option = scenario.options[optionIndex];
+      return `<button type="button" data-procedure-option="${optionIndex}"><span>${option.icon}</span><strong>${easyCopy(option.text)}</strong></button>`;
+    }).join("")}</div>`;
+    $$('[data-procedure-option]', host).forEach(button => {
+      button.addEventListener("click", () => handleProcedureChoice(Number(button.dataset.procedureOption), button));
+    });
+  }
+
+  function handleProcedureChoice(optionIndex, button) {
+    if (!selectedTool || memoryState?.kind !== "procedure" || session.mechanicComplete) return;
+    const scenario = memoryState.scenarios[memoryState.scenarioIndex];
+    const option = scenario?.options[optionIndex];
+    if (!option) return;
+    const status = $("#procedureStatus", el.artStage);
+    if (option.correct) {
+      button.classList.add("is-complete");
+      $$('[data-procedure-option]', el.artStage).forEach(item => { item.disabled = true; });
+      if (status) status.textContent = `✓ ${easyCopy(option.feedback)}`;
+      playTone("hit");
+      memoryState.scenarioIndex += 1;
+      if (memoryState.scenarioIndex >= memoryState.scenarios.length) {
+        finishMechanicSoon(session.sequencePresentation?.complete || "세 상황에서 안전한 판단을 내렸습니다.", 650);
+      } else {
+        scheduleMechanicTimeout(renderProcedureScenario, 720);
+      }
+    } else {
+      button.classList.add("is-wrong");
+      button.disabled = true;
+      if (status) status.textContent = easyCopy(option.feedback);
+      addMechanicMistake(7, option.feedback);
+      scheduleMechanicTimeout(() => {
+        if (!session.mechanicComplete) {
+          button.classList.remove("is-wrong");
+          button.disabled = false;
+        }
+      }, 620);
+    }
+  }
+
+  function startAdhesiveChallenge() {
+    const difficulty = mechanicDifficulty(getArtwork(session.artId));
+    rhythmState = {
+      kind: "adhesive",
+      index: 0,
+      radius: 92,
+      targetRadii: [34, 29, 32],
+      speed: 38 + difficulty * 4,
+      tolerance: Math.max(5, 8 - difficulty * .55),
+      cueStage: 0,
+      running: true,
+      roundActive: false,
+      deadlineEnabled: difficulty === 5,
+      deadlineLimitMs: 4200,
+      deadlineRemainingMs: 4200,
+      deadlineActive: false,
+      roundResults: ["pending", "pending", "pending"]
+    };
+    configureAdhesiveRound();
+  }
+
+  function configureAdhesiveRound() {
+    if (rhythmState?.kind !== "adhesive" || session.mechanicComplete) return;
+    rhythmState.radius = 92;
+    rhythmState.targetRadius = rhythmState.targetRadii[rhythmState.index];
+    rhythmState.cueStage = 0;
+    rhythmState.running = true;
+    rhythmState.roundActive = true;
+    rhythmState.lastTime = performance.now();
+    const ring = $("#adhesiveShrinkingRing", el.artStage);
+    const target = $("#adhesiveTargetCircle", el.artStage);
+    const button = $("[data-adhesive-drop]", el.artStage);
+    const judge = $("#adhesiveJudge", el.artStage);
+    const status = $("#adhesiveStatus", el.artStage);
+    const presentation = session.rhythmPresentation || rhythmPresentationForTool("reversibleAdhesive");
+    if (ring) {
+      ring.style.width = `${rhythmState.radius}%`;
+      ring.style.height = `${rhythmState.radius}%`;
+      ring.classList.remove("is-perfect", "is-good", "is-wrong");
+    }
+    if (target) {
+      target.style.width = `${rhythmState.targetRadius}%`;
+      target.style.height = `${rhythmState.targetRadius}%`;
+    }
+    if (button) {
+      button.disabled = false;
+      button.classList.remove("is-success", "is-wrong");
+    }
+    if (judge) judge.textContent = easyCopy(presentation.target);
+    if (status) status.textContent = `${rhythmState.index + 1} / 3 ${presentation.unit} · ${presentation.status}`;
+    if (session.expertCueMode) {
+      if (status) status.textContent = `${rhythmState.index + 1} / 3 ${presentation.unit} · ${presentation.cueLow}`;
+      updateExpertMaterialState("low", presentation);
+    }
+    updateAdhesiveDeadlineDisplay();
+    $$("#adhesiveCues span", el.artStage).forEach(cue => cue.classList.remove("is-active", "is-complete"));
+    playTone("open");
+    if (mechanicAnimationFrame) cancelAnimationFrame(mechanicAnimationFrame);
+    mechanicAnimationFrame = requestAnimationFrame(updateAdhesiveChallenge);
+  }
+
+  function updateAdhesiveChallenge(now) {
+    if (rhythmState?.kind !== "adhesive" || !rhythmState.running || !rhythmState.roundActive || session.mechanicComplete) return;
+    const elapsed = Math.min(.05, (now - rhythmState.lastTime) / 1000);
+    rhythmState.lastTime = now;
+    if (rhythmState.deadlineEnabled && rhythmState.deadlineActive) {
+      rhythmState.deadlineRemainingMs = Math.max(0, rhythmState.deadlineRemainingMs - elapsed * 1000);
+      updateAdhesiveDeadlineDisplay();
+      if (rhythmState.deadlineRemainingMs <= 0) {
+        handleAdhesiveDeadlineExpired();
+        return;
+      }
+    }
+    rhythmState.radius -= rhythmState.speed * elapsed;
+    const cueThresholds = [74, 54, rhythmState.targetRadius + 13];
+    if (rhythmState.cueStage < cueThresholds.length && rhythmState.radius <= cueThresholds[rhythmState.cueStage]) {
+      const cues = $$("#adhesiveCues span", el.artStage);
+      cues[rhythmState.cueStage - 1]?.classList.replace("is-active", "is-complete");
+      cues[rhythmState.cueStage]?.classList.add("is-active");
+      playTone(rhythmState.cueStage === 2 ? "hit" : "click");
+      rhythmState.cueStage += 1;
+    }
+    const ring = $("#adhesiveShrinkingRing", el.artStage);
+    if (ring) {
+      ring.style.width = `${Math.max(8, rhythmState.radius)}%`;
+      ring.style.height = `${Math.max(8, rhythmState.radius)}%`;
+    }
+    const presentation = session.rhythmPresentation || rhythmPresentationForTool("reversibleAdhesive");
+    const targetStart = rhythmState.targetRadius - rhythmState.tolerance;
+    const targetEnd = rhythmState.targetRadius + rhythmState.tolerance;
+    const materialState = rhythmState.radius > targetEnd ? "low" : rhythmState.radius >= targetStart ? "safe" : "high";
+    updateExpertMaterialState(materialState, presentation);
+    const status = $("#adhesiveStatus", el.artStage);
+    if (session.expertCueMode && status) status.textContent = `${rhythmState.index + 1} / 3 ${presentation.unit} · ${materialState === "low" ? presentation.cueLow : materialState === "safe" ? presentation.cueSafe : presentation.cueHigh}`;
+    if (rhythmState.radius < rhythmState.targetRadius - rhythmState.tolerance - 7) {
+      judgeAdhesiveTiming(false, true);
+      return;
+    }
+    mechanicAnimationFrame = requestAnimationFrame(updateAdhesiveChallenge);
+  }
+
+  function handleAdhesiveDrop() {
+    if (!selectedTool || rhythmState?.kind !== "adhesive" || !rhythmState.running || !rhythmState.roundActive || session.mechanicComplete) return;
+    judgeAdhesiveTiming(Math.abs(rhythmState.radius - rhythmState.targetRadius) <= rhythmState.tolerance, false);
+  }
+
+  function judgeAdhesiveTiming(success, autoMiss) {
+    if (rhythmState?.kind !== "adhesive" || !rhythmState.roundActive) return;
+    rhythmState.roundActive = false;
+    if (mechanicAnimationFrame) cancelAnimationFrame(mechanicAnimationFrame);
+    mechanicAnimationFrame = null;
+    const ring = $("#adhesiveShrinkingRing", el.artStage);
+    const button = $("[data-adhesive-drop]", el.artStage);
+    const judge = $("#adhesiveJudge", el.artStage);
+    const status = $("#adhesiveStatus", el.artStage);
+    const presentation = session.rhythmPresentation || rhythmPresentationForTool("reversibleAdhesive");
+    if (button) button.disabled = true;
+    if (success) {
+      const perfect = Math.abs(rhythmState.radius - rhythmState.targetRadius) <= 2.2;
+      ring?.classList.add(perfect ? "is-perfect" : "is-good");
+      button?.classList.add("is-success");
+      if (judge) judge.textContent = perfect ? "PERFECT!" : "GOOD!";
+      rhythmState.roundResults[rhythmState.index] = "success";
+      rhythmState.index += 1;
+      playTone(perfect ? "success" : "hit");
+      renderAdhesiveRounds();
+      if (rhythmState.index >= rhythmState.targetRadii.length) {
+        rhythmState.running = false;
+        rhythmState.deadlineActive = false;
+        updateAdhesiveDeadlineDisplay();
+        finishMechanicSoon(presentation.complete, 620);
+        return;
+      }
+      if (status) status.textContent = perfect ? presentation.nextPerfect : presentation.nextGood;
+      rhythmState.speed += 3;
+      if (rhythmState.deadlineEnabled) {
+        rhythmState.deadlineActive = true;
+        rhythmState.deadlineRemainingMs = rhythmState.deadlineLimitMs;
+        updateAdhesiveDeadlineDisplay();
+      }
+      scheduleMechanicTimeout(configureAdhesiveRound, 720);
+    } else {
+      ring?.classList.add("is-wrong");
+      button?.classList.add("is-wrong");
+      const early = !autoMiss && rhythmState.radius > rhythmState.targetRadius;
+      const message = autoMiss ? "원보다 너무 작아질 때까지 기다렸어요." : early ? "아직 원이 너무 커요. 조금 더 좁아질 때까지 기다리세요." : "목표 원을 지나쳤어요. 겹치는 순간에 눌러 주세요.";
+      if (judge) judge.textContent = early ? "EARLY" : "LATE";
+      if (status) status.textContent = message;
+      addMechanicMistake(6, message, {
+        label: presentation.target,
+        actual: rhythmState.radius,
+        targetStart: rhythmState.targetRadius - rhythmState.tolerance,
+        targetEnd: rhythmState.targetRadius + rhythmState.tolerance,
+        unit: "%"
+      });
+      scheduleMechanicTimeout(configureAdhesiveRound, 760);
+    }
+  }
+
+  function renderAdhesiveRounds() {
+    if (rhythmState?.kind !== "adhesive") return;
+    const rounds = $("#adhesiveRounds", el.artStage);
+    if (!rounds) return;
+    const symbols = { pending: "○", success: "●", timeout: "×" };
+    rounds.textContent = rhythmState.roundResults.map(result => symbols[result] || "○").join(" ");
+  }
+
+  function updateAdhesiveDeadlineDisplay() {
+    if (rhythmState?.kind !== "adhesive" || !rhythmState.deadlineEnabled) return;
+    const deadline = $("#adhesiveDeadline", el.artStage);
+    const label = $("#adhesiveDeadlineLabel", el.artStage);
+    const fill = $("#adhesiveDeadlineFill", el.artStage);
+    if (!deadline) return;
+    const ratio = rhythmState.deadlineLimitMs > 0
+      ? Math.max(0, Math.min(1, rhythmState.deadlineRemainingMs / rhythmState.deadlineLimitMs))
+      : 0;
+    deadline.classList.toggle("is-idle", !rhythmState.deadlineActive);
+    deadline.classList.toggle("is-active", rhythmState.deadlineActive);
+    deadline.classList.toggle("is-urgent", rhythmState.deadlineActive && ratio <= .32);
+    if (label) label.textContent = rhythmState.deadlineActive
+      ? `접착제가 굳기 전 다음 방울 · ${(rhythmState.deadlineRemainingMs / 1000).toFixed(1)}초 남음`
+      : rhythmState.index >= rhythmState.targetRadii.length
+        ? "세 방울을 모두 이어 놓았습니다."
+        : "첫 방울 뒤 연결 시간이 시작됩니다.";
+    if (fill) fill.style.width = `${ratio * 100}%`;
+  }
+
+  function handleAdhesiveDeadlineExpired() {
+    if (rhythmState?.kind !== "adhesive" || !rhythmState.deadlineEnabled || !rhythmState.deadlineActive
+      || session.mechanicComplete) return;
+    rhythmState.roundActive = false;
+    rhythmState.running = false;
+    if (mechanicAnimationFrame) cancelAnimationFrame(mechanicAnimationFrame);
+    mechanicAnimationFrame = null;
+    const timedOutIndex = rhythmState.index;
+    rhythmState.roundResults[timedOutIndex] = "timeout";
+    rhythmState.index += 1;
+    rhythmState.deadlineActive = false;
+    renderAdhesiveRounds();
+    updateAdhesiveDeadlineDisplay();
+    const button = $("[data-adhesive-drop]", el.artStage);
+    const ring = $("#adhesiveShrinkingRing", el.artStage);
+    const judge = $("#adhesiveJudge", el.artStage);
+    const status = $("#adhesiveStatus", el.artStage);
+    if (button) {
+      button.disabled = true;
+      button.classList.add("is-wrong");
+    }
+    ring?.classList.add("is-wrong");
+    if (judge) judge.textContent = "TIME OUT";
+    const message = "접착제가 굳기 전에 다음 방울을 이어 놓지 못했어요. 이 방울은 건너뛰고 다음 위치로 이동합니다.";
+    if (status) status.textContent = message;
+    addMechanicMistake(6, message);
+    if (rhythmState.index >= rhythmState.targetRadii.length) {
+      finishMechanicSoon("연결 시간이 지난 방울은 건너뛰고 접착 작업을 마쳤습니다.", 650);
+      return;
+    }
+    rhythmState.deadlineActive = true;
+    rhythmState.deadlineRemainingMs = rhythmState.deadlineLimitMs;
+    updateAdhesiveDeadlineDisplay();
+    scheduleMechanicTimeout(configureAdhesiveRound, 650);
+  }
+
+  function scheduleMechanicTimeout(callback, delay) {
+    const timer = window.setTimeout(() => {
+      mechanicTimers.delete(timer);
+      callback();
+    }, delay);
+    mechanicTimers.add(timer);
+    return timer;
+  }
+
+  function handleToneChoice(button) {
+    if (!selectedTool || session.mechanicComplete) return;
+    const choice = Number(button.dataset.toneChoice);
+    if (choice === session.correctTone) {
+      button.classList.add("is-correct");
+      $$("[data-tone-choice]", el.artStage).forEach(item => { item.disabled = true; });
+      finishMechanicSoon("결손의 모양을 잇고 가까이서 세필 무늬로 구별되는 보색 시편을 골랐습니다.", 520);
+    } else {
+      button.classList.add("is-wrong");
+      addMechanicMistake(8, "색만 비슷해서는 부족해요. 결손 실루엣과 가까이서 보이는 세필 무늬도 함께 비교하세요.");
+      scheduleMechanicTimeout(() => button.classList.remove("is-wrong"), 420);
+    }
+  }
+
+  function normalizeFineAngle(value) {
+    const normalized = ((Number(value) + 180) % 360 + 360) % 360 - 180;
+    return Math.abs(normalized) < .01 ? 0 : normalized;
+  }
+
+  function handleAlignPiece(index, delta) {
+    if (!selectedTool || session.mechanicComplete) return;
+    const seam = $(`[data-align-seam="${index}"]`, el.artStage);
+    if (!seam || seam.classList.contains("is-complete")) return;
+    session.alignAngles[index] = normalizeFineAngle(session.alignAngles[index] + delta);
+    seam.style.setProperty("--piece-angle", `${session.alignAngles[index]}deg`);
+    const parameters = session.alignParameters || alignDifficultyParameters(mechanicDifficulty(getArtwork(session.artId)));
+    const error = Math.abs(session.alignAngles[index]);
+    const feedback = $(`[data-align-feedback="${index}"]`, seam);
+    seam.classList.toggle("is-near", error <= parameters.nearThreshold);
+    playTone("click");
+    if (error <= parameters.tolerance) {
+      seam.classList.remove("is-near");
+      seam.classList.add("is-complete");
+      $$('button', seam).forEach(button => { button.disabled = true; });
+      if (feedback) feedback.textContent = session.alignTheme === "paper" ? "찢김과 섬유 결 연결 완료" : "균열과 무늬 연결 완료";
+      session.hitTargets += 1;
+      playTone("hit");
+      const status = $("#alignStatus", el.artStage);
+      if (status) status.textContent = `${session.hitTargets} / ${parameters.pieceCount} ${session.alignNoun || "파편"} 정렬 완료`;
+      if (session.hitTargets >= parameters.pieceCount) {
+        const countWord = parameters.pieceCount === 4 ? "네" : "세";
+        const message = session.alignTheme === "paper"
+          ? `${countWord} 찢김의 섬유 결이 보존용 종이 위에서 끊김 없이 이어졌습니다.`
+          : `${countWord} 파편의 금빛 무늬와 균열선이 끊김 없이 이어졌습니다.`;
+        finishMechanicSoon(message, 520);
+      }
+    } else if (feedback) {
+      feedback.textContent = error <= parameters.nearThreshold
+        ? "거의 이어졌어요"
+        : error <= Math.max(20, parameters.nearThreshold * 3)
+          ? (session.alignTheme === "paper" ? "찢김이 가까워지는 중" : "균열이 가까워지는 중")
+          : (session.alignTheme === "paper" ? "찢김과 섬유 결 비교" : "무늬와 균열 비교");
+    }
+  }
+
+  function dragPreviewDurationMs(difficulty) {
+    if (state.extendedPuzzlePreview) return 5000;
+    const level = Math.max(2, Math.min(5, Number(difficulty) || 2));
+    if (level === 2) return 3000;
+    if (level === 5) return 1500;
+    return 2500;
+  }
+
+  function startDragPreview() {
+    if (!session || session.mechanicComplete || currentMechanic !== "drag") return;
+    const durationMs = dragPreviewDurationMs(mechanicDifficulty(getArtwork(session.artId)));
+    dragPreviewState = {
+      kind: "drag-preview",
+      durationMs,
+      remainingMs: durationMs,
+      lastTime: performance.now(),
+      running: true,
+      complete: false
+    };
+    const workbench = $(".drag-workbench", el.artStage);
+    const preview = $("[data-drag-preview]", el.artStage);
+    const playArea = $("[data-drag-play]", el.artStage);
+    workbench?.classList.remove("is-awaiting-tool");
+    preview?.classList.remove("is-finished");
+    playArea?.classList.add("is-concealed");
+    playArea?.setAttribute("aria-hidden", "true");
+    $$("[data-drag-piece]", el.artStage).forEach(piece => {
+      piece.tabIndex = -1;
+      piece.setAttribute("aria-disabled", "true");
+    });
+    updateDragPreviewDisplay();
+    playTone("open");
+    if (mechanicAnimationFrame) cancelAnimationFrame(mechanicAnimationFrame);
+    mechanicAnimationFrame = requestAnimationFrame(updateDragPreview);
+  }
+
+  function updateDragPreviewDisplay() {
+    if (dragPreviewState?.kind !== "drag-preview") return;
+    const label = $("#dragPreviewLabel", el.artStage);
+    const progress = $("#dragPreviewProgress", el.artStage);
+    const seconds = Math.max(0, dragPreviewState.remainingMs / 1000).toFixed(1);
+    const ratio = dragPreviewState.durationMs > 0
+      ? Math.max(0, Math.min(1, dragPreviewState.remainingMs / dragPreviewState.durationMs))
+      : 0;
+    if (label) label.textContent = `원래 배치 기록 중 · ${seconds}초 남음`;
+    if (progress) progress.style.width = `${ratio * 100}%`;
+  }
+
+  function updateDragPreview(now) {
+    if (dragPreviewState?.kind !== "drag-preview" || !dragPreviewState.running || dragPreviewState.complete
+      || session?.mechanicComplete || currentMechanic !== "drag") return;
+    const elapsedMs = Math.min(100, Math.max(0, now - dragPreviewState.lastTime));
+    dragPreviewState.lastTime = now;
+    dragPreviewState.remainingMs = Math.max(0, dragPreviewState.remainingMs - elapsedMs);
+    updateDragPreviewDisplay();
+    if (dragPreviewState.remainingMs <= 0) {
+      mechanicAnimationFrame = null;
+      completeDragPreview();
+      return;
+    }
+    mechanicAnimationFrame = requestAnimationFrame(updateDragPreview);
+  }
+
+  function completeDragPreview() {
+    if (dragPreviewState?.kind !== "drag-preview" || dragPreviewState.complete) return;
+    dragPreviewState.running = false;
+    dragPreviewState.complete = true;
+    const preview = $("[data-drag-preview]", el.artStage);
+    const playArea = $("[data-drag-play]", el.artStage);
+    preview?.classList.add("is-finished");
+    playArea?.classList.remove("is-concealed");
+    playArea?.setAttribute("aria-hidden", "false");
+    $$("[data-drag-piece]", el.artStage).forEach(piece => {
+      piece.tabIndex = 0;
+      piece.setAttribute("aria-disabled", "false");
+    });
+    const presentation = session.dragPresentation || dragPresentationForTool("reversibleAdhesive");
+    const status = $("#puzzleStatus", el.artStage);
+    if (status) status.textContent = `기록한 배치를 떠올려 ${presentation.item}을 맞추세요.`;
+    el.stepInstruction.textContent = `원래 배치 기록을 가렸습니다. ${presentation.item}의 모양과 무늬를 기억해 맞추세요.`;
+    playTone("hit");
+  }
+
+  function resumeDragPreview() {
+    if (dragPreviewState?.kind !== "drag-preview" || dragPreviewState.complete) return;
+    dragPreviewState.running = true;
+    dragPreviewState.lastTime = performance.now();
+    updateDragPreviewDisplay();
+    mechanicAnimationFrame = requestAnimationFrame(updateDragPreview);
+  }
+
+  function beginPieceDrag(piece, event) {
+    if (!dragPreviewState?.complete) return;
+    dragState = { piece, startX: event.clientX, startY: event.clientY, pointerId: event.pointerId };
+    piece.classList.add("is-dragging");
+    pointerDown = true;
+    el.artStage.setPointerCapture?.(event.pointerId);
+  }
+
+  function movePieceDrag(event) {
+    if (!dragState) return;
+    const dx = event.clientX - dragState.startX;
+    const dy = event.clientY - dragState.startY;
+    dragState.piece.style.transform = `translate(${dx}px, ${dy}px) scale(1.06)`;
+  }
+
+  function finishPieceDrag(event) {
+    if (!dragState) return;
+    const { piece } = dragState;
+    const slot = $(`[data-drag-slot="${piece.dataset.dragPiece}"]`, el.artStage);
+    const allSlots = $$('[data-drag-slot]', el.artStage);
+    const pieceRect = piece.getBoundingClientRect();
+    const slotRect = slot?.getBoundingClientRect();
+    const pieceCenter = { x: pieceRect.left + pieceRect.width / 2, y: pieceRect.top + pieceRect.height / 2 };
+    const slotCenter = slotRect ? { x: slotRect.left + slotRect.width / 2, y: slotRect.top + slotRect.height / 2 } : { x: 0, y: 0 };
+    const distance = Math.hypot(pieceCenter.x - slotCenter.x, pieceCenter.y - slotCenter.y);
+    const nearestSlot = allSlots.reduce((nearest, candidate) => {
+      const rect = candidate.getBoundingClientRect();
+      const candidateDistance = Math.hypot(pieceCenter.x - (rect.left + rect.width / 2), pieceCenter.y - (rect.top + rect.height / 2));
+      return !nearest || candidateDistance < nearest.distance ? { candidate, distance: candidateDistance, rect } : nearest;
+    }, null);
+    const difficulty = mechanicDifficulty(getArtwork(session.artId));
+    const matchingRadius = Math.max(52, (slotRect?.width || 100) * (.84 - difficulty * .06));
+    piece.classList.remove("is-dragging");
+    piece.style.transform = "";
+    if (slot && distance < matchingRadius) {
+      placePieceInSlot(piece, slot);
+    } else if (nearestSlot && nearestSlot.distance < Math.max(52, nearestSlot.rect.width * (.84 - difficulty * .06))) {
+      nearestSlot.candidate.classList.add("is-wrong");
+      addMechanicMistake(7, session.dragPresentation?.wrong || "형태와 지지점 표시를 다시 비교하세요.");
+      scheduleMechanicTimeout(() => nearestSlot.candidate.classList.remove("is-wrong"), 420);
+    } else {
+      addMechanicMistake(4, session.dragPresentation?.miss || "표시가 맞는 지점까지 항목을 정확히 옮겨 주세요.");
+    }
+    dragState = null;
+    pointerDown = false;
+    try { el.artStage.releasePointerCapture?.(event.pointerId); } catch (_) { /* no-op */ }
+  }
+
+  function placeDragPieceWithKeyboard(piece) {
+    if (!dragPreviewState?.complete) return;
+    const slot = $(`[data-drag-slot="${piece.dataset.dragPiece}"]`, el.artStage);
+    if (slot) placePieceInSlot(piece, slot);
+  }
+
+  function placePieceInSlot(piece, slot) {
+    if (piece.classList.contains("is-placed")) return;
+    piece.classList.add("is-placed");
+    piece.removeAttribute("tabindex");
+    slot.classList.add("is-filled");
+    slot.textContent = "";
+    slot.appendChild(piece);
+    session.hitTargets += 1;
+    const stageRect = el.artStage.getBoundingClientRect();
+    const slotRect = slot.getBoundingClientRect();
+    createSwipeSpark(slotRect.left - stageRect.left + slotRect.width / 2, slotRect.top - stageRect.top + slotRect.height / 2);
+    playTone("hit");
+    const total = session.puzzlePieceCount || 4;
+    const unit = session.dragPresentation?.unit || "배치";
+    el.stepInstruction.textContent = `${session.hitTargets} / ${total} ${unit} 완료`;
+    const status = $("#puzzleStatus", el.artStage);
+    if (status) status.textContent = `${session.hitTargets} / ${total} ${unit}`;
+    if (session.hitTargets >= total) finishMechanicSoon(session.dragPresentation?.complete || "네 지점을 안전하게 배치했습니다.");
+  }
+
+  function updateStreakHud(emphasis = "") {
+    if (!el.streakHud || !session) return;
+    const streak = Math.max(0, Number(session.streak) || 0);
+    const maxStreak = Math.max(streak, Number(session.maxStreak) || 0);
+    el.streakValue.textContent = String(streak);
+    el.streakBest.textContent = `최고 ${maxStreak}`;
+    el.streakHud.setAttribute("aria-label", `현재 연속 성공 ${streak}단계, 최고 ${maxStreak}단계`);
+    el.streakHud.classList.toggle("has-streak", streak > 0);
+    el.streakHud.classList.remove("is-bumping", "is-resetting");
+    if (!emphasis || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+    void el.streakHud.offsetWidth;
+    el.streakHud.classList.add(emphasis === "reset" ? "is-resetting" : "is-bumping");
+  }
+
+  function registerStepSuccess() {
+    if (!session || session.streakRecordedStepIndex === session.stepIndex) return;
+    session.streakRecordedStepIndex = session.stepIndex;
+    if (session.stepHadMistake) {
+      session.streak = 0;
+      updateStreakHud();
+      return;
+    }
+    session.streak = Math.max(0, Number(session.streak) || 0) + 1;
+    session.maxStreak = Math.max(Number(session.maxStreak) || 0, session.streak);
+    updateStreakHud("success");
+  }
+
+  function normalizeNumericFailure(feedback) {
+    if (!feedback || typeof feedback !== "object") return null;
+    const scaleMin = Number.isFinite(Number(feedback.scaleMin)) ? Number(feedback.scaleMin) : 0;
+    const scaleMax = Number.isFinite(Number(feedback.scaleMax)) ? Number(feedback.scaleMax) : 100;
+    const actual = Number(feedback.actual);
+    const targetStart = Number(feedback.targetStart);
+    const targetEnd = Number(feedback.targetEnd);
+    if (![actual, targetStart, targetEnd].every(Number.isFinite) || scaleMax <= scaleMin) return null;
+    const low = Math.max(scaleMin, Math.min(scaleMax, Math.min(targetStart, targetEnd)));
+    const high = Math.max(low, Math.min(scaleMax, Math.max(targetStart, targetEnd)));
+    const clampedActual = Math.max(scaleMin, Math.min(scaleMax, actual));
+    const distance = clampedActual < low ? low - clampedActual : clampedActual > high ? clampedActual - high : 0;
+    const proximity = Math.max(0, Math.min(1, 1 - distance / (scaleMax - scaleMin)));
+    return {
+      actual: clampedActual,
+      targetStart: low,
+      targetEnd: high,
+      scaleMin,
+      scaleMax,
+      proximity,
+      near: proximity >= .9,
+      label: String(feedback.label || "판정값"),
+      unit: String(feedback.unit || "")
+    };
+  }
+
+  function formatFailureValue(value, unit) {
+    const rounded = Math.abs(value - Math.round(value)) < .05 ? Math.round(value) : Math.round(value * 10) / 10;
+    return `${rounded}${unit}`;
+  }
+
+  function hideNearMissFeedback() {
+    if (!el.nearMissFeedback) return;
+    el.nearMissFeedback.classList.add("is-hidden");
+    el.nearMissFeedback.classList.remove("is-near");
+  }
+
+  function showNumericFailureFeedback(feedback) {
+    if (!feedback || !el.nearMissFeedback) {
+      hideNearMissFeedback();
+      return;
+    }
+    if (nearMissFeedbackTimer) {
+      window.clearTimeout(nearMissFeedbackTimer);
+      mechanicTimers.delete(nearMissFeedbackTimer);
+    }
+    const span = feedback.scaleMax - feedback.scaleMin;
+    const targetStartPercent = (feedback.targetStart - feedback.scaleMin) / span * 100;
+    const targetWidthPercent = (feedback.targetEnd - feedback.targetStart) / span * 100;
+    const actualPercent = (feedback.actual - feedback.scaleMin) / span * 100;
+    el.nearMissTitle.textContent = feedback.near ? "아깝습니다!" : `${easyCopy(feedback.label)} 결과 비교`;
+    el.nearMissPercent.textContent = `목표에 가까움 ${Math.round(feedback.proximity * 100)}%`;
+    el.nearMissTarget.textContent = `안전 범위 ${formatFailureValue(feedback.targetStart, feedback.unit)}~${formatFailureValue(feedback.targetEnd, feedback.unit)}`;
+    el.nearMissActual.textContent = `내 결과 ${formatFailureValue(feedback.actual, feedback.unit)}`;
+    el.nearMissComparison.style.setProperty("--target-start", `${targetStartPercent}%`);
+    el.nearMissComparison.style.setProperty("--target-width", `${targetWidthPercent}%`);
+    el.nearMissComparison.style.setProperty("--actual-position", `${actualPercent}%`);
+    el.nearMissFeedback.classList.toggle("is-near", feedback.near);
+    el.nearMissFeedback.classList.remove("is-hidden");
+    nearMissFeedbackTimer = scheduleMechanicTimeout(() => {
+      nearMissFeedbackTimer = null;
+      hideNearMissFeedback();
+    }, feedback.near ? 2200 : 1750);
+  }
+
+  function addMechanicMistake(riskAmount, message, numericFeedback = null) {
+    const normalizedFeedback = normalizeNumericFailure(numericFeedback);
+    session.risk = Math.min(100, session.risk + Math.round(riskAmount * restorationRiskMultiplier()));
+    session.mistakes += 1;
+    session.streak = 0;
+    session.stepHadMistake = true;
+    updateRisk();
+    updateStreakHud("reset");
+    showNumericFailureFeedback(normalizedFeedback);
+    showToast(normalizedFeedback?.near ? `아깝습니다! ${message}` : message);
+    playTone("wrong");
+  }
+
+  function finishMechanicSoon(message, delay = 520) {
+    if (session.mechanicComplete) return;
+    session.mechanicComplete = true;
+    registerStepSuccess();
+    el.stepInstruction.textContent = easyCopy(message);
+    playTone("success");
+    scheduleMechanicTimeout(completeStep, delay);
+  }
+
+  function cancelMechanicSchedules() {
+    if (mechanicAnimationFrame) cancelAnimationFrame(mechanicAnimationFrame);
+    mechanicAnimationFrame = null;
+    mechanicTimers.forEach(timer => window.clearTimeout(timer));
+    mechanicTimers.clear();
+  }
+
+  function pauseRestoration() {
+    if (restorationPaused || !session) return;
+    restorationPaused = true;
+    pauseRestorationClock();
+    stopRestorationTimerTicker();
+    cancelMechanicSchedules();
+    nearMissFeedbackTimer = null;
+    hideNearMissFeedback();
+    $$(".is-wrong", el.labWorkspace).forEach(item => item.classList.remove("is-wrong"));
+    $$(".swipe-spark, [data-damage-target].is-hit, [data-uv-target].is-hit", el.artStage).forEach(item => item.remove());
+
+    if (cleaningState) cleaningState.running = false;
+    if (layerCleaningState) {
+      layerCleaningState.paused = true;
+      layerCleaningState.dragging = false;
+      const board = $("[data-layer-cleaning-board]", el.artStage);
+      try { board?.releasePointerCapture?.(layerCleaningState.pointerId); } catch (_) { /* no-op */ }
+      layerCleaningState.pointerId = null;
+    }
+    if (budgetState) budgetState.paused = true;
+    if (balanceState) {
+      balanceState.paused = true;
+      if (balanceState.drag) {
+        const support = $(`[data-balance-support="${balanceState.drag.index}"]`, el.artStage);
+        support?.classList.remove("is-dragging");
+        try { el.artStage.releasePointerCapture?.(balanceState.drag.pointerId); } catch (_) { /* no-op */ }
+        balanceState.drag = null;
+      }
+    }
+    if (timingState) {
+      timingState.running = false;
+      timingState.holding = false;
+    }
+    if (rhythmState) rhythmState.running = false;
+    if (dragPreviewState && !dragPreviewState.complete) dragPreviewState.running = false;
+    if (dragState) {
+      dragState.piece.classList.remove("is-dragging");
+      dragState.piece.style.transform = "";
+      try { el.artStage.releasePointerCapture?.(dragState.pointerId); } catch (_) { /* no-op */ }
+      dragState = null;
+    }
+    pointerDown = false;
+    $("#toolCursor")?.classList.remove("is-visible");
+    const layer = $("#mechanicLayer", el.artStage);
+    layer?.classList.add("is-paused");
+    if (layer) $(".mechanic-pause-overlay", layer)?.setAttribute("aria-hidden", "false");
+  }
+
+  function resumeRestoration() {
+    const labIsActive = $('[data-view-panel="lab"]')?.classList.contains("is-active");
+    const practiceIsActive = practiceMode && $('[data-view-panel="practice"]')?.classList.contains("is-active");
+    if (!restorationPaused || document.hidden || (!labIsActive && !practiceIsActive) || !session) return;
+    restorationPaused = false;
+    resumeRestorationClock();
+    startRestorationTimerTicker();
+    const layer = $("#mechanicLayer", el.artStage);
+    layer?.classList.remove("is-paused");
+    if (layer) $(".mechanic-pause-overlay", layer)?.setAttribute("aria-hidden", "true");
+
+    if (!selectedTool) return;
+
+    if (session.mechanicComplete) {
+      scheduleMechanicTimeout(completeStep, 320);
+    } else if (currentMechanic === "choice") {
+      $$('[data-test-choice].is-testing', el.artStage).forEach(button => {
+        completeTestChoiceObservation(button, Number(button.dataset.testChoice));
+      });
+    } else if (currentMechanic === "sequence") {
+      if (!memoryState || memoryState.kind !== "procedure") startProcedureChallenge();
+      else renderProcedureScenario();
+    } else if (currentMechanic === "drag") {
+      if (!dragPreviewState || dragPreviewState.kind !== "drag-preview") startDragPreview();
+      else if (!dragPreviewState.complete) resumeDragPreview();
+    } else if (currentMechanic === "trace") {
+      if (!cleaningState) startCleaningChallenge();
+      else cleaningState.running = true;
+    } else if (currentMechanic === "stability") {
+      if (!timingState || timingState.kind !== "stability") startStabilityChallenge();
+      else {
+        timingState.overMoistureReady = true;
+        timingState.running = true;
+        timingState.lastTime = performance.now();
+        mechanicAnimationFrame = requestAnimationFrame(updateStabilityChallenge);
+      }
+    } else if (currentMechanic === "precision") {
+      if (!timingState || timingState.kind !== "precision") startPrecisionChallenge();
+      else configurePrecisionRound();
+    } else if (currentMechanic === "rhythm") {
+      if (!rhythmState || rhythmState.kind !== "adhesive") startAdhesiveChallenge();
+      else if (!rhythmState.roundActive) configureAdhesiveRound();
+      else {
+        rhythmState.running = true;
+        rhythmState.lastTime = performance.now();
+        mechanicAnimationFrame = requestAnimationFrame(updateAdhesiveChallenge);
+      }
+    } else if (currentMechanic === "cleaning") {
+      if (!layerCleaningState || layerCleaningState.kind !== "layer-cleaning") startLayerCleaningMechanic();
+      else layerCleaningState.paused = false;
+    } else if (currentMechanic === "budget") {
+      if (!budgetState || budgetState.kind !== "budget") startBudgetMechanic();
+      else budgetState.paused = false;
+    } else if (currentMechanic === "balance") {
+      if (!balanceState || balanceState.kind !== "balance") startBalanceMechanic();
+      else {
+        balanceState.paused = false;
+        balanceState.lastTime = performance.now();
+        updateBalancePhysicsTarget();
+      }
+    }
+    showToast("복원 작업을 중지 지점부터 다시 시작합니다.");
+  }
+
+  function clearMechanicTimers() {
+    cancelMechanicSchedules();
+    nearMissFeedbackTimer = null;
+    timingState = null;
+    memoryState = null;
+    rhythmState = null;
+    cleaningState = null;
+    layerCleaningState = null;
+    budgetState = null;
+    balanceState = null;
+    dragPreviewState = null;
+    restorationPaused = false;
+    delete el.artStage.dataset.inspectionLight;
+    $("#mechanicLayer", el.artStage)?.classList.remove("is-paused");
+  }
+
+  function moveCursor(event) {
+    const rect = el.artStage.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const cursor = $("#toolCursor");
+    if (!cursor) return;
+    cursor.style.left = `${x}px`;
+    cursor.style.top = `${y}px`;
+    cursor.classList.add("is-visible");
+  }
+
+  function hitTest(event) {
+    if (currentMechanic === "uv") {
+      hitUvTest(event);
+      return;
+    }
+    const stageRect = el.artStage.getBoundingClientRect();
+    const x = event.clientX - stageRect.left;
+    const y = event.clientY - stageRect.top;
+    let hitAny = false;
+
+    session.targetIds.forEach(targetId => {
+      const target = document.getElementById(targetId);
+      if (!target || target.dataset.hit === "true") return;
+      if (!target.classList.contains("is-revealed")) return;
+      const targetRect = target.getBoundingClientRect();
+      const centerX = targetRect.left - stageRect.left + targetRect.width / 2;
+      const centerY = targetRect.top - stageRect.top + targetRect.height / 2;
+      const distance = Math.hypot(x - centerX, y - centerY);
+      if (distance < Math.max(42, targetRect.width * .85)) {
+        target.dataset.hit = "true";
+        target.classList.add("is-hit");
+        session.hitTargets += 1;
+        hitAny = true;
+        createSwipeSpark(x, y);
+        scheduleMechanicTimeout(() => target.remove(), 240);
+      }
+    });
+
+    if (hitAny) {
+      playTone("hit");
+      const total = session.targetIds.length;
+      el.stepInstruction.textContent = `${session.hitTargets} / ${total} 손상 지점 기록 중 · 둥근 빛을 움직여 계속 탐색하세요`;
+      const status = $("#inspectionStatus", el.artStage);
+      if (status) status.textContent = `${session.hitTargets} / ${total} 기록 완료 · 남은 손상을 빛으로 찾아보세요.`;
+      if (session.hitTargets >= total) {
+        finishMechanicSoon("움직이는 사광 안에서 드러난 손상 지점을 모두 찾아 기록했습니다.", 380);
+      }
+    }
+  }
+
+  function hitUvTest(event) {
+    const stageRect = el.artStage.getBoundingClientRect();
+    const x = event.clientX - stageRect.left;
+    const y = event.clientY - stageRect.top;
+    let hitAny = false;
+
+    session.targetIds.forEach(targetId => {
+      const target = document.getElementById(targetId);
+      if (!target || target.dataset.hit === "true" || !target.classList.contains("is-revealed")) return;
+      const targetRect = target.getBoundingClientRect();
+      const centerX = targetRect.left - stageRect.left + targetRect.width / 2;
+      const centerY = targetRect.top - stageRect.top + targetRect.height / 2;
+      const distance = Math.hypot(x - centerX, y - centerY);
+      if (distance >= Math.max(42, targetRect.width * .9)) return;
+      target.dataset.hit = "true";
+      target.classList.add("is-hit");
+      session.hitTargets += 1;
+      hitAny = true;
+      createSwipeSpark(x, y);
+      scheduleMechanicTimeout(() => target.remove(), 240);
+    });
+
+    if (!hitAny) return;
+    playTone("hit");
+    const total = session.targetIds.length;
+    el.stepInstruction.textContent = `${session.hitTargets} / ${total} 후대 보수 흔적 기록 중 · 원본의 고른 형광은 피하세요`;
+    const status = $("#uvInspectionStatus", el.artStage);
+    if (status) status.textContent = `${session.hitTargets} / ${total} 보수 흔적 확인 · 경계와 질감이 다른 반응을 계속 찾으세요.`;
+    if (session.hitTargets < total) return;
+    const presentation = session.uvPresentation || uvPresentation(getArtwork(session.artId));
+    session.uvHistoryConfirmed = true;
+    session.uvFindingLabel = presentation.finding;
+    finishMechanicSoon(`${presentation.finding}으로 기록했습니다.`, 380);
+  }
+
+  function createSwipeSpark(x, y) {
+    const spark = document.createElement("span");
+    spark.className = "swipe-spark";
+    spark.textContent = "✦";
+    spark.style.left = `${x}px`;
+    spark.style.top = `${y}px`;
+    el.artStage.appendChild(spark);
+    scheduleMechanicTimeout(() => spark.remove(), 400);
+  }
+
+  function completeStep() {
+    if (!session) return;
+    clearMechanicTimers();
+    if (practiceMode) {
+      completePracticeChallenge();
+      return;
+    }
+    const art = getArtwork(session.artId);
+    playTone("success");
+    session.stepIndex += 1;
+    if (session.stepIndex >= art.steps.length) {
+      completeRestoration();
+      return;
+    }
+    tutorialLabPhase = "tool";
+    showToast("단계 완료! 다음 처리로 넘어갑니다.");
+    renderCurrentStep();
+  }
+
+  function restorationAccuracy(workSession) {
+    const underCleaningCount = (workSession.cleaningResults || []).filter(result => result.outcome === "under").length;
+    return Math.max(55, 100 - workSession.mistakes * 8 - Math.round(workSession.risk * .25) - underCleaningCount * 6);
+  }
+
+  function accuracyRewardFor(accuracy) {
+    if (accuracy >= 100) return { grade: "S+", title: "실수 없는 복원", coinRate: 0.5, repBonus: 3 };
+    if (accuracy >= 95) return { grade: "S", title: "정밀 복원", coinRate: 0.3, repBonus: 2 };
+    if (accuracy >= 90) return { grade: "A", title: "안전 복원", coinRate: 0.18, repBonus: 1 };
+    if (accuracy >= 80) return { grade: "B", title: "안정 복원", coinRate: 0.08, repBonus: 0 };
+    return { grade: "C", title: "기록 완료", coinRate: 0, repBonus: 0 };
+  }
+
+  function speedRewardFor(elapsedSeconds, accuracy, stepCount = 5) {
+    const safeTarget = Math.max(180, stepCount * 60);
+    if (accuracy < 80) return { tier: "none", title: "안전 우선", score: 0, coinRate: 0, target: safeTarget };
+    if (elapsedSeconds <= safeTarget * .55) return { tier: "gold", title: "황금 손놀림", score: 300, coinRate: .3, target: safeTarget };
+    if (elapsedSeconds <= safeTarget * .8) return { tier: "silver", title: "숙련된 손놀림", score: 200, coinRate: .2, target: safeTarget };
+    if (elapsedSeconds <= safeTarget) return { tier: "bronze", title: "차분한 손놀림", score: 100, coinRate: .1, target: safeTarget };
+    return { tier: "none", title: "시간 기록 완료", score: 0, coinRate: 0, target: safeTarget };
+  }
+
+  function streakRewardFor(maxStreak) {
+    const streak = Math.max(0, Number(maxStreak) || 0);
+    if (streak >= 5) return { title: "5단계 연속 성공", coinRate: .2 };
+    if (streak >= 4) return { title: "4단계 연속 성공", coinRate: .15 };
+    if (streak >= 3) return { title: "3단계 연속 성공", coinRate: .1 };
+    return { title: "연속 성공 도전", coinRate: 0 };
+  }
+
+  function completeRestoration() {
+    const art = getArtwork(session.artId);
+    const accuracy = restorationAccuracy(session);
+    const accuracyReward = accuracyRewardFor(accuracy);
+    const durationSeconds = finishRestorationClock();
+    const speedReward = speedRewardFor(durationSeconds, accuracy, art.steps.length);
+    const streakReward = streakRewardFor(session.maxStreak);
+    const rewardMultiplier = accuracy / 100;
+    const baseCoins = Math.max(60, Math.round(art.rewardCoins * rewardMultiplier));
+    const accuracyBonusCoins = Math.round(art.rewardCoins * accuracyReward.coinRate);
+    const speedBonusCoins = Math.round(art.rewardCoins * speedReward.coinRate);
+    const streakBonusCoins = Math.round(art.rewardCoins * streakReward.coinRate);
+    const restorationFacilityRate = upgradeEffectTotal("restorationRewardMult");
+    const facilityBonusCoins = Math.round((baseCoins + accuracyBonusCoins + speedBonusCoins + streakBonusCoins) * restorationFacilityRate);
+    const coins = baseCoins + accuracyBonusCoins + speedBonusCoins + streakBonusCoins + facilityBonusCoins;
+    const rep = Math.max(3, Math.round(art.rewardRep * (0.72 + rewardMultiplier * .28))) + accuracyReward.repBonus;
+    const skillScore = accuracy * 100 + speedReward.score;
+    const cleaningOutcomes = (session.cleaningResults || []).map(result => ({
+      stepIndex: result.stepIndex,
+      outcome: result.outcome,
+      removal: result.removal
+    }));
+    const overcleaned = cleaningOutcomes.some(result => result.outcome === "over");
+    const uvHistoryConfirmed = Boolean(session.uvHistoryConfirmed);
+    const appealPenalty = Math.min(40, (session.budgetResults || []).reduce((sum, result) => sum + Math.max(0, Number(result.appealPenalty) || 0), 0));
+
+    state.coins += coins;
+    state.reputation += rep;
+    state.restored[art.id] = {
+      day: state.day,
+      accuracy,
+      risk: session.risk,
+      mistakes: session.mistakes,
+      durationSeconds,
+      skillScore,
+      overcleaned,
+      uvHistoryConfirmed,
+      appealPenalty,
+      cleaningOutcomes
+    };
+    state.records.unshift({
+      artId: art.id,
+      day: state.day,
+      accuracy,
+      risk: session.risk,
+      grade: accuracyReward.grade,
+      bonusCoins: accuracyBonusCoins,
+      speedBonusCoins,
+      speedScore: speedReward.score,
+      durationSeconds,
+      skillScore,
+      overcleaned,
+      uvHistoryConfirmed,
+      appealPenalty,
+      cleaningOutcomes,
+      steps: art.steps.map(s => s.name)
+    });
+    const replacedArtworkId = queueArtworkForGallery(art.id);
+    state.activeArtworkId = null;
+    state.activeRestorationElapsedMs = 0;
+    state.assistantNotice = true;
+    if (isFirstRotationTutorialActive() && art.id === "moon-jar") {
+      state.tutorialStep = "result";
+    }
+    saveState();
+
+    el.resultArt.innerHTML = artworkSVG(art.id, "finished", "result");
+    el.resultTitle.textContent = `${art.title} 복원 완료!`;
+    const cleaningSummary = overcleaned
+      ? " 세척 기록에 원본층 손상 위험이 남았습니다."
+      : cleaningOutcomes.some(result => result.outcome === "under")
+        ? " 안전하게 멈췄지만 일부 오염층이 남은 세척 기록이 있습니다."
+        : cleaningOutcomes.some(result => result.outcome === "optimal")
+          ? " 세척은 원래 표면을 지키는 적정 지점에서 멈췄습니다."
+          : "";
+    const uvSummary = uvHistoryConfirmed
+      ? ` 자외선 형광 조사에서 ${session.uvFindingLabel || "과거 보수 이력"}을 확인했습니다.`
+      : "";
+    const budgetSummary = appealPenalty
+      ? ` 작업량을 나누며 이번 전시에서 눈에 띄는 부분 ${appealPenalty}점을 다음 작업으로 미뤘습니다.`
+      : (session.budgetResults || []).length
+        ? " 작업량을 안전과 겉모습에 고르게 나눴습니다."
+        : "";
+    el.resultSummary.textContent = easyCopy(`${art.summary}${cleaningSummary}${uvSummary}${budgetSummary}`);
+    el.resultAccuracy.textContent = `${accuracy}%`;
+    el.resultRep.textContent = `+${rep}`;
+    el.resultCoins.textContent = `+${formatNumber(coins)}`;
+    el.resultTime.textContent = formatRestorationTime(durationSeconds);
+    el.resultAccuracyReward.className = `accuracy-reward grade-${accuracyReward.grade.toLowerCase().replace("+", "plus")}`;
+    el.resultGrade.textContent = accuracyReward.grade;
+    el.resultBonusTitle.textContent = accuracyReward.title;
+    const restorationBonusDetails = [
+      accuracyBonusCoins > 0 ? `정확도 +${formatNumber(accuracyBonusCoins)}🪙` : "",
+      streakBonusCoins > 0 ? `${streakReward.title} +${formatNumber(streakBonusCoins)}🪙` : "",
+      accuracyReward.repBonus ? `평판 +${accuracyReward.repBonus}` : "",
+      facilityBonusCoins ? `복원 작업실 +${formatNumber(facilityBonusCoins)}🪙` : ""
+    ].filter(Boolean);
+    el.resultBonusText.textContent = restorationBonusDetails.length
+      ? restorationBonusDetails.join(" · ")
+      : "정확도 80% 또는 3단계 연속 성공부터 별도 보너스가 지급됩니다.";
+    el.resultSpeedReward.className = `speed-reward tier-${speedReward.tier}`;
+    el.resultSpeedTitle.textContent = speedReward.title;
+    el.resultSpeedText.textContent = speedReward.score > 0
+      ? `${formatRestorationTime(durationSeconds)} 완료 · 빠른 완료 보너스 +${formatNumber(speedReward.score)}점 · +${formatNumber(speedBonusCoins)}🪙 · 관장 점수 ${formatNumber(skillScore)}점`
+      : accuracy < 80
+        ? `${formatRestorationTime(durationSeconds)} 완료 · 정확도 80% 이상부터 빠른 완료 보너스를 받을 수 있어요.`
+        : `${formatRestorationTime(durationSeconds)} 완료 · ${formatRestorationTime(speedReward.target)} 안에 마치면 빠른 완료 보너스를 받아요.`;
+    el.resultEthics.textContent = easyCopy(art.ethics);
+    if (replacedArtworkId) {
+      const replacedArtwork = getArtwork(replacedArtworkId);
+      el.resultSummary.textContent += ` 전시대가 가득 차 ${replacedArtwork?.title || "가장 오래 전시한 작품"} 대신 새 작품을 배치했습니다.`;
+    }
+
+    el.dayModal.classList.add("is-hidden");
+    el.artInfoModal.classList.add("is-hidden");
+    el.directorModal.classList.add("is-hidden");
+    el.resultModal.classList.remove("is-hidden");
+    el.modalBackdrop.classList.remove("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "false");
+    renderAll();
+    if (isFirstRotationTutorialActive() && state.tutorialStep === "result") {
+      scheduleTutorialGuide(true);
+    }
+    playTone("complete");
+  }
+
+  function closeResultModal() {
+    el.modalBackdrop.classList.add("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "true");
+    session = null;
+    if (isFirstRotationTutorialActive() && state.tutorialStep === "result") {
+      state.tutorialStep = "gallery";
+      saveState();
+    }
+    renderLab();
+    switchView("gallery");
+    if (isFirstRotationTutorialActive()) scheduleTutorialGuide(true);
+    checkStoryProgress();
+  }
+
+  function updateRisk() {
+    el.riskFill.style.width = `${session?.risk || 0}%`;
+    el.riskValue.textContent = `${session?.risk || 0}%`;
+  }
+
+  function updateWorkflowStrip(stepIndex, stepCount) {
+    const items = $$(".workflow-item");
+    const stageRatio = stepCount <= 1 ? 0 : stepIndex / (stepCount - 1);
+    const currentWorkflow = Math.min(4, Math.floor(stageRatio * 4 + .001));
+    items.forEach((item, index) => {
+      item.classList.toggle("is-active", index === currentWorkflow);
+      item.classList.toggle("is-done", index < currentWorkflow);
+    });
+  }
+
+  function progressClassForStep(art, stepIndex) {
+    const ratio = stepIndex / Math.max(1, art.steps.length - 1);
+    if (ratio >= .78) return "filled";
+    if (ratio >= .5) return "stable";
+    if (ratio >= .25) return "clean";
+    return "damaged";
+  }
+
+  function upgradeEffectTotal(effectName) {
+    return UPGRADES.reduce((total, upgrade) => {
+      if (!state.upgrades[upgrade.id]) return total;
+      return total + (Number(upgrade.effect?.[effectName]) || 0);
+    }, 0);
+  }
+
+  function restorationRiskMultiplier() {
+    return Math.max(0.4, 1 - upgradeEffectTotal("riskReduction"));
+  }
+
+  function gallerySlotCount() {
+    return Math.min(6, 4 + Math.round(upgradeEffectTotal("displaySlots")));
+  }
+
+  function gallerySelectionIds() {
+    const limit = gallerySlotCount();
+    const seen = new Set();
+    let ids = Array.isArray(state.gallerySelection)
+      ? state.gallerySelection.filter(id => {
+        if (seen.has(id) || !state.restored[id] || !getArtwork(id)) return false;
+        seen.add(id);
+        return true;
+      }).slice(0, limit)
+      : [];
+    if (!ids.length) {
+      ids = state.records
+        .map(record => record.artId)
+        .filter(id => state.restored[id] && getArtwork(id))
+        .filter((id, index, list) => list.indexOf(id) === index)
+        .slice(0, limit)
+        .reverse();
+      if (!ids.length) ids = ARTWORKS.filter(art => state.restored[art.id]).slice(-limit).map(art => art.id);
+    }
+    state.gallerySelection = ids;
+    return ids;
+  }
+
+  function displayedGalleryArts() {
+    return gallerySelectionIds().map(getArtwork).filter(Boolean);
+  }
+
+  function activeAnnexPrograms(day = state.day) {
+    return Object.entries(state.facilityPlans || {}).map(([facilityId, plan]) => {
+      if (!state.upgrades[facilityId] || Number(plan?.day) !== Number(day)) return null;
+      const facility = UPGRADES.find(upgrade => upgrade.id === facilityId);
+      const program = ANNEX_PROGRAMS[facilityId]?.find(item => item.id === plan?.programId);
+      return facility && program ? { facility, program } : null;
+    }).filter(Boolean);
+  }
+
+  function activeAnnexProgramFor(facilityId) {
+    return activeAnnexPrograms().find(item => item.facility.id === facilityId)?.program || null;
+  }
+
+  function annexOperationTotals() {
+    const programs = activeAnnexPrograms();
+    return programs.reduce((totals, item) => {
+      totals.appealBonus += Number(item.program.effect.appealBonus) || 0;
+      totals.visitorBonus += Number(item.program.effect.visitorBonus) || 0;
+      totals.incomeBonus += Number(item.program.effect.incomeBonus) || 0;
+      totals.repBonus += Number(item.program.effect.repBonus) || 0;
+      return totals;
+    }, { appealBonus: 0, visitorBonus: 0, incomeBonus: 0, repBonus: 0, programs });
+  }
+
+  function annexProgramEffectText(effect) {
+    return [
+      effect.appealBonus ? `전시 매력 +${effect.appealBonus}` : "",
+      effect.visitorBonus ? `관람객 +${effect.visitorBonus}` : "",
+      effect.incomeBonus ? `수입 +${formatNumber(effect.incomeBonus)}🪙` : "",
+      effect.repBonus ? `평판 +${effect.repBonus}` : ""
+    ].filter(Boolean).join(" · ");
+  }
+
+  function queueArtworkForGallery(artId) {
+    if (!state.restored[artId] || !getArtwork(artId)) return null;
+    const limit = gallerySlotCount();
+    const ids = gallerySelectionIds().filter(id => id !== artId);
+    if (ids.length < limit) {
+      ids.push(artId);
+      state.gallerySelection = ids;
+      return null;
+    }
+    const replacementIndex = Math.max(0, Math.min(ids.length - 1, Number(state.galleryNextSlot) || 0));
+    const replacedArtworkId = ids[replacementIndex];
+    ids[replacementIndex] = artId;
+    state.galleryNextSlot = (replacementIndex + 1) % limit;
+    state.gallerySelection = ids;
+    return replacedArtworkId;
+  }
+
+  function advancedUpgradeForBase(baseId) {
+    return ADVANCED_UPGRADES.find(upgrade => upgrade.requires === baseId) || null;
+  }
+
+  function facilitySceneMarkup(upgrade) {
+    const scenes = {
+      lighting: `<div class="gallery-fixture fixture-lighting" data-facility="lighting">
+        <span class="fixture-track"></span><i></i><i></i><i></i><i></i>
+      </div>`,
+      guide: `<button type="button" class="gallery-fixture fixture-guide" data-facility="guide" data-gallery-guide aria-label="전시 중인 작품의 무작위 해설 듣기">
+        <span class="fixture-screen">🎧<b>작품 해설</b></span><i></i><span class="guide-speech" aria-live="polite"></span>
+      </button>`,
+      shop: `<div class="gallery-fixture fixture-shop" data-facility="shop">
+        <span class="fixture-awning"></span><b>ART SHOP</b><i>▣</i><i>◈</i><i>▤</i>
+      </div>`,
+      lab: `<div class="gallery-fixture fixture-lab" data-facility="lab">
+        <b>환경 관제</b><span>21°C</span><span>RH 50%</span><i></i>
+      </div>`,
+      climate: `<div class="gallery-fixture fixture-climate" data-facility="climate">
+        <span class="fixture-vent"></span><i></i><i></i><i></i>
+      </div>`,
+      lounge: `<div class="gallery-fixture fixture-lounge" data-facility="lounge">
+        <span class="fixture-sofa"><i></i><i></i></span><b>REST</b>
+      </div>`,
+      archive: `<div class="gallery-fixture fixture-archive" data-facility="archive">
+        <b>OPEN ARCHIVE</b><span>${"<i></i>".repeat(12)}</span>
+      </div>`,
+      garden: `<div class="gallery-fixture fixture-garden" data-facility="garden">
+        <span class="fixture-planter"><i></i><i></i><i></i></span><b>조각 정원</b><span class="fixture-sculpture">◒</span>
+      </div>`,
+      cafe: `<div class="gallery-fixture fixture-cafe" data-facility="cafe">
+        <span class="fixture-awning"></span><b>MUSEUM CAFÉ</b><i>☕</i><em></em>
+      </div>`,
+      studio: `<div class="gallery-fixture fixture-studio" data-facility="studio">
+        <span class="fixture-window"><i></i><i></i><i></i></span><b>CONSERVATION</b><em>⌕</em>
+      </div>`,
+      facade: `<div class="gallery-fixture fixture-facade" data-facility="facade">
+        <i></i><strong>${escapeHTML(state.museumName)}</strong><i></i>
+      </div>`,
+      grandHall: `<div class="gallery-fixture fixture-grand-hall" data-facility="grandHall">
+        <span class="fixture-chandelier"><i></i><i></i><i></i><i></i><i></i></span><em></em><em></em>
+      </div>`
+    };
+    return scenes[upgrade.id] || "";
+  }
+
+  function annexFacilityMarkup(upgrade) {
+    const installed = Boolean(state.upgrades[upgrade.id]);
+    const activeProgram = installed ? activeAnnexProgramFor(upgrade.id) : null;
+    const programs = ANNEX_PROGRAMS[upgrade.id] || [];
+    const advancedUpgrade = advancedUpgradeForBase(upgrade.id);
+    const isAdvanced = Boolean(advancedUpgrade && state.upgrades[advancedUpgrade.id]);
+    const scenes = {
+      lounge: `<span class="annex-lounge-sofa"><i></i><i></i></span><span class="annex-lounge-lamp">✦</span><span class="annex-lounge-table">☕</span>`,
+      shop: `<span class="annex-shop-awning"></span><span class="annex-shop-shelf"><i>▣</i><i>◈</i><i>▤</i></span><span class="annex-shop-counter">SHOP</span>`,
+      garden: `<span class="annex-garden-bed"><i></i><i></i><i></i></span><span class="annex-garden-art">◒</span><span class="annex-garden-bench"></span>`,
+      cafe: `<span class="annex-cafe-counter">☕<i></i></span><span class="annex-cafe-table"><i></i><i></i></span><span class="annex-cafe-sign">CAFÉ</span>`,
+      grandHall: `<span class="annex-hall-curtain"></span><span class="annex-hall-column is-left"></span><span class="annex-hall-column is-right"></span><span class="annex-hall-stage">GRAND HALL</span><span class="annex-hall-light">✦</span>`
+    };
+    const advancedScenes = {
+      lounge: `<span class="annex-advanced-decor annex-lounge-upgrade"><i>📚</i><i>🧸</i><b>FAMILY</b></span>`,
+      shop: `<span class="annex-advanced-decor annex-shop-upgrade"><i>✦</i><b>MAKE &amp; SHOP</b><i>✦</i></span>`,
+      garden: `<span class="annex-advanced-decor annex-garden-upgrade"><i>✿</i><b>4 SEASONS</b><i>◉</i></span>`,
+      cafe: `<span class="annex-advanced-decor annex-cafe-upgrade"><i>🍰</i><b>TERRACE</b><i>☕</i></span>`,
+      grandHall: `<span class="annex-advanced-decor annex-hall-upgrade"><i>✦</i><b>SPECIAL EXHIBITION</b><i>✦</i></span>`
+    };
+    const roomClass = `annex-room annex-room-${upgrade.id} ${installed ? "is-installed" : "is-planned"} ${activeProgram ? "has-daily-program" : ""} ${isAdvanced ? "is-advanced" : ""}`;
+    const activity = activeProgram
+      ? `<span class="annex-program-activity"><i>${activeProgram.icon}</i><i>✦</i><i>${activeProgram.icon}</i></span><span class="annex-live-badge">TODAY · 운영 중</span>`
+      : "";
+    const stage = installed
+      ? `<button type="button" class="annex-room-stage annex-room-stage-button" data-annex-open="${upgrade.id}" aria-expanded="false" aria-label="${escapeHTML(upgrade.name)} 오늘의 운영 프로그램 선택">${scenes[upgrade.id]}${isAdvanced ? advancedScenes[upgrade.id] || "" : ""}${activity}</button>`
+      : `<div class="annex-room-stage" aria-hidden="true"><span class="annex-blueprint"><b>${upgrade.icon}</b><small>시설 투자 후 이 공간이 완성됩니다</small></span></div>`;
+    const operationMarkup = installed ? `
+      <div class="annex-operation-status">
+        <span>${activeProgram ? `<b>${activeProgram.icon} ${escapeHTML(activeProgram.name)}</b><small>${escapeHTML(annexProgramEffectText(activeProgram.effect))}</small>` : "<b>오늘의 운영을 준비하세요</b><small>고른 활동의 보상은 다음 개관 때 받아요</small>"}</span>
+        <button type="button" class="annex-operation-trigger" data-annex-open="${upgrade.id}" aria-expanded="false">${activeProgram ? "변경" : "운영 준비"}</button>
+      </div>
+      <section class="annex-operation-panel is-hidden" data-annex-panel="${upgrade.id}" aria-label="${escapeHTML(upgrade.name)} 운영 프로그램">
+        <div class="annex-operation-heading"><strong>오늘 어떤 프로그램을 운영할까요?</strong><small>개관 전에는 자유롭게 바꿀 수 있고, 개관하면 다음 날 다시 선택합니다.</small></div>
+        <div class="annex-program-choices">${programs.map(program => `
+          <button type="button" class="annex-program-choice ${activeProgram?.id === program.id ? "is-selected" : ""}" data-annex-program="${upgrade.id}" data-program-id="${program.id}">
+            <span>${program.icon}</span><strong>${escapeHTML(easyCopy(program.name))}</strong><small>${escapeHTML(easyCopy(program.copy))}</small><em>${escapeHTML(annexProgramEffectText(program.effect))}</em>
+          </button>`).join("")}</div>
+      </section>` : "";
+    return `<article class="${roomClass}" data-facility="${upgrade.id}">
+      <header><span>${upgrade.icon}</span><div><small>${escapeHTML(easyCopy(upgrade.category))}</small><strong>${escapeHTML(easyCopy(upgrade.name))}</strong></div><em>${installed ? isAdvanced ? "2단계 완성" : activeProgram ? "오늘 준비 완료" : "운영 가능" : "코인 모으는 중"}</em></header>
+      ${stage}
+      <p>${escapeHTML(easyCopy(upgrade.desc))}${isAdvanced ? `<strong class="annex-improvement-note">✨ ${escapeHTML(easyCopy(advancedUpgrade.name))} 적용 중</strong>` : ""}</p>
+      ${operationMarkup}
+    </article>`;
+  }
+
+  function bindAnnexFacilityEvents() {
+    $$('[data-annex-open]', el.galleryAnnexLayer).forEach(button => {
+      button.addEventListener("click", () => toggleAnnexProgramPanel(button.dataset.annexOpen));
+    });
+    $$('[data-annex-program]', el.galleryAnnexLayer).forEach(button => {
+      button.addEventListener("click", () => scheduleAnnexProgram(button.dataset.annexProgram, button.dataset.programId));
+    });
+  }
+
+  function toggleAnnexProgramPanel(facilityId) {
+    const panel = $(`[data-annex-panel="${facilityId}"]`, el.galleryAnnexLayer);
+    if (!panel) return;
+    const willOpen = panel.classList.contains("is-hidden");
+    $$('[data-annex-panel]', el.galleryAnnexLayer).forEach(item => item.classList.add("is-hidden"));
+    $$('[data-annex-open]', el.galleryAnnexLayer).forEach(button => button.setAttribute("aria-expanded", "false"));
+    $$('.annex-room', el.galleryAnnexLayer).forEach(room => room.classList.remove("is-configuring"));
+    if (!willOpen) return;
+    panel.classList.remove("is-hidden");
+    panel.closest(".annex-room")?.classList.add("is-configuring");
+    $$(`[data-annex-open="${facilityId}"]`, el.galleryAnnexLayer).forEach(button => button.setAttribute("aria-expanded", "true"));
+    playTone("open");
+  }
+
+  function scheduleAnnexProgram(facilityId, programId) {
+    const facility = UPGRADES.find(upgrade => upgrade.id === facilityId);
+    const program = ANNEX_PROGRAMS[facilityId]?.find(item => item.id === programId);
+    if (!facility || !program || !state.upgrades[facilityId]) return;
+    state.facilityPlans[facilityId] = { day: state.day, programId: program.id };
+    saveState();
+    renderGallery();
+    showToast(`${facility.name} · ${program.name} 준비 완료! ${annexProgramEffectText(program.effect)}`);
+    playTone("success");
+  }
+
+  function renderGallery() {
+    const displayedArts = displayedGalleryArts();
+    const slotCount = gallerySlotCount();
+    const slots = Array.from({ length: slotCount }, (_, index) => displayedArts[index] || null);
+    el.gallerySlots.style.setProperty("--gallery-columns", String(slotCount));
+    el.gallerySlots.innerHTML = slots.map(art => {
+      if (!art) {
+        return `<div class="gallery-slot"><div class="empty-slot">복원 작품 대기</div><div class="slot-pedestal"></div></div>`;
+      }
+      return `<div class="gallery-slot" data-gallery-artwork="${art.id}"><div class="slot-art">${artworkSVG(art.id, "finished", "gallery")}</div><div class="slot-pedestal"></div><div class="slot-label">${escapeHTML(art.title)}</div></div>`;
+    }).join("");
+
+    const estimates = getMuseumEstimates();
+    el.visitorEstimate.textContent = `${estimates.visitors}명`;
+    el.incomeEstimate.textContent = `+${formatNumber(estimates.income)}🪙`;
+    el.appealValue.textContent = formatNumber(estimates.appeal);
+    el.freshnessValue.textContent = estimates.hasNewArtwork
+      ? "신작 공개 · 100%"
+      : estimates.freshness > 0
+        ? `반복 전시 · ${Math.round(estimates.freshness * 100)}%`
+        : "관심 소진 · 새 복원 필요";
+    el.freshnessValue.classList.toggle("is-warning", !estimates.hasNewArtwork);
+    el.openMuseumButton.disabled = displayedArts.length === 0;
+    el.openMuseumButton.textContent = displayedArts.length === 0
+      ? "복원 작품이 필요해요"
+      : estimates.hasNewArtwork
+        ? "신작 공개 · 오늘 개관"
+        : estimates.freshness > 0
+          ? `반복 개관 · 수익 ${Math.round(estimates.freshness * 100)}%`
+          : "새 작품 복원 후 개관 추천";
+    UPGRADES.forEach(upgrade => {
+      el.gallerySceneCard.classList.toggle(`has-${upgrade.id}`, Boolean(state.upgrades[upgrade.id]));
+    });
+    el.galleryFacilityLayer.innerHTML = BASE_UPGRADES.filter(upgrade => state.upgrades[upgrade.id] && !ANNEX_FACILITY_IDS.has(upgrade.id)).map(upgrade =>
+      facilitySceneMarkup(upgrade)
+    ).join("");
+    el.galleryAnnexLayer.innerHTML = BASE_UPGRADES.filter(upgrade => ANNEX_FACILITY_IDS.has(upgrade.id)).map(annexFacilityMarkup).join("");
+    const installedAnnexCount = [...ANNEX_FACILITY_IDS].filter(id => state.upgrades[id]).length;
+    const activeAnnexCount = activeAnnexPrograms().length;
+    el.galleryAnnexStatus.textContent = installedAnnexCount === 0
+      ? "시설 투자 후 편의동에서 하루 프로그램을 운영할 수 있어요"
+      : activeAnnexCount > 0
+        ? `오늘 운영 준비 ${activeAnnexCount} / ${installedAnnexCount} · 예상 수치에 반영 중`
+        : "완성된 시설을 눌러 오늘의 운영 프로그램을 준비하세요";
+    bindAnnexFacilityEvents();
+    $('[data-gallery-guide]', el.galleryFacilityLayer)?.addEventListener("click", () => speakGalleryGuide(displayedArts));
+    renderStoryProgress();
+    renderVisitors(Math.min(10, Math.ceil(estimates.visitors / 10)), slots);
+    renderUpgrades();
+  }
+
+  function speakGalleryGuide(displayedArts) {
+    const candidates = displayedArts.filter(art => art.id !== lastGuidedArtworkId);
+    const pool = candidates.length ? candidates : displayedArts;
+    const art = pool[Math.floor(Math.random() * pool.length)];
+    const guide = $('[data-gallery-guide]', el.galleryFacilityLayer);
+    const speech = $(".guide-speech", guide);
+    if (!art || !speech) {
+      showToast("해설할 전시 작품이 아직 없습니다.");
+      return;
+    }
+    lastGuidedArtworkId = art.id;
+    const storySentence = easyCopy(String(art.story || art.culturalValue || art.summary))
+      .split(/(?<=[.!?。])\s+/)[0]
+      .slice(0, 105);
+    const etiquette = [
+      "작품과 전시대는 손으로 만지지 말고 눈으로 감상해 주세요.",
+      "플래시는 작품 재료에 부담을 줄 수 있으니 촬영할 때 꺼 주세요.",
+      "작품에서 한 걸음 떨어지면 전체 형태와 복원 흔적이 함께 보여요.",
+      "다음 관람객도 볼 수 있도록 전시대 앞 통로를 함께 나눠 주세요."
+    ][Math.floor(Math.random() * 4)];
+    speech.innerHTML = `<strong>🎧 ${escapeHTML(art.title)}</strong><span>${escapeHTML(art.era)} · ${escapeHTML(art.artist || "작자 미상")}</span><p>${escapeHTML(storySentence)}</p><em>관람 안내 · ${escapeHTML(etiquette)}</em>`;
+    guide.classList.remove("is-speaking");
+    void guide.offsetWidth;
+    guide.classList.add("is-speaking");
+    window.clearTimeout(guideSpeechTimer);
+    guideSpeechTimer = window.setTimeout(() => guide.classList.remove("is-speaking"), 8500);
+    playTone("open");
+  }
+
+  function renderVisitors(count, gallerySlots) {
+    const colors = ["#f28c7f", "#78b9e8", "#8fd0a8", "#f2c26f", "#b99ae6"];
+    const skins = ["#f2c39f", "#d99b75", "#f0b98c", "#b97858"];
+    const occupiedSlots = gallerySlots
+      .map((art, slotIndex) => ({ art, slotIndex }))
+      .filter(item => Boolean(item.art));
+    if (!occupiedSlots.length) {
+      el.visitorLayer.innerHTML = "";
+      return;
+    }
+    const slotCenters = occupiedSlots.map(item => 5 + ((item.slotIndex + .5) / gallerySlots.length) * 90);
+    const visitorCount = Math.min(count, occupiedSlots.length * 2);
+    el.visitorLayer.innerHTML = Array.from({ length: visitorCount }, (_, i) => {
+      const occupiedIndex = i % occupiedSlots.length;
+      const rowIndex = Math.floor(i / occupiedSlots.length);
+      const left = slotCenters[occupiedIndex] + (rowIndex === 0 ? -3.2 : 4.6);
+      const scale = rowIndex === 0 ? .78 : .9;
+      const { art, slotIndex } = occupiedSlots[occupiedIndex];
+      const comments = [
+        `“${art.title}”의 색이 참 따뜻해요!`,
+        `${art.era}의 이야기가 느껴져요.`,
+        "상처를 모두 숨기지 않은 게 좋아요.",
+        "복원 기록까지 보니 더 특별해요.",
+        `${art.artType}도 이렇게 복원하는군요!`
+      ];
+      const comment = rowIndex === 0
+        ? `<span class="visitor-comment" style="--comment-delay:${(i * 1.65).toFixed(2)}s">${escapeHTML(comments[(state.day + i) % comments.length])}</span>`
+        : "";
+      return `<button type="button" class="visitor" data-visitor-index="${i}" data-visitor-art-id="${art.id}" data-slot-index="${slotIndex}" aria-label="${escapeHTML(art.title)} 전시를 보는 관람객에게 말 걸기" style="left:${left}%;transform:scale(${scale});--shirt:${colors[i % colors.length]};--skin:${skins[i % skins.length]};animation-delay:${(i % 5) * .18}s">${comment}</button>`;
+    }).join("");
+
+    $$('[data-visitor-art-id]', el.visitorLayer).forEach(visitor => {
+      visitor.addEventListener("click", () => reactToVisitor(visitor));
+    });
+  }
+
+  function reactToVisitor(visitor) {
+    const art = getArtwork(visitor.dataset.visitorArtId);
+    if (!art) return;
+    const reactions = [
+      `“${art.title}”의 이야기를 듣고 나니 다르게 보여요!`,
+      `${art.era}의 흔적을 이렇게 가까이 볼 수 있다니 멋져요.`,
+      "복원한 부분을 숨기지 않은 점이 인상적이에요.",
+      `${art.artist || "작자 미상"}의 손길이 다시 살아난 것 같아요.`,
+      "기록을 함께 보니 작품이 지나온 시간이 느껴져요."
+    ];
+    const reactionIndex = (state.day + Number(visitor.dataset.visitorIndex || 0) + Math.floor(performance.now() / 1000)) % reactions.length;
+    let comment = $(".visitor-comment", visitor);
+    if (!comment) {
+      comment = document.createElement("span");
+      comment.className = "visitor-comment";
+      visitor.appendChild(comment);
+    }
+    comment.textContent = reactions[reactionIndex];
+    comment.style.setProperty("--comment-delay", "0s");
+    comment.classList.remove("is-reacting");
+    void comment.offsetWidth;
+    comment.classList.add("is-reacting");
+    playTone("open");
+  }
+
+  function renderUpgrades() {
+    const ownedBaseCount = BASE_UPGRADES.filter(upgrade => state.upgrades[upgrade.id]).length;
+    const ownedAdvancedCount = ADVANCED_UPGRADES.filter(upgrade => state.upgrades[upgrade.id]).length;
+    const sceneUpgradeIds = ["lighting", "facade", "garden", "lounge", "shop", "cafe", "grandHall", "guide"];
+    const sceneUpgradeSet = new Set(sceneUpgradeIds);
+    const sections = [
+      { label: "전시관 꾸미기 · 화면에 바로 반영", items: sceneUpgradeIds.map(id => UPGRADES.find(upgrade => upgrade.id === id)).filter(Boolean) },
+      { label: "운영·보존 설비", items: BASE_UPGRADES.filter(upgrade => !sceneUpgradeSet.has(upgrade.id)) }
+    ];
+    if (state.day >= ADVANCED_UPGRADE_UNLOCK_DAY) {
+      sections.push({ label: "15일차 개방 · 시설 2단계", items: ADVANCED_UPGRADES });
+    }
+    const investmentUnlocked = state.museumIncomeEarned > 0;
+    const overviewText = investmentUnlocked
+      ? `누적 개관 수입 ${formatNumber(state.museumIncomeEarned)}🪙 · 시설은 보유 코인으로 구매합니다.`
+      : "첫 작품을 전시해 개관 수입을 만들면 시설 투자가 열립니다.";
+    const advancedSummary = state.day >= ADVANCED_UPGRADE_UNLOCK_DAY
+      ? `기본 시설 ${ownedBaseCount} / ${BASE_UPGRADES.length} · 2단계 개선 ${ownedAdvancedCount} / ${ADVANCED_UPGRADES.length}`
+      : `기본 시설 ${ownedBaseCount} / ${BASE_UPGRADES.length} · 2단계 개선은 ${ADVANCED_UPGRADE_UNLOCK_DAY}일차에 개방`;
+    const lateUpgradeTeaser = state.day < ADVANCED_UPGRADE_UNLOCK_DAY
+      ? `<div class="late-upgrade-teaser"><span>🔒</span><div><strong>${ADVANCED_UPGRADE_UNLOCK_DAY}일차에 시설 2단계 개방</strong><small>이미 지은 12개 시설을 더 크게 개선할 수 있어요. 앞으로 ${ADVANCED_UPGRADE_UNLOCK_DAY - state.day}일 남았습니다.</small></div></div>`
+      : "";
+    el.upgradeList.innerHTML = `<div class="upgrade-overview"><strong>${advancedSummary}</strong><span>${overviewText}</span></div>` + sections.map(section => {
+      const cards = section.items.map(upgrade => {
+        const owned = Boolean(state.upgrades[upgrade.id]);
+        const requiredUpgrade = upgrade.requires ? UPGRADES.find(item => item.id === upgrade.requires) : null;
+        const requirementLocked = !owned && Boolean(requiredUpgrade && !state.upgrades[requiredUpgrade.id]);
+        const dayLocked = !owned && state.day < (Number(upgrade.unlockDay) || 1);
+        const investmentLocked = !owned && !investmentUnlocked;
+        const cannotAfford = !owned && state.coins < upgrade.cost;
+        const locked = dayLocked || requirementLocked || investmentLocked;
+        const buttonCopy = dayLocked
+          ? `🔒 ${upgrade.unlockDay}일차`
+          : requirementLocked
+            ? `🔒 ${escapeHTML(requiredUpgrade.name)} 필요`
+            : `${investmentLocked ? "🔒 " : ""}${formatNumber(upgrade.cost)}🪙`;
+        const ownedCopy = upgrade.tier === 2 ? "2단계 완료" : "설치됨";
+        return `<div class="upgrade-card ${owned ? "is-owned" : ""} ${upgrade.tier === 2 ? "is-tier-two" : ""} ${locked ? "is-locked" : ""}">
+          <div class="upgrade-icon">${upgrade.icon}</div>
+          <div class="upgrade-copy"><strong>${easyCopy(upgrade.name)}</strong>${upgrade.tier === 2 ? `<em>${escapeHTML(requiredUpgrade?.name || "기본 시설")}의 2단계 개선</em>` : ""}<span>${easyCopy(upgrade.desc)}</span></div>
+          ${owned ? `<span class="hint-pill">${ownedCopy}</span>` : `<button class="button button-soft ${investmentLocked ? "is-budget-locked" : ""} ${cannotAfford ? "is-unaffordable" : ""}" data-buy-upgrade="${upgrade.id}" aria-label="${upgrade.name} 구매, 보유 코인 ${formatNumber(state.coins)} 중 ${formatNumber(upgrade.cost)} 필요" ${dayLocked || requirementLocked ? "disabled" : ""}>${buttonCopy}</button>`}
+        </div>`;
+      }).join("");
+      return `<p class="upgrade-category">${section.label}</p>${cards}`;
+    }).join("") + lateUpgradeTeaser;
+
+    $$('[data-buy-upgrade]', el.upgradeList).forEach(button => {
+      button.addEventListener("click", () => buyUpgrade(button.dataset.buyUpgrade));
+    });
+  }
+
+  function buyUpgrade(id) {
+    const upgrade = UPGRADES.find(item => item.id === id);
+    if (!upgrade || state.upgrades[id]) return;
+    if (state.day < (Number(upgrade.unlockDay) || 1)) {
+      showToast(`${upgrade.name}은 ${upgrade.unlockDay}일차에 열립니다.`);
+      playTone("wrong");
+      return;
+    }
+    const requiredUpgrade = upgrade.requires ? UPGRADES.find(item => item.id === upgrade.requires) : null;
+    if (requiredUpgrade && !state.upgrades[requiredUpgrade.id]) {
+      showToast(`${requiredUpgrade.name}${particleForEasyCopy(requiredUpgrade.name, "을")} 먼저 설치해야 2단계로 개선할 수 있어요.`);
+      playTone("wrong");
+      return;
+    }
+    if (state.museumIncomeEarned <= 0) {
+      showToast("첫 작품을 전시해 개관 수입을 만든 뒤 시설 투자를 시작할 수 있어요.");
+      playTone("wrong");
+      return;
+    }
+    if (state.coins < upgrade.cost) {
+      showToast(`보유 코인이 ${formatNumber(upgrade.cost - state.coins)}🪙 부족합니다. 새 작품을 복원해 전시 수입을 모아 주세요.`);
+      playTone("wrong");
+      return;
+    }
+    state.coins -= upgrade.cost;
+    state.upgrades[id] = true;
+    state.assistantNotice = true;
+    saveState();
+    renderTopbar();
+    renderGallery();
+    renderLab();
+    updateAssistantNotice();
+    showUpgradeCelebration(upgrade);
+    showToast(`${upgrade.name} ${upgrade.tier === 2 ? "개선" : "설치"} 완료 · ${upgrade.desc}`);
+    playTone("complete");
+    checkStoryProgress();
+  }
+
+  function showUpgradeCelebration(upgrade) {
+    $(".upgrade-celebration")?.remove();
+    const celebration = document.createElement("div");
+    celebration.className = "upgrade-celebration";
+    const actionLabel = upgrade.tier === 2 ? "개선" : "설치";
+    celebration.innerHTML = `<span>${upgrade.icon}</span><div><strong>${escapeHTML(upgrade.name)} ${actionLabel} 완료!</strong><small>${escapeHTML(upgrade.desc)} · 실제 공간과 계산에 바로 반영됐어요.</small></div>`;
+    document.body.appendChild(celebration);
+    el.gallerySceneCard.classList.add("is-upgrade-flashing");
+    const installedFixture = $(`[data-facility="${upgrade.requires || upgrade.id}"]`, el.gallerySceneCard);
+    installedFixture?.classList.add("is-revealing");
+    window.setTimeout(() => {
+      celebration.remove();
+      el.gallerySceneCard.classList.remove("is-upgrade-flashing");
+    }, 1700);
+  }
+
+  function getMuseumEstimates() {
+    const restoredCount = Object.keys(state.restored).length;
+    const displayedArts = displayedGalleryArts();
+    const operations = annexOperationTotals();
+    const hasNewArtwork = restoredCount > state.lastOpeningRestoredCount;
+    const repeatRates = [.6, .3, .1, 0];
+    const freshness = hasNewArtwork
+      ? 1
+      : repeatRates[Math.min(state.repeatOpeningCount, repeatRates.length - 1)] || 0;
+    let appeal = displayedArts.reduce((sum, art) => {
+      const appealPenalty = Math.max(0, Number(state.restored[art.id]?.appealPenalty) || 0);
+      return sum + Math.max(0, art.appeal - appealPenalty);
+    }, 0) + operations.appealBonus;
+    appeal = Math.round(appeal * (1 + upgradeEffectTotal("appealMult")));
+    const baseVisitors = Math.max(0, Math.round(8 + appeal * .78 + state.reputation * .35));
+    const freshnessFactor = .5 + freshness * .5;
+    const visitors = displayedArts.length
+      ? Math.max(1, Math.round(baseVisitors * (1 + upgradeEffectTotal("visitorMult")) * freshnessFactor + operations.visitorBonus * freshnessFactor))
+      : 0;
+    let income = Math.round((baseVisitors * 2.35 + appeal * .4) * freshness);
+    income = Math.round(income * (1 + upgradeEffectTotal("incomeMult")) + operations.incomeBonus * freshness);
+    return { appeal, visitors, income, freshness, hasNewArtwork, operations };
+  }
+
+  function runMuseumDay() {
+    if (museumDayAnimating) return;
+    const restoredCount = Object.keys(state.restored).length;
+    if (!restoredCount) {
+      showToast("전시할 복원 작품이 아직 없습니다.");
+      return;
+    }
+
+    const estimates = getMuseumEstimates();
+    const event = DAY_EVENTS[(state.day + restoredCount + state.reputation) % DAY_EVENTS.length];
+    const visitors = Math.max(1, estimates.visitors + event.visitorBonus);
+    const income = Math.max(0, estimates.income + Math.round(event.incomeBonus * estimates.freshness));
+    const baseRep = Math.max(1, Math.round(visitors / 45));
+    const repGain = Math.round((baseRep + event.repBonus + upgradeEffectTotal("repDaily") + estimates.operations.repBonus) * estimates.freshness);
+
+    if (estimates.hasNewArtwork) {
+      state.lastOpeningRestoredCount = restoredCount;
+      state.repeatOpeningCount = 0;
+    } else {
+      state.repeatOpeningCount += 1;
+    }
+
+    const unlocksAdvancedFacilities = state.day < ADVANCED_UPGRADE_UNLOCK_DAY
+      && state.day + 1 >= ADVANCED_UPGRADE_UNLOCK_DAY;
+    state.coins += income;
+    state.museumIncomeEarned += income;
+    state.reputation += repGain;
+    state.lastDayVisitors = visitors;
+    state.totalVisitors += visitors;
+    state.day += 1;
+    if (unlocksAdvancedFacilities) state.assistantNotice = true;
+    if (!estimates.hasNewArtwork && estimates.freshness <= .3) state.assistantNotice = true;
+    if (isFirstRotationTutorialActive() && state.tutorialStep === "gallery") {
+      state.tutorialStep = "income";
+    }
+    saveState();
+
+    el.dayVisitors.textContent = `${visitors}명`;
+    el.dayIncome.textContent = `+${formatNumber(income)}🪙`;
+    el.dayRep.textContent = `+${repGain}`;
+    const freshnessMessage = estimates.hasNewArtwork
+      ? "새 복원 작품 공개로 관람 관심이 가득 찼습니다."
+      : estimates.freshness > 0
+        ? `같은 전시를 반복해 관람 관심이 ${Math.round(estimates.freshness * 100)}%로 낮아졌습니다. 새 작품을 복원하면 다시 100%가 됩니다.`
+        : "같은 전시의 관심이 모두 소진되어 오늘은 수익과 평판이 없습니다. 새 작품을 복원해 전시를 갱신하세요.";
+    const annexMessage = estimates.operations.programs.length
+      ? `편의동 운영 프로그램: ${estimates.operations.programs.map(item => `${item.facility.name} · ${item.program.name}`).join(", ")}. ${estimates.operations.programs.map(item => item.program.result).join(" ")}`
+      : "편의동 프로그램은 준비하지 않았습니다. 다음 개관 전에는 완성된 편의시설을 눌러 운영을 준비할 수 있습니다.";
+    const advancedFacilityMessage = unlocksAdvancedFacilities
+      ? ` ${ADVANCED_UPGRADE_UNLOCK_DAY}일차가 되어 시설 2단계 개선 12개가 열렸습니다. 이미 지은 시설을 더 발전시켜 보세요.`
+      : "";
+    el.dayEventText.textContent = easyCopy(`${freshnessMessage} ${event.text} ${annexMessage}${advancedFacilityMessage}`);
+    el.resultModal.classList.add("is-hidden");
+    el.storyModal.classList.add("is-hidden");
+    renderAll();
+    museumDayAnimating = true;
+    el.openMuseumButton.disabled = true;
+    el.openMuseumButton.textContent = "오늘 전시 운영 중…";
+    animateVisitorIncome(income);
+    if (isFirstRotationTutorialActive()) scheduleTutorialGuide(false);
+    window.setTimeout(() => {
+      museumDayAnimating = false;
+      el.dayModal.classList.remove("is-hidden");
+      el.modalBackdrop.classList.remove("is-hidden");
+      el.modalBackdrop.setAttribute("aria-hidden", "false");
+      if (isFirstRotationTutorialActive() && state.tutorialStep === "income") {
+        state.tutorialStep = "report";
+        saveState();
+        scheduleTutorialGuide(true);
+      }
+      playTone("complete");
+    }, 1900);
+  }
+
+  function animateVisitorIncome(income) {
+    const visitors = $$(".visitor", el.visitorLayer);
+    if (!visitors.length || income <= 0) {
+      playTone("coin");
+      return;
+    }
+    const baseShare = Math.floor(income / visitors.length);
+    let remainder = income - baseShare * visitors.length;
+    visitors.forEach((visitor, index) => {
+      const share = baseShare + (remainder > 0 ? 1 : 0);
+      remainder = Math.max(0, remainder - 1);
+      const popup = document.createElement("span");
+      popup.className = "visitor-income-pop";
+      popup.style.setProperty("--income-delay", `${index * 90}ms`);
+      popup.textContent = `띠링 +🪙${formatNumber(share)}`;
+      visitor.appendChild(popup);
+      visitor.classList.add("is-earning");
+      window.setTimeout(() => playTone("coin"), index * 90);
+      window.setTimeout(() => visitor.classList.remove("is-earning"), 1050 + index * 90);
+    });
+  }
+
+  function closeDayModal() {
+    el.modalBackdrop.classList.add("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "true");
+    museumDayAnimating = false;
+    if (isFirstRotationTutorialActive() && ["income", "report"].includes(state.tutorialStep)) {
+      state.tutorialStep = "complete";
+      saveState();
+    }
+    renderGallery();
+    showToast(`${state.day}일차를 시작합니다.`);
+    if (isFirstRotationTutorialActive()) scheduleTutorialGuide(true);
+    checkStoryProgress();
+  }
+
+  function renderRecords() {
+    renderRankingPanel();
+    if (!state.records.length) {
+      el.recordList.innerHTML = `<div class="record-empty">아직 완료된 복원 기록이 없습니다.<br />첫 작품을 복원하면 조사·처리 단계가 이곳에 남아요.</div>`;
+      return;
+    }
+
+    const displayedIds = new Set(gallerySelectionIds());
+    el.recordList.innerHTML = state.records.map(record => {
+      const art = getArtwork(record.artId);
+      if (!art) return "";
+      const isDisplayed = displayedIds.has(art.id);
+      return `<article class="record-card" data-record-id="${art.id}">
+        <div class="record-art">${artworkSVG(art.id, "finished", "record")}</div>
+        <div class="record-copy">
+          <p class="eyebrow">DAY ${record.day} · ${art.material}</p>
+          <h3>${art.title}</h3>
+          <p class="record-meta">정확도 ${record.accuracy}% · 등급 ${record.grade || accuracyRewardFor(record.accuracy).grade} · 마지막 작품 위험도 ${record.risk}%${record.appealPenalty ? ` · 미룬 전시 손질 -${record.appealPenalty}` : ""}${record.durationSeconds ? ` · 복원 작업 시간 ${formatRestorationTime(record.durationSeconds)}` : ""}${record.bonusCoins ? ` · 정확도 보너스 +${formatNumber(record.bonusCoins)}🪙` : ""}${record.speedScore ? ` · 빠른 완료 +${formatNumber(record.speedScore)}점/+${formatNumber(record.speedBonusCoins)}🪙` : ""}${record.skillScore ? ` · 관장 점수 ${formatNumber(record.skillScore)}` : ""}</p>
+          <div class="record-steps">${record.steps.map(stepName => `<span class="record-step">${easyCopy(stepName)}</span>`).join("")}</div>
+          <p class="record-note">${easyCopy(`${art.summary}${record.uvHistoryConfirmed ? " 자외선 조사에서 옛 수리 흔적을 확인했습니다." : ""}${record.appealPenalty ? ` 작업량을 나누며 눈에 띄는 손질 ${record.appealPenalty}점을 다음 작업으로 미뤘습니다.` : ""} ${art.ethics}`)}</p>
+          <div class="record-actions">
+            <button class="button button-soft" data-record-art-info="${art.id}">작품 시대·작가·이야기 보기</button>
+            <button class="button ${isDisplayed ? "button-ghost" : "button-primary"}" data-display-record-art="${art.id}" ${isDisplayed ? "disabled" : ""}>${isDisplayed ? "현재 전시 중" : "이 작품 전시하기"}</button>
+          </div>
+        </div>
+      </article>`;
+    }).join("");
+
+    $$("[data-record-art-info]", el.recordList).forEach(button => {
+      button.addEventListener("click", () => openArtworkInfo(button.dataset.recordArtInfo));
+    });
+    $$("[data-display-record-art]", el.recordList).forEach(button => {
+      button.addEventListener("click", () => displayArtworkFromRecord(button.dataset.displayRecordArt));
+    });
+  }
+
+  function displayArtworkFromRecord(artId) {
+    const art = getArtwork(artId);
+    if (!art || !state.restored[artId] || gallerySelectionIds().includes(artId)) return;
+    const replacedArtworkId = queueArtworkForGallery(artId);
+    saveState();
+    switchView("gallery");
+    const replacedArtwork = getArtwork(replacedArtworkId);
+    showToast(replacedArtwork
+      ? `${replacedArtwork.title}을 수장고로 옮기고 ${art.title}을 전시했습니다.`
+      : `${art.title}을 빈 전시대에 배치했습니다.`);
+    playTone("success");
+  }
+
+  function getPracticeChallenge(id) {
+    return PRACTICE_CHALLENGES.find(challenge => challenge.id === id) || null;
+  }
+
+  function practiceDifficultyLabel(level) {
+    return ({ 2: "입문", 3: "보통", 4: "어려움", 5: "숙련" })[level] || "입문";
+  }
+
+  function renderPractice() {
+    const completedCount = PRACTICE_CHALLENGES.filter(challenge => Number(state.practiceBest[challenge.id]) > 0).length;
+    el.practiceSummary.textContent = `최고 기록 ${completedCount} / ${PRACTICE_CHALLENGES.length}`;
+    const practiceCountDescription = $("#practiceCountDescription");
+    if (practiceCountDescription) practiceCountDescription.textContent = `${PRACTICE_CHALLENGES.length}종 복원 기술과 난이도 2~5를 골라 자유롭게 연습하세요. 재료비·보상·실제 작품 기록에는 영향을 주지 않습니다.`;
+    if (practiceMode) {
+      el.practiceMenu.classList.add("is-hidden");
+      el.practiceArenaHost.classList.add("is-active");
+      return;
+    }
+
+    el.practiceMenu.classList.remove("is-hidden");
+    el.practiceArenaHost.classList.remove("is-active");
+    el.practiceList.innerHTML = PRACTICE_CHALLENGES.map((challenge, index) => {
+      const best = Math.max(0, Math.min(100, Number(state.practiceBest[challenge.id]) || 0));
+      const reward = accuracyRewardFor(best);
+      const challengeArt = getArtwork(challenge.artId);
+      const guide = mechanicGuideForArtwork(challenge.id, challengeArt, challenge.step.tool);
+      const defaultDifficulty = Math.max(2, Math.min(5, Number(challenge.difficultyLevel) || 2));
+      return `<article class="practice-card ${best ? "has-score" : ""}">
+        <div class="practice-card-number">${String(index + 1).padStart(2, "0")}</div>
+        <div class="practice-card-icon">${challenge.icon}</div>
+        <div class="practice-card-copy">
+          <div><span>${challenge.difficulty}</span><strong>${MECHANIC_EASY_NAMES[challenge.id]}</strong><em>배우는 용어 · ${challenge.title}</em></div>
+          <p class="practice-rule"><b>지금 할 일</b>${easyCopy(challenge.copy)}</p>
+          <p class="practice-easy"><b>왜 할까요?</b>${easyCopy(guide.easy)}</p>
+          <p class="practice-impact"><b>작품에 좋은 점</b>${easyCopy(guide.impact)}</p>
+          <small>${TOOLS[challenge.step.tool].icon} ${TOOLS[challenge.step.tool].name} · ${best ? `최고 ${best}% · ${reward.grade}` : "아직 안 해 봄"}</small>
+        </div>
+        <div class="practice-card-actions">
+          <label class="practice-difficulty-label">
+            <span>연습 난이도</span>
+            <select class="practice-difficulty-select" data-practice-difficulty aria-label="${MECHANIC_EASY_NAMES[challenge.id]} 연습 난이도">
+              ${[2, 3, 4, 5].map(level => `<option value="${level}" ${level === defaultDifficulty ? "selected" : ""}>${level} · ${practiceDifficultyLabel(level)}</option>`).join("")}
+            </select>
+          </label>
+          <button class="button ${best ? "button-soft" : "button-primary"}" data-start-practice="${challenge.id}">${best ? "다시 연습" : "연습 시작"}</button>
+        </div>
+      </article>`;
+    }).join("");
+
+    $$('[data-start-practice]', el.practiceList).forEach(button => {
+      button.addEventListener("click", () => {
+        const difficultySelect = $("[data-practice-difficulty]", button.closest(".practice-card"));
+        startPracticeChallenge(button.dataset.startPractice, Number(difficultySelect?.value));
+      });
+    });
+  }
+
+  function startPracticeChallenge(id, difficultyLevel = 2) {
+    const challenge = getPracticeChallenge(id);
+    const art = challenge ? getArtwork(challenge.artId) : null;
+    if (!challenge || !art || practiceMode) return;
+    const selectedDifficulty = Math.max(2, Math.min(5, Math.round(Number(difficultyLevel) || 2)));
+    clearMechanicTimers();
+    practiceReturnSession = session
+      ? { ...session, targetIds: Array.isArray(session.targetIds) ? [...session.targetIds] : [] }
+      : null;
+    practiceMode = true;
+    practiceMechanicId = id;
+    stopRestorationTimerTicker();
+    session = createRestorationSession(art.id, false);
+    session.practiceDifficulty = selectedDifficulty;
+    updateRestorationTimer();
+    el.practiceResult.classList.add("is-hidden");
+    el.practiceArenaHost.appendChild(el.labWorkspace);
+    el.practiceMenu.classList.add("is-hidden");
+    el.practiceArenaHost.classList.add("is-active");
+    el.labEmpty.classList.add("is-hidden");
+    el.labWorkspace.classList.remove("is-hidden");
+    el.labWorkspace.classList.add("is-practice-mode");
+    el.labWorkspace.classList.remove("has-upgrade-lab");
+    el.labMaterial.textContent = `PRACTICE ${String(MECHANIC_IDS.indexOf(id) + 1).padStart(2, "0")} · LV.${selectedDifficulty}`;
+    el.labTitle.textContent = MECHANIC_EASY_NAMES[id];
+    el.labSubtitle.textContent = easyCopy(challenge.copy);
+    el.labArtworkEra.textContent = "윤슬의 보존 연습실 · 실제 작품 기록과 분리";
+    el.labArtworkArtist.textContent = `사용 도구 · ${TOOLS[challenge.step.tool].name}`;
+    el.labArtworkStory.textContent = easyCopy(challenge.step.diagnosis);
+    el.labUpgradeBadge.classList.remove("is-hidden");
+    el.labUpgradeBadge.textContent = `🎓 연습 모드 · 난이도 ${selectedDifficulty} · 재료비와 보상 없음`;
+    el.returnToStorage.textContent = "연습 끝내기";
+    renderCurrentStep();
+    updateAssistant("practice");
+    showToast(`${MECHANIC_EASY_NAMES[id]} 난이도 ${selectedDifficulty} 연습을 시작합니다.`);
+  }
+
+  function completePracticeChallenge() {
+    const challenge = getPracticeChallenge(practiceMechanicId);
+    if (!challenge || !session) return exitPracticeChallenge(false);
+    const accuracy = restorationAccuracy(session);
+    const practiceDifficulty = mechanicDifficulty(getArtwork(session.artId));
+    const previousBest = Number(state.practiceBest[challenge.id]) || 0;
+    state.practiceBest[challenge.id] = Math.max(previousBest, accuracy);
+    saveState();
+    const reward = accuracyRewardFor(accuracy);
+    const isNewBest = accuracy > previousBest;
+    finishPracticeSession();
+    el.practiceResult.className = `practice-result grade-${reward.grade.toLowerCase().replace("+", "plus")}`;
+    el.practiceResult.innerHTML = `<span>${reward.grade}</span><div><strong>${MECHANIC_EASY_NAMES[challenge.id]} · 난이도 ${practiceDifficulty} · 정확도 ${accuracy}%${isNewBest ? " · 최고 기록!" : ""}</strong><small>연습 점수와 실수만 기록했어요. 코인·미술관 평판·실제 작품 상태는 바뀌지 않아요.</small></div>`;
+    renderPractice();
+    playTone("complete");
+  }
+
+  function finishPracticeSession() {
+    clearMechanicTimers();
+    el.labView.appendChild(el.labWorkspace);
+    el.labWorkspace.classList.remove("is-practice-mode");
+    el.practiceArenaHost.classList.remove("is-active");
+    session = practiceReturnSession;
+    practiceReturnSession = null;
+    practiceMode = false;
+    practiceMechanicId = null;
+    if (session?.timed) startRestorationTimerTicker();
+    else stopRestorationTimerTicker();
+    renderLab();
+    restorationPaused = Boolean(session);
+    pauseRestorationClock();
+  }
+
+  function exitPracticeChallenge(showMessage = true) {
+    if (!practiceMode) return;
+    finishPracticeSession();
+    renderPractice();
+    if (showMessage) showToast("연습을 종료했습니다. 실제 복원 진행은 그대로 보존됩니다.");
+  }
+
+  function artworkSVG(id, status = "damaged", context = "stage") {
+    const statusClass = status === "finished" ? "is-finished" : status === "clean" ? "is-clean" : status === "stable" ? "is-stable" : status === "filled" ? "is-filled" : "";
+    const label = getArtwork(id)?.title || "미술품";
+    artworkSvgRenderSequence += 1;
+    const instanceId = `${String(id).replace(/[^a-zA-Z0-9_-]/g, "-")}-${artworkSvgRenderSequence}`;
+    const commonStart = `<svg class="artwork-svg ${statusClass}" viewBox="0 0 520 420" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><defs>
+      <linearGradient id="ivory-${instanceId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffdf0"/><stop offset=".52" stop-color="#f7e4bd"/><stop offset="1" stop-color="#dba77b"/></linearGradient>
+      <linearGradient id="gold-${instanceId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe07b"/><stop offset=".45" stop-color="#e9a239"/><stop offset="1" stop-color="#ad642c"/></linearGradient>
+      <linearGradient id="teal-${instanceId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#aee6d3"/><stop offset=".52" stop-color="#5eb1a0"/><stop offset="1" stop-color="#2f736f"/></linearGradient>
+      <linearGradient id="sunset-${instanceId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#78bce8"/><stop offset=".42" stop-color="#ffd28f"/><stop offset="1" stop-color="#ee8069"/></linearGradient>
+      <radialGradient id="jar-${instanceId}" cx="35%" cy="20%" r="80%"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#f8ecd2"/><stop offset="1" stop-color="#d8ac84"/></radialGradient>
+      <filter id="soft-${instanceId}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#6d4853" flood-opacity=".2"/></filter>
+    </defs>`;
+    const end = `</svg>`;
+
+    if (id === "moon-jar") {
+      return commonStart + `
+        <ellipse cx="260" cy="365" rx="150" ry="27" fill="#6f4650" opacity=".15"/>
+        <path d="M183 97 C177 57 211 37 260 37 C309 37 343 57 337 97 L321 134 C373 172 388 254 351 317 C329 354 294 369 260 369 C226 369 191 354 169 317 C132 254 147 172 199 134 Z" fill="url(#jar-${instanceId})" stroke="#7a5360" stroke-width="9" stroke-linejoin="round"/>
+        <ellipse cx="260" cy="91" rx="77" ry="31" fill="#d9a67d" stroke="#7a5360" stroke-width="8"/>
+        <ellipse cx="260" cy="86" rx="62" ry="19" fill="#fff8df"/>
+        <path d="M168 207 C208 196 223 220 260 207 C298 194 318 214 358 202" fill="none" stroke="#ef7d6f" stroke-width="17" opacity=".95"/>
+        <path d="M166 235 C205 225 228 246 262 234 C301 220 320 242 359 227" fill="none" stroke="#f1c653" stroke-width="14" opacity=".95"/>
+        <path d="M175 262 C213 254 232 273 263 263 C300 252 321 270 350 258" fill="none" stroke="#73c6ae" stroke-width="12" opacity=".95"/>
+        <path d="M210 124 C224 91 247 86 265 90" fill="none" stroke="white" stroke-width="18" stroke-linecap="round" opacity=".62"/>
+        <g class="damage-dirt" fill="#7f6b57" opacity=".52"><circle cx="196" cy="177" r="12"/><circle cx="326" cy="277" r="15"/><circle cx="221" cy="317" r="10"/><circle cx="306" cy="151" r="8"/></g>
+        <g class="damage-crack" fill="none" stroke="#8b5d58" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M228 97 L239 139 L219 168 L237 202"/><path d="M314 171 L293 199 L307 225 L286 250"/><path d="M259 254 L248 286 L266 315 L252 348"/>
+        </g>
+        <g class="damage-flake" fill="#c79572" stroke="#7a5360" stroke-width="5"><path d="M173 225 l28 -12 16 23 -27 19z"/><path d="M319 298 l28 -10 7 24 -30 11z"/></g>
+        <path d="M177 334 C205 350 226 354 260 354 C294 354 316 350 343 334" fill="none" stroke="#fff" stroke-width="8" opacity=".3"/>
+      ` + end;
+    }
+
+    if (id === "spring-scroll") {
+      return commonStart + `
+        <ellipse cx="260" cy="375" rx="135" ry="23" fill="#6f4650" opacity=".13"/>
+        <rect x="127" y="45" width="266" height="322" rx="13" fill="#e89b78" stroke="#784f58" stroke-width="9"/>
+        <rect x="152" y="65" width="216" height="280" rx="5" fill="#fff5d6" stroke="#b77866" stroke-width="5"/>
+        <rect x="105" y="29" width="310" height="31" rx="15" fill="url(#gold-${instanceId})" stroke="#704b55" stroke-width="8"/>
+        <rect x="92" y="342" width="336" height="31" rx="15" fill="url(#gold-${instanceId})" stroke="#704b55" stroke-width="8"/>
+        <circle cx="118" cy="357" r="18" fill="#925c49" stroke="#704b55" stroke-width="6"/><circle cx="402" cy="357" r="18" fill="#925c49" stroke="#704b55" stroke-width="6"/>
+        <path d="M190 272 C214 244 232 226 253 190 C267 166 283 138 309 114" fill="none" stroke="#745a49" stroke-width="12" stroke-linecap="round"/>
+        <path d="M239 209 C212 196 196 177 183 151" fill="none" stroke="#745a49" stroke-width="8" stroke-linecap="round"/>
+        <path d="M269 169 C295 165 318 151 335 128" fill="none" stroke="#745a49" stroke-width="8" stroke-linecap="round"/>
+        <g fill="#ef7f88" stroke="#9b4f60" stroke-width="4"><circle cx="183" cy="145" r="20"/><circle cx="205" cy="155" r="18"/><circle cx="193" cy="170" r="19"/><circle cx="333" cy="121" r="18"/><circle cx="314" cy="132" r="17"/><circle cx="330" cy="145" r="17"/></g>
+        <g fill="#f6d461"><circle cx="194" cy="156" r="7"/><circle cx="324" cy="134" r="6"/></g>
+        <path d="M224 243 C200 236 184 219 177 202 C197 201 220 211 237 228" fill="#7ec69d" stroke="#4f876d" stroke-width="5"/>
+        <path d="M290 156 C312 158 332 170 342 188 C318 188 299 180 282 165" fill="#78b9e5" stroke="#4f7791" stroke-width="5"/>
+        <path d="M291 107 C305 91 324 91 339 103 C326 109 316 122 306 137 C295 128 289 119 291 107Z" fill="#ffcf55" stroke="#80584e" stroke-width="5"/>
+        <circle cx="313" cy="109" r="4" fill="#48313a"/>
+        <path d="M339 106 l18 7 -18 8z" fill="#ed8c48" stroke="#80584e" stroke-width="3"/>
+        <path d="M165 79 C178 102 179 132 165 157" fill="none" stroke="white" stroke-width="12" opacity=".43"/>
+        <g class="damage-stain" fill="#9f704f" opacity=".3"><ellipse cx="198" cy="112" rx="35" ry="23"/><ellipse cx="311" cy="274" rx="42" ry="29"/><circle cx="217" cy="296" r="19"/></g>
+        <g class="damage-tear" fill="none" stroke="#8b5b55" stroke-width="7" stroke-linecap="round"><path d="M154 183 l21 17 -18 19 22 17"/><path d="M367 230 l-22 13 18 21 -21 17"/><path d="M228 344 l12 -25 17 10 13 -22"/></g>
+        <path d="M170 88 L350 88" stroke="#d9bb94" stroke-width="4" opacity=".55"/>
+      ` + end;
+    }
+
+    if (id === "sunset-painting") {
+      return commonStart + `
+        <ellipse cx="260" cy="372" rx="157" ry="24" fill="#6f4650" opacity=".14"/>
+        <rect x="77" y="49" width="366" height="303" rx="18" fill="url(#gold-${instanceId})" stroke="#704b55" stroke-width="11"/>
+        <rect x="104" y="76" width="312" height="249" rx="8" fill="#6e4e58" stroke="#fff2c7" stroke-width="9"/>
+        <clipPath id="paint-clip-${instanceId}"><rect x="113" y="85" width="294" height="231" rx="3"/></clipPath>
+        <g clip-path="url(#paint-clip-${instanceId})">
+          <rect x="113" y="85" width="294" height="231" fill="url(#sunset-${instanceId})"/>
+          <circle cx="333" cy="140" r="37" fill="#fff2ad" opacity=".9"/>
+          <path d="M113 220 C153 185 190 191 225 213 C255 232 287 229 327 202 C356 183 382 190 407 205 L407 316 L113 316Z" fill="#6f9b79"/>
+          <path d="M113 257 C164 220 206 233 249 263 C284 287 342 260 407 235 L407 316 L113 316Z" fill="#4e7767"/>
+          <path d="M195 316 C222 272 248 246 276 221 C300 200 320 183 340 159" fill="none" stroke="#e8c78b" stroke-width="26"/>
+          <path d="M191 316 C219 272 247 245 274 221 C298 200 319 180 338 158" fill="none" stroke="#f8e4af" stroke-width="12"/>
+          <g fill="#614a50"><circle cx="245" cy="250" r="8"/><path d="M239 258 h12 l8 35 h-29z"/><circle cx="291" cy="220" r="8"/><path d="M285 228 h12 l7 35 h-27z"/></g>
+          <g fill="#365d4f"><circle cx="158" cy="197" r="42"/><rect x="151" y="195" width="14" height="80"/><circle cx="377" cy="194" r="45"/><rect x="370" y="195" width="14" height="82"/></g>
+          <rect class="damage-dirt" x="113" y="85" width="294" height="231" fill="#8a6b47" opacity=".23"/>
+          <g class="damage-flake" fill="#f0d8b2" stroke="#875c59" stroke-width="4"><path d="M169 135 l18 -9 17 12 -7 21 -24 -2z"/><path d="M308 245 l24 -8 11 20 -15 18 -23 -8z"/><path d="M246 170 l14 -8 14 11 -5 17 -20 1z"/></g>
+          <g class="damage-crack" fill="none" stroke="#805a57" stroke-width="4" opacity=".7"><path d="M148 107 l18 17 -12 16 18 20 -13 21"/><path d="M356 113 l-17 21 14 15 -17 23 10 25"/></g>
+        </g>
+        <path d="M92 67 L423 336" stroke="white" stroke-width="7" opacity=".18"/>
+        <g fill="#fff2c7"><circle cx="97" cy="69" r="10"/><circle cx="423" cy="69" r="10"/><circle cx="97" cy="333" r="10"/><circle cx="423" cy="333" r="10"/></g>
+      ` + end;
+    }
+
+    if (id === "bronze-mirror") {
+      return commonStart + `
+        <ellipse cx="260" cy="372" rx="150" ry="24" fill="#6f4650" opacity=".14"/>
+        <path d="M226 295 L202 351 H318 L294 295Z" fill="url(#gold-${instanceId})" stroke="#714d55" stroke-width="9"/>
+        <rect x="174" y="343" width="172" height="30" rx="14" fill="#a76b45" stroke="#714d55" stroke-width="8"/>
+        <circle cx="260" cy="188" r="138" fill="url(#teal-${instanceId})" stroke="#714d55" stroke-width="12"/>
+        <circle cx="260" cy="188" r="108" fill="#8dc8b8" stroke="#d9ad60" stroke-width="10"/>
+        <circle cx="260" cy="188" r="32" fill="url(#gold-${instanceId})" stroke="#714d55" stroke-width="8"/>
+        <g fill="none" stroke="#326f68" stroke-width="11" stroke-linecap="round">
+          <path d="M260 86 C300 92 324 116 326 148 C328 179 310 194 285 192 C304 214 303 241 282 262 C258 286 222 279 207 253"/>
+          <path d="M260 290 C219 284 195 260 193 229 C191 198 210 183 235 184 C216 162 217 135 238 114 C260 92 296 97 313 121"/>
+        </g>
+        <g fill="#e0b25b"><circle cx="260" cy="77" r="9"/><circle cx="371" cy="188" r="9"/><circle cx="260" cy="299" r="9"/><circle cx="149" cy="188" r="9"/></g>
+        <path d="M193 112 C224 73 273 62 316 79" fill="none" stroke="white" stroke-width="17" stroke-linecap="round" opacity=".34"/>
+        <g class="damage-corrosion" fill="#4f946c" stroke="#2f6f5b" stroke-width="4" opacity=".92"><circle cx="191" cy="145" r="20"/><circle cx="323" cy="132" r="25"/><circle cx="338" cy="229" r="22"/><circle cx="215" cy="256" r="18"/><circle cx="273" cy="177" r="13"/></g>
+        <g class="damage-crack" fill="none" stroke="#375c58" stroke-width="6"><path d="M202 90 l18 28 -9 22 21 19"/><path d="M324 250 l-21 -22 10 -24 -18 -20"/></g>
+      ` + end;
+    }
+
+    const catalogArt = getArtwork(id);
+    if (catalogArt?.visual) {
+      return genericArtworkSVG(catalogArt, statusClass, instanceId);
+    }
+
+    return commonStart + `<text x="260" y="210" text-anchor="middle" font-size="28" fill="#6f4d57">ARTWORK</text>` + end;
+  }
+
+  function genericArtworkSVG(art, statusClass, instanceId) {
+    const colorA = art.colors?.[0] || "#ffd8c7";
+    const colorB = art.colors?.[1] || "#bfe8dc";
+    const accent = art.accent || "#f5c85f";
+    const variant = Number(art.variant || 0);
+    const visualSeed = Number(art.visualSeed || variant * 31 + 7);
+    const label = escapeAttribute(art.title);
+    const start = `<svg class="artwork-svg ${statusClass}" viewBox="0 0 520 420" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><defs>
+      <linearGradient id="catalog-main-${instanceId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${colorA}"/><stop offset="1" stop-color="${colorB}"/></linearGradient>
+      <linearGradient id="catalog-accent-${instanceId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${accent}"/><stop offset="1" stop-color="#c27a54"/></linearGradient>
+      <filter id="catalog-soft-${instanceId}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#6d4853" flood-opacity=".2"/></filter>
+    </defs><ellipse cx="260" cy="368" rx="145" ry="24" fill="#6f4650" opacity=".14"/>`;
+    let body = "";
+
+    if (art.visual === "vessel") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <path d="M200 91 C191 61 218 45 260 45 C302 45 329 61 320 91 L306 132 C358 164 376 246 344 311 C325 349 294 365 260 365 C226 365 195 349 176 311 C144 246 162 164 214 132Z" fill="url(#catalog-main-${instanceId})" stroke="#704f58" stroke-width="9"/>
+        <ellipse cx="260" cy="88" rx="63" ry="24" fill="${accent}" stroke="#704f58" stroke-width="8"/><ellipse cx="260" cy="84" rx="48" ry="13" fill="#fff8e7"/>
+        <path d="M177 220 C214 202 237 229 270 214 C302 199 326 216 352 200" fill="none" stroke="${accent}" stroke-width="${10 + variant % 6}" opacity=".88"/>
+        <path d="M206 131 C224 99 244 94 264 97" fill="none" stroke="white" stroke-width="16" stroke-linecap="round" opacity=".55"/>
+      </g>`;
+    } else if (art.visual === "hanging") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <rect x="126" y="42" width="268" height="326" rx="14" fill="${colorA}" stroke="#704f58" stroke-width="9"/>
+        <rect x="151" y="68" width="218" height="274" rx="5" fill="#fff8df" stroke="${colorB}" stroke-width="6"/>
+        <rect x="102" y="27" width="316" height="31" rx="15" fill="url(#catalog-accent-${instanceId})" stroke="#704f58" stroke-width="8"/>
+        <rect x="91" y="342" width="338" height="31" rx="15" fill="url(#catalog-accent-${instanceId})" stroke="#704f58" stroke-width="8"/>
+        <path d="M190 290 C221 243 235 212 264 171 C286 140 305 122 334 103" fill="none" stroke="#71564c" stroke-width="11" stroke-linecap="round"/>
+        <g fill="${accent}" stroke="#985565" stroke-width="4"><circle cx="${190 + variant % 30}" cy="155" r="20"/><circle cx="316" cy="${127 + variant % 24}" r="18"/><circle cx="240" cy="224" r="15"/></g>
+        <g fill="${colorB}"><path d="M226 237 C196 228 181 208 179 186 C207 191 228 207 242 229Z"/><path d="M273 172 C301 169 326 179 341 199 C314 202 289 192 268 181Z"/></g>
+      </g>`;
+    } else if (art.visual === "framed" || art.visual === "abstract") {
+      const abstractMarks = art.visual === "abstract"
+        ? `<circle cx="205" cy="172" r="${42 + variant % 18}" fill="${accent}" opacity=".88"/><rect x="255" y="118" width="94" height="128" rx="22" fill="${colorB}" transform="rotate(${variant % 2 ? 9 : -8} 302 182)"/><path d="M138 271 C204 218 281 312 376 220" fill="none" stroke="#fff" stroke-width="22" opacity=".68"/>`
+        : `<circle cx="329" cy="144" r="34" fill="#fff0a8"/><path d="M117 232 C170 178 220 199 253 229 C294 267 341 197 403 213 L403 316 L117 316Z" fill="${colorB}"/><path d="M117 272 C174 221 232 250 282 279 C325 304 365 267 403 246 L403 316 L117 316Z" fill="#568173"/><path d="M206 316 C240 267 275 226 329 177" fill="none" stroke="#f8e5b0" stroke-width="18"/>`;
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <rect x="76" y="48" width="368" height="305" rx="18" fill="url(#catalog-accent-${instanceId})" stroke="#704f58" stroke-width="11"/>
+        <rect x="105" y="77" width="310" height="247" rx="7" fill="url(#catalog-main-${instanceId})" stroke="#fff2d1" stroke-width="8"/>
+        ${abstractMarks}
+        <path d="M93 65 L424 336" stroke="white" stroke-width="7" opacity=".2"/>
+      </g>`;
+    } else if (art.visual === "round") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <path d="M228 298 L204 354 H316 L292 298Z" fill="url(#catalog-accent-${instanceId})" stroke="#704f58" stroke-width="9"/>
+        <rect x="175" y="345" width="170" height="28" rx="13" fill="#aa7452" stroke="#704f58" stroke-width="8"/>
+        <circle cx="260" cy="190" r="137" fill="url(#catalog-main-${instanceId})" stroke="#704f58" stroke-width="12"/>
+        <circle cx="260" cy="190" r="104" fill="none" stroke="${accent}" stroke-width="11"/>
+        <circle cx="260" cy="190" r="31" fill="url(#catalog-accent-${instanceId})" stroke="#704f58" stroke-width="8"/>
+        <g fill="none" stroke="#49766d" stroke-width="10"><path d="M260 94 C322 105 341 159 309 195 C344 223 320 282 260 287"/><path d="M260 287 C198 276 179 222 211 186 C176 158 200 99 260 94"/></g>
+      </g>`;
+    } else if (art.visual === "textile") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <path d="M126 54 H394 L379 352 Q260 379 141 352Z" fill="url(#catalog-main-${instanceId})" stroke="#704f58" stroke-width="10"/>
+        <path d="M159 82 H361 L350 325 Q260 346 170 325Z" fill="${colorA}" stroke="${accent}" stroke-width="7" stroke-dasharray="10 8"/>
+        <g fill="${accent}" stroke="#985565" stroke-width="4"><circle cx="260" cy="182" r="43"/><circle cx="220" cy="209" r="27"/><circle cx="300" cy="209" r="27"/></g>
+        <path d="M260 232 C232 261 218 286 212 319 M260 232 C289 259 302 283 308 319" fill="none" stroke="#568173" stroke-width="12" stroke-linecap="round"/>
+        <path d="M154 105 C201 87 316 88 365 109" fill="none" stroke="white" stroke-width="13" opacity=".35"/>
+      </g>`;
+    } else if (art.visual === "box") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <path d="M128 133 L176 79 H347 L396 133 L363 321 H157Z" fill="url(#catalog-main-${instanceId})" stroke="#704f58" stroke-width="11"/>
+        <path d="M128 133 H396 L371 185 H149Z" fill="#5b4450" opacity=".32"/>
+        <rect x="166" y="157" width="188" height="137" rx="18" fill="#5c3c48" stroke="${accent}" stroke-width="8"/>
+        <g fill="${accent}"><circle cx="228" cy="211" r="28"/><circle cx="292" cy="230" r="24"/><path d="M242 260 C257 233 278 199 312 180 C299 225 280 260 242 281Z"/></g>
+        <path d="M179 106 H343" stroke="white" stroke-width="12" stroke-linecap="round" opacity=".35"/>
+      </g>`;
+    } else if (art.visual === "sculpture" || art.visual === "bust") {
+      const bust = art.visual === "bust";
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <rect x="160" y="326" width="200" height="45" rx="12" fill="url(#catalog-accent-${instanceId})" stroke="#704f58" stroke-width="9"/>
+        <path d="M203 322 C205 282 222 255 245 244 ${bust ? "C207 224 199 167 224 122 C242 89 285 87 307 117 C338 159 322 221 281 244 C309 258 326 284 330 322Z" : "C190 219 193 151 227 103 C250 69 292 79 311 112 C339 161 324 223 283 249 C312 262 326 287 330 322Z"}" fill="url(#catalog-main-${instanceId})" stroke="#704f58" stroke-width="10"/>
+        <circle cx="244" cy="167" r="6" fill="#72525a"/><circle cx="285" cy="167" r="6" fill="#72525a"/>
+        <path d="M249 205 Q265 ${215 + variant % 9} 282 203" fill="none" stroke="#9d6c6e" stroke-width="6" stroke-linecap="round"/>
+        <path d="M220 123 C241 93 277 91 304 117" fill="none" stroke="white" stroke-width="13" opacity=".38"/>
+      </g>`;
+    } else if (art.visual === "glass") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <path d="M215 54 H305 L297 116 C338 145 356 219 338 297 C329 337 301 361 260 361 C219 361 191 337 182 297 C164 219 182 145 223 116Z" fill="url(#catalog-main-${instanceId})" fill-opacity=".76" stroke="#704f58" stroke-width="10"/>
+        <rect x="211" y="47" width="98" height="31" rx="13" fill="${accent}" stroke="#704f58" stroke-width="8"/>
+        <path d="M205 146 C237 120 285 120 316 149" fill="none" stroke="white" stroke-width="15" opacity=".5"/>
+        <g fill="${accent}" opacity=".7"><circle cx="226" cy="237" r="17"/><circle cx="290" cy="276" r="12"/><circle cx="278" cy="194" r="9"/></g>
+      </g>`;
+    } else if (art.visual === "photo") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <rect x="121" y="45" width="278" height="330" rx="12" fill="#fff9e9" stroke="#704f58" stroke-width="10" transform="rotate(${variant % 2 ? 2 : -2} 260 210)"/>
+        <rect x="149" y="77" width="222" height="229" rx="4" fill="url(#catalog-main-${instanceId})"/>
+        <circle cx="310" cy="134" r="31" fill="#fff0a8"/><path d="M149 244 C193 199 232 221 267 246 C299 269 334 239 371 212 V306 H149Z" fill="#6f9181"/>
+        <g fill="#594951"><circle cx="232" cy="232" r="12"/><path d="M219 244 H245 L255 288 H208Z"/></g>
+        <rect x="175" y="328" width="170" height="8" rx="4" fill="${accent}" opacity=".6"/>
+      </g>`;
+    } else if (art.visual === "book") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <path d="M73 121 Q166 78 253 126 V345 Q166 299 73 338Z" fill="${colorA}" stroke="#704f58" stroke-width="10"/>
+        <path d="M447 121 Q354 78 267 126 V345 Q354 299 447 338Z" fill="${colorB}" stroke="#704f58" stroke-width="10"/>
+        <path d="M260 128 V346" stroke="#704f58" stroke-width="12"/>
+        <g stroke="#a78472" stroke-width="5" opacity=".6"><path d="M104 158 Q171 131 228 158"/><path d="M104 192 Q171 165 228 192"/><path d="M292 158 Q355 132 416 158"/><path d="M292 192 Q355 166 416 192"/></g>
+        <circle cx="353" cy="249" r="37" fill="${accent}" opacity=".75"/><path d="M331 251 l16 17 31 -39" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
+      </g>`;
+    } else if (art.visual === "mural") {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <path d="M100 65 L405 48 L431 148 L405 355 L298 371 L194 351 L82 287 L96 185Z" fill="#e8d3b2" stroke="#704f58" stroke-width="11"/>
+        <path d="M117 91 L383 76 L407 157 L383 324 L296 344 L207 327 L108 273 L118 190Z" fill="url(#catalog-main-${instanceId})"/>
+        <circle cx="307" cy="145" r="31" fill="${accent}"/><path d="M122 267 C187 205 234 236 277 267 C317 296 361 253 400 218 V325 L296 344 L207 327Z" fill="#568173"/>
+        <g fill="#654d55"><circle cx="213" cy="220" r="11"/><path d="M202 232 H224 L235 280 H190Z"/><circle cx="274" cy="202" r="10"/><path d="M264 213 H284 L293 258 H254Z"/></g>
+      </g>`;
+    } else {
+      body = `<g filter="url(#catalog-soft-${instanceId})">
+        <rect x="156" y="48" width="208" height="319" rx="34" fill="url(#catalog-main-${instanceId})" stroke="#704f58" stroke-width="11"/>
+        <path d="M194 95 H326 M194 126 H326 M194 283 H326" stroke="${accent}" stroke-width="10" stroke-linecap="round"/>
+        <path d="M260 159 C299 172 314 207 296 239 C278 270 233 272 215 240 C196 206 218 170 260 159Z" fill="${accent}" opacity=".82"/>
+        <circle cx="244" cy="205" r="6" fill="#704f58"/><circle cx="277" cy="205" r="6" fill="#704f58"/>
+      </g>`;
+    }
+
+    const titleMotif = artworkTitleMotif(art, accent, colorA, colorB);
+    const rotation = (visualSeed % 7) - 3;
+    const scaleX = .93 + (visualSeed % 5) * .025;
+    const scaleY = .94 + (Math.floor(visualSeed / 5) % 4) * .022;
+    body = `<g transform="translate(260 210) rotate(${rotation}) scale(${scaleX} ${scaleY}) translate(-260 -210)">${body}${titleMotif}</g>`;
+    const damage = `<g class="damage-stain" fill="#805f52" opacity=".28"><circle cx="${148 + visualSeed * 7 % 155}" cy="${117 + visualSeed * 11 % 96}" r="${15 + visualSeed % 11}"/><ellipse cx="${278 + visualSeed * 5 % 88}" cy="${244 + visualSeed * 3 % 72}" rx="${23 + visualSeed % 13}" ry="${14 + visualSeed % 8}"/></g>
+      <g class="damage-crack" fill="none" stroke="#79575a" stroke-width="${4 + visualSeed % 4}" stroke-linecap="round"><path d="M${176 + visualSeed % 44} 92 l18 31 -13 25 20 29"/><path d="M${304 + visualSeed % 35} 221 l-19 22 12 25 -22 28"/></g>
+      <g class="damage-flake" fill="#f2dec3" stroke="#79575a" stroke-width="4"><path d="M${145 + visualSeed % 34} 242 l25 -11 15 19 -18 20 -26 -8z"/><path d="M${292 + visualSeed % 28} 128 l22 -8 14 17 -13 19 -24 -7z"/></g>`;
+    return start + body + (titleMotif ? "" : artworkOrnaments(art, accent, colorA, colorB)) + damage + `</svg>`;
+  }
+
+  function artworkTitleMotif(art, accent, colorA, colorB) {
+    const title = String(art.title || "").normalize("NFKC");
+    const dark = "#654b57";
+    const pale = "#fff8d8";
+    const green = "#568873";
+    const layers = [];
+    const add = markup => {
+      if (layers.length < 2) layers.push(markup);
+    };
+
+    if (/달|별|은하|밤|천문|별자리|우주/.test(title)) {
+      add(`<g aria-hidden="true">
+        <path d="M319 103 C287 115 284 160 317 176 C294 174 275 155 275 131 C275 104 297 84 324 86 C339 87 351 94 359 105 C345 100 332 99 319 103Z" fill="${pale}" stroke="${dark}" stroke-width="5"/>
+        <g fill="${accent}"><path d="M177 112 l5 10 11 2 -8 8 2 11 -10 -5 -10 5 2 -11 -8 -8 11 -2z"/><path d="M373 194 l4 8 9 1 -7 7 2 9 -8 -4 -8 4 2 -9 -7 -7 9 -1z"/><circle cx="222" cy="151" r="6"/><circle cx="347" cy="230" r="5"/></g>
+        <path d="M177 112 L222 151 L319 103 L373 194" fill="none" stroke="${colorB}" stroke-width="4" stroke-dasharray="7 7" opacity=".82"/>
+      </g>`);
+    } else if (/해|햇살|노을|새벽|정오/.test(title)) {
+      add(`<g aria-hidden="true" stroke-linecap="round">
+        <circle cx="330" cy="133" r="35" fill="${accent}" stroke="${dark}" stroke-width="5"/>
+        <g stroke="${accent}" stroke-width="8"><path d="M330 76 V57"/><path d="M330 209 V190"/><path d="M273 133 H253"/><path d="M407 133 H387"/><path d="M289 92 l-14 -14"/><path d="M371 174 l14 14"/><path d="M371 92 l14 -14"/><path d="M289 174 l-14 14"/></g>
+      </g>`);
+    }
+
+    if (/꽃|연꽃|모란|매화|국화|동백|라일락|양귀비|해바라기|초충|화조|식물|약초/.test(title)) {
+      add(`<g aria-hidden="true">
+        <path d="M221 300 C225 257 230 218 246 178 M249 297 C271 258 286 222 292 180" fill="none" stroke="${green}" stroke-width="9" stroke-linecap="round"/>
+        <path d="M228 247 C196 235 183 214 183 192 C210 197 231 214 241 237Z M268 244 C298 230 319 210 324 187 C296 191 274 210 258 234Z" fill="${colorB}" stroke="${green}" stroke-width="4"/>
+        <g fill="${accent}" stroke="${dark}" stroke-width="4"><circle cx="247" cy="168" r="19"/><circle cx="226" cy="177" r="18"/><circle cx="232" cy="153" r="18"/><circle cx="258" cy="149" r="18"/><circle cx="268" cy="174" r="18"/></g><circle cx="248" cy="164" r="9" fill="${pale}"/>
+      </g>`);
+    }
+
+    if (/새(?!벽|끼)|학|봉황|기러기|두루미|물총새|갈매기|날개|화조/.test(title)) {
+      add(`<g aria-hidden="true" stroke="${dark}" stroke-width="5" stroke-linejoin="round">
+        <ellipse cx="294" cy="183" rx="48" ry="30" fill="${colorB}"/><circle cx="338" cy="158" r="20" fill="${pale}"/>
+        <path d="M356 158 l25 10 -25 9z" fill="${accent}"/><path d="M284 178 C263 146 244 151 245 179 C249 202 274 206 300 192Z" fill="${accent}"/>
+        <path d="M254 190 l-34 27 43 -10z" fill="${colorA}"/><circle cx="343" cy="153" r="4" fill="${dark}" stroke="none"/>
+        <path d="M299 211 l-5 30 M315 211 l5 30" fill="none" stroke-linecap="round"/>
+      </g>`);
+    }
+
+    if (/물|파도|바다|강|연못|항구|봄비|빗|폭포|수영|물결/.test(title)) {
+      add(`<g aria-hidden="true" fill="none" stroke-linecap="round">
+        <path d="M137 263 C177 230 205 288 246 253 C286 219 315 280 356 246 C377 229 392 234 405 246" stroke="${accent}" stroke-width="12"/>
+        <path d="M132 294 C174 261 207 316 249 283 C292 249 325 307 383 270" stroke="${colorB}" stroke-width="10"/>
+        <path d="M184 219 C204 203 225 205 243 220 C223 237 202 239 184 219Z" fill="${pale}" stroke="${dark}" stroke-width="4"/><circle cx="228" cy="217" r="3" fill="${dark}" stroke="none"/>
+      </g>`);
+    }
+
+    if (/산|숲|정원|들판|나무|소나무|대나무|풀잎|온실|밀밭/.test(title)) {
+      add(`<g aria-hidden="true" stroke="${dark}" stroke-width="5" stroke-linejoin="round">
+        <path d="M132 287 L206 196 L246 242 L294 169 L391 287Z" fill="${colorB}"/><path d="M264 287 L327 219 L401 287Z" fill="${green}"/>
+        <path d="M173 270 V207" fill="none" stroke-width="10"/><circle cx="173" cy="190" r="33" fill="${accent}"/><circle cx="149" cy="211" r="24" fill="${colorA}"/><circle cx="195" cy="213" r="25" fill="${colorB}"/>
+      </g>`);
+    }
+
+    if (/토끼|고양이|여우|사자|사슴|유니콘|뿔짐승|말|거북|물고기|나비|곤충|산양|새끼|동물/.test(title)) {
+      const hasHorn = /유니콘|뿔짐승|사슴|산양/.test(title);
+      const longEars = /토끼|사슴/.test(title);
+      add(`<g aria-hidden="true" stroke="${dark}" stroke-width="5" stroke-linejoin="round">
+        <path d="M218 153 ${longEars ? "C198 105 217 88 240 143" : "L233 116 L252 148"} M302 153 ${longEars ? "C322 105 303 88 280 143" : "L287 116 L268 148"}" fill="${colorA}"/>
+        ${hasHorn ? `<path d="M260 144 L277 91 L287 147Z" fill="${accent}"/>` : ""}
+        <ellipse cx="260" cy="202" rx="72" ry="65" fill="${colorB}"/><circle cx="235" cy="190" r="7" fill="${dark}" stroke="none"/><circle cx="286" cy="190" r="7" fill="${dark}" stroke="none"/>
+        <path d="M252 213 Q260 222 268 213 M260 221 V235 M260 235 q-17 15 -32 0 M260 235 q17 15 32 0" fill="none" stroke-linecap="round"/>
+      </g>`);
+    }
+
+    if (/사람|아이|소녀|소년|여인|여신|무희|배우|가족|악사|산책|초상|씨름|한판|친구들/.test(title)) {
+      add(`<g aria-hidden="true" fill="${colorB}" stroke="${dark}" stroke-width="5" stroke-linejoin="round">
+        <circle cx="225" cy="175" r="24" fill="${pale}"/><path d="M197 284 L207 207 Q225 190 243 207 L255 284Z"/>
+        <circle cx="302" cy="160" r="27" fill="${pale}"/><path d="M270 284 L282 195 Q302 178 322 195 L338 284Z" fill="${accent}"/>
+        <path d="M243 222 Q262 207 282 217" fill="none" stroke-linecap="round"/>
+      </g>`);
+    }
+
+    if (/방|집|도시|골목|카페|극장|시장|학교|부엌|창가|건축|궁전|사진관|공방/.test(title)) {
+      add(`<g aria-hidden="true" stroke="${dark}" stroke-width="5" stroke-linejoin="round">
+        <path d="M170 190 L258 119 L351 190 V294 H170Z" fill="${colorB}"/><path d="M151 193 L258 101 L370 193" fill="none" stroke-width="12" stroke-linecap="round"/>
+        <rect x="205" y="211" width="49" height="83" fill="${accent}"/><rect x="281" y="204" width="45" height="48" fill="${pale}"/>
+        <path d="M303 204 V252 M281 228 H326" fill="none" stroke-width="4"/>
+      </g>`);
+    }
+
+    if (/음악|악보|노래|음표|악사|종소리|인형극/.test(title)) {
+      add(`<g aria-hidden="true" fill="${accent}" stroke="${dark}" stroke-width="4" stroke-linecap="round">
+        <circle cx="201" cy="252" r="18"/><circle cx="302" cy="218" r="18"/><path d="M219 251 V140 L320 119 V218 M219 171 L320 150" fill="none" stroke-width="12"/>
+        <path d="M351 171 q25 -25 41 0 q-16 25 -41 0Z" fill="${colorB}"/>
+      </g>`);
+    }
+
+    if (/책|수첩|필사본|일지|도감|노트|기록|편지|지도|달력|대본|시집|화첩|병풍|족자/.test(title)) {
+      add(`<g aria-hidden="true" stroke="${dark}" stroke-width="5" stroke-linejoin="round">
+        <path d="M139 158 Q194 130 252 162 V296 Q194 267 139 291Z" fill="${pale}"/><path d="M381 158 Q326 130 268 162 V296 Q326 267 381 291Z" fill="${colorA}"/><path d="M260 161 V298" fill="none" stroke-width="9"/>
+        <path d="M165 190 Q203 173 232 190 M165 221 Q203 204 232 221 M288 190 Q326 173 355 190 M288 221 Q326 204 355 221" fill="none" stroke="${accent}" stroke-width="6" stroke-linecap="round"/>
+      </g>`);
+    }
+
+    if (/포도|복숭아|석류|오렌지|과일|씨앗|도토리/.test(title)) {
+      add(`<g aria-hidden="true" stroke="${dark}" stroke-width="4">
+        <path d="M259 125 C283 103 309 111 324 130 C297 137 277 148 259 170" fill="none" stroke="${green}" stroke-width="9"/>
+        <g fill="${accent}"><circle cx="240" cy="178" r="20"/><circle cx="270" cy="177" r="20"/><circle cx="225" cy="207" r="19"/><circle cx="256" cy="209" r="21"/><circle cx="289" cy="207" r="19"/><circle cx="242" cy="239" r="19"/><circle cx="273" cy="238" r="18"/></g>
+        <path d="M283 137 C309 119 335 130 341 154 C318 158 300 154 283 137Z" fill="${colorB}"/>
+      </g>`);
+    }
+
+    if (/리본|나선|바람|시간|궤도|소음|숨결|무중력|색면|콜라주/.test(title)) {
+      add(`<g aria-hidden="true" fill="none" stroke-linecap="round">
+        <path d="M143 241 C183 123 275 313 366 148" stroke="${accent}" stroke-width="18"/>
+        <path d="M155 170 C224 272 291 102 383 241" stroke="${colorB}" stroke-width="12" opacity=".9"/>
+        <circle cx="199" cy="137" r="17" fill="${colorA}" stroke="${dark}" stroke-width="4"/><circle cx="347" cy="267" r="14" fill="${pale}" stroke="${dark}" stroke-width="4"/>
+      </g>`);
+    }
+
+    if (!layers.length) return "";
+    return `<g class="artwork-title-motif" opacity=".9" pointer-events="none">${layers.join("")}</g>`;
+  }
+
+  function artworkOrnaments(art, accent, colorA, colorB) {
+    const seed = Number(art.visualSeed || 1);
+    const motif = seed % 6;
+    const offset = seed % 37;
+    if (motif === 0) {
+      return `<g opacity=".62" fill="${accent}">${Array.from({ length: 7 }, (_, index) => {
+        const x = 142 + ((index * 53 + offset) % 245);
+        const y = 108 + ((index * 71 + offset) % 190);
+        return `<path d="M${x} ${y - 9} l3 6 7 1 -5 5 2 7 -7 -4 -6 4 1 -7 -5 -5 7 -1z"/>`;
+      }).join("")}</g>`;
+    }
+    if (motif === 1) {
+      return `<g fill="none" stroke="${accent}" stroke-width="7" stroke-linecap="round" opacity=".56"><path d="M126 ${170 + offset % 40} C178 ${132 + offset % 30} 219 ${220 + offset % 18} 270 177 S361 142 405 ${192 + offset % 28}"/><path d="M130 ${246 + offset % 25} C195 207 233 287 292 241 S367 214 397 263"/></g>`;
+    }
+    if (motif === 2) {
+      return `<g opacity=".58" fill="${colorB}" stroke="${accent}" stroke-width="4">${Array.from({ length: 5 }, (_, index) => {
+        const x = 168 + index * 43 + offset % 19;
+        const y = 134 + ((index + seed) % 3) * 58;
+        return `<path d="M${x} ${y} C${x - 19} ${y - 24} ${x - 35} ${y + 13} ${x} ${y + 34} C${x + 35} ${y + 13} ${x + 19} ${y - 24} ${x} ${y}Z"/>`;
+      }).join("")}</g>`;
+    }
+    if (motif === 3) {
+      return `<g opacity=".42" stroke="${accent}" stroke-width="5">${Array.from({ length: 5 }, (_, index) => `<path d="M${151 + index * 46} 104 V318 M126 ${132 + index * 43} H394" fill="none"/>`).join("")}</g>`;
+    }
+    if (motif === 4) {
+      return `<g opacity=".58" fill="${accent}">${Array.from({ length: 10 }, (_, index) => `<circle cx="${143 + (index * 67 + offset) % 245}" cy="${112 + (index * 41 + offset) % 198}" r="${5 + (index + seed) % 8}"/>`).join("")}</g>`;
+    }
+    return `<g opacity=".55" fill="none" stroke="${colorA}" stroke-width="8" stroke-linecap="round"><path d="M150 280 Q196 ${118 + offset} 247 272 T370 151"/><path d="M165 158 Q221 ${294 - offset} 281 149 T383 278"/></g>`;
+  }
+
+  function escapeAttribute(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]);
+  }
+
+  function getArtwork(id) {
+    return ARTWORKS.find(art => art.id === id) || null;
+  }
+
+  function isFirstRotationTutorialActive() {
+    return Boolean(
+      state.started
+      && state.onboardingComplete
+      && state.introStorySeen
+      && !state.tutorialComplete
+    );
+  }
+
+  function reconcileTutorialAfterReload() {
+    if (!isFirstRotationTutorialActive()) return;
+    const previousStep = state.tutorialStep;
+    if (state.tutorialStep === "story_read") state.tutorialStep = "select";
+    if (state.restored["moon-jar"] && ["story", "select", "lab", "result"].includes(state.tutorialStep)) {
+      state.tutorialStep = "gallery";
+    }
+    if (state.day > 1 && ["income", "report"].includes(state.tutorialStep)) {
+      state.tutorialStep = "complete";
+    }
+    if (state.tutorialStep !== previousStep) saveState();
+  }
+
+  function tutorialMechanicInstruction(mechanic, toolId = "") {
+    if (["choice", "trace", "drag", "stability", "precision", "sequence", "rhythm", "tone", "align", "uv"].includes(mechanic) && toolId) {
+      return mechanicNoticeForTool(toolId, mechanic);
+    }
+    return ({
+      spot: "마우스나 손가락으로 둥근 사광을 움직이세요. 빛 안에서 선명해진 손상만 짧게 눌러 기록하고 물음표 제작 흔적은 피합니다.",
+      uv: "UV 조사등을 움직여 원본의 고른 형광은 피하고, 경계와 질감이 달라지는 어두운 덧칠·밝은 접착 보수 흔적 3곳만 기록하세요.",
+      trace: "포인터가 붓으로 바뀝니다. 왼쪽의 빛나는 점에 붓을 대고 초록 결 위를 직접 따라 세 줄을 그으세요.",
+      choice: "시험구를 한 번씩 눌러 반응을 먼저 여세요. 색 변화 5% 이하, 안료 이동 없음, 광택 변화 5% 이하를 모두 만족하는 결과를 고릅니다.",
+      drag: "접착제를 바르기 전 네 파편의 굴곡과 이어지는 금빛 무늬를 보고 빈자리에 직소퍼즐처럼 맞추세요. 키보드는 파편에서 Enter를 누르면 됩니다.",
+      stability: "간접 가습을 켰다 쉬며 수치를 초록 범위에 머물게 하세요. 아래 유지 막대가 끝까지 차면 통과합니다.",
+      precision: "처리 버튼을 누르고 있는 동안 양이 찹니다. 표시가 초록 범위에 들어오면 손가락을 떼세요. 세 번 맞춥니다.",
+      sequence: "숫자는 없습니다. 작품의 돌발 반응을 읽고 그 순간 가장 안전한 다음 행동을 판단하세요.",
+      rhythm: "1·2·TAP 예고를 보고 큰 원이 가운데 초록 접합점 원과 꼭 겹치는 순간 중앙을 누르세요. 세 지점을 맞춥니다.",
+      tone: "색뿐 아니라 결손 실루엣도 비교하세요. 같은 모양이면서 가까이서 가는 세필 줄무늬가 보이는 시편을 고릅니다.",
+      align: "고정된 왼쪽 조각과 회전하는 오른쪽 조각을 비교하세요. 좌우 버튼으로 조금씩 움직여 금빛 무늬와 어두운 균열이 끊김 없이 이어지게 맞춥니다."
+    })[mechanic] || "작업 화면의 안내를 따라 현재 처리를 완료하세요.";
+  }
+
+  function tutorialMechanicTarget(mechanic) {
+    return ({
+      spot: "#mechanicLayer",
+      uv: ".uv-chamber",
+      trace: ".cleaning-panel",
+      choice: ".test-analysis",
+      drag: ".drag-workbench",
+      stability: ".stability-panel",
+      precision: ".precision-panel",
+      sequence: ".procedure-panel",
+      rhythm: ".adhesive-panel",
+      tone: ".tone-panel",
+      align: ".align-panel"
+    })[mechanic] || "#artStage";
+  }
+
+  function currentTutorialGuide() {
+    const stepName = state.tutorialStep || "story";
+    if (stepName === "story") {
+      return {
+        progress: "1 / 10",
+        title: "첫 작품의 이야기를 먼저 읽어요",
+        message: "복원은 작품이 무엇인지 이해하는 데서 시작해요. ‘색동 달항아리’ 카드의 작품 이야기를 열어 보세요.",
+        tip: "시대·작가·가치·사연은 복원 판단과 관람객 반응을 이해하는 단서가 됩니다.",
+        target: '[data-art-info="moon-jar"]'
+      };
+    }
+    if (stepName === "story_read") {
+      return {
+        progress: "1 / 10",
+        title: "작품의 배경을 확인했어요",
+        message: "시대, 작가, 작품 종류와 가치를 읽었다면 설명 창을 닫고 실제 상태를 살펴볼게요.",
+        tip: "처음부터 새것처럼 만들지 않고, 작품의 의미와 남겨야 할 흔적을 먼저 정합니다.",
+        target: "#artInfoCloseButton"
+      };
+    }
+    if (stepName === "select") {
+      return {
+        progress: "2 / 10",
+        title: "첫 작품을 복원실로 옮겨요",
+        message: "복원에는 재료비가 들지만 완료하면 지원금과 평판을 얻어요. 강조된 버튼으로 달항아리를 옮겨 주세요.",
+        tip: "현재 보유 코인과 카드에 적힌 재료비를 비교하면 작업을 시작할 수 있는지 알 수 있어요.",
+        target: '[data-start-art="moon-jar"]'
+      };
+    }
+    if (stepName === "lab") {
+      const art = session ? getArtwork(session.artId) : getArtwork(state.activeArtworkId);
+      const stepIndex = session?.stepIndex || 0;
+      const current = art?.steps?.[stepIndex];
+      const progress = `${Math.min(7, 3 + stepIndex)} / 10`;
+      if (tutorialLabPhase === "tool") {
+        return {
+          progress,
+          title: `복원 ${stepIndex + 1}단계 · 알맞은 도구 선택`,
+          message: `오른쪽 ‘상태 기록’을 읽고 작업 목적에 맞는 ‘${TOOLS[current?.tool]?.name || "도구"}’를 골라 주세요.`,
+          tip: "잘못된 도구는 위험도를 올립니다. 단계 이름, 상태 기록, 도구 설명을 함께 보면 답을 찾을 수 있어요.",
+          target: current?.tool ? `[data-tool="${current.tool}"]` : "#toolGrid"
+        };
+      }
+      return {
+        progress,
+        title: `복원 ${stepIndex + 1}단계 · ${mechanicDisplayName(current?.tool, currentMechanic)}`,
+        message: tutorialMechanicInstruction(currentMechanic, current.tool),
+        tip: "실수해도 바로 실패하지 않아요. 위험도와 화면의 피드백을 읽고 다시 시도하면 됩니다.",
+        target: tutorialMechanicTarget(currentMechanic)
+      };
+    }
+    if (stepName === "result") {
+      return {
+        progress: "8 / 10",
+        title: "복원 결과를 읽고 전시에 배치해요",
+        message: "정확도·평판·지원금을 확인하세요. 윤리 노트는 왜 이 처리가 좋은 복원이었는지 알려 줍니다.",
+        tip: "‘전시관에 배치’를 누르면 복원한 작품이 운영 수입을 만드는 전시품이 됩니다.",
+        target: "#resultConfirm"
+      };
+    }
+    if (stepName === "gallery") {
+      return {
+        progress: "9 / 10",
+        title: "오늘 전시를 열고 수입을 받아 봐요",
+        message: "오른쪽에서 예상 관람객·수입·관람 관심도를 확인한 뒤 ‘신작 공개 · 오늘 개관’을 눌러 주세요.",
+        tip: "같은 작품만 반복 개관하면 관심도와 수익이 줄어듭니다. 새 작품을 복원하면 다시 100%가 됩니다.",
+        target: "#openMuseumButton"
+      };
+    }
+    if (stepName === "income") {
+      return {
+        progress: "10 / 10",
+        title: "관람객 반응과 수익을 확인해요",
+        message: "관람객의 말풍선과 머리 위 동전 금액이 오늘 전시가 만든 반응과 수입을 보여 줍니다.",
+        tip: "잠시 뒤 오늘의 방문객, 총수입, 평판을 정리한 운영 보고가 열립니다.",
+        target: ".gallery-scene-card"
+      };
+    }
+    if (stepName === "report") {
+      return {
+        progress: "10 / 10",
+        title: "오늘의 운영 보고를 마무리해요",
+        message: "방문객·수입·평판과 오늘 발생한 이벤트를 확인하고 다음 날을 준비하세요.",
+        tip: "번 코인은 다음 복원 재료와 시설 꾸미기에 쓰고, 미술관 평판이 오르면 새 작품이 열려요.",
+        target: "#dayConfirm"
+      };
+    }
+    return {
+      progress: "10 / 10",
+      title: "첫 운영 로테이션을 완료했어요!",
+      message: "작품 이해 → 복원 → 기록 → 전시 → 수익의 전체 흐름을 익혔습니다. 이제 원하는 작품과 운영 전략을 자유롭게 선택하세요.",
+      tip: "막힐 때는 오른쪽 위 윤슬 버튼을 열면 현재 화면에서 할 일을 다시 안내받을 수 있어요.",
+      target: null,
+      complete: true
+    };
+  }
+
+  function clearTutorialTarget() {
+    tutorialTargetElement?.removeAttribute("data-tutorial-active");
+    tutorialTargetElement = null;
+    window.clearTimeout(tutorialDimTimer);
+    el.tutorialDimmer.classList.add("is-hidden");
+    el.tutorialDimmer.classList.remove("is-flashing");
+    el.tutorialSpotlight.classList.add("is-hidden");
+  }
+
+  function updateTutorialDimmer(left, top, right, bottom) {
+    const panels = {
+      top: $(`[data-tutorial-dim="top"]`, el.tutorialDimmer),
+      left: $(`[data-tutorial-dim="left"]`, el.tutorialDimmer),
+      right: $(`[data-tutorial-dim="right"]`, el.tutorialDimmer),
+      bottom: $(`[data-tutorial-dim="bottom"]`, el.tutorialDimmer)
+    };
+    Object.assign(panels.top.style, { left: "0", top: "0", width: "100%", height: `${top}px` });
+    Object.assign(panels.bottom.style, { left: "0", top: `${bottom}px`, width: "100%", height: `${Math.max(0, window.innerHeight - bottom)}px` });
+    Object.assign(panels.left.style, { left: "0", top: `${top}px`, width: `${left}px`, height: `${Math.max(0, bottom - top)}px` });
+    Object.assign(panels.right.style, { left: `${right}px`, top: `${top}px`, width: `${Math.max(0, window.innerWidth - right)}px`, height: `${Math.max(0, bottom - top)}px` });
+  }
+
+  function flashTutorialDimmer() {
+    if (!tutorialTargetElement || el.tutorialSpotlight.classList.contains("is-hidden")) return;
+    window.clearTimeout(tutorialDimTimer);
+    el.tutorialDimmer.classList.remove("is-hidden", "is-flashing");
+    void el.tutorialDimmer.offsetWidth;
+    el.tutorialDimmer.classList.add("is-flashing");
+    tutorialDimTimer = window.setTimeout(() => {
+      el.tutorialDimmer.classList.add("is-hidden");
+      el.tutorialDimmer.classList.remove("is-flashing");
+    }, 1400);
+  }
+
+  function updateTutorialSpotlight() {
+    if (!tutorialTargetElement?.isConnected || tutorialTargetElement.getClientRects().length === 0) {
+      el.tutorialDimmer.classList.add("is-hidden");
+      el.tutorialSpotlight.classList.add("is-hidden");
+      return;
+    }
+    const rect = tutorialTargetElement.getBoundingClientRect();
+    const padding = 7;
+    const left = Math.max(5, rect.left - padding);
+    const top = Math.max(5, rect.top - padding);
+    const right = Math.min(window.innerWidth - 5, rect.right + padding);
+    const bottom = Math.min(window.innerHeight - 5, rect.bottom + padding);
+    if (right <= 5 || bottom <= 5 || left >= window.innerWidth - 5 || top >= window.innerHeight - 5) {
+      el.tutorialDimmer.classList.add("is-hidden");
+      el.tutorialSpotlight.classList.add("is-hidden");
+      return;
+    }
+    Object.assign(el.tutorialSpotlight.style, {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${Math.max(18, right - left)}px`,
+      height: `${Math.max(18, bottom - top)}px`
+    });
+    updateTutorialDimmer(left, top, right, bottom);
+    el.tutorialSpotlight.classList.remove("is-hidden");
+  }
+
+  function renderTutorialGuide(focusTarget = false) {
+    clearTutorialTarget();
+    if (!isFirstRotationTutorialActive()) {
+      el.tutorialGuide.classList.add("is-hidden");
+      el.tutorialGuide.classList.remove("is-top");
+      document.body.classList.remove("is-tutorial-running");
+      return;
+    }
+    const guide = currentTutorialGuide();
+    el.tutorialProgress.textContent = guide.progress;
+    el.tutorialTitle.textContent = guide.title;
+    el.tutorialMessage.textContent = guide.message;
+    el.tutorialTip.textContent = guide.tip;
+    el.tutorialFocusButton.textContent = guide.complete ? "처음 안내 마치기" : "강조 위치 보기";
+    el.tutorialSkipButton.classList.toggle("is-hidden", Boolean(guide.complete));
+    el.tutorialGuide.classList.remove("is-hidden");
+    document.body.classList.add("is-tutorial-running");
+    if (guide.target) {
+      tutorialTargetElement = document.querySelector(guide.target);
+      tutorialTargetElement?.setAttribute("data-tutorial-active", "true");
+    }
+    el.tutorialGuide.classList.remove("is-top");
+    updateTutorialSpotlight();
+    if (focusTarget) focusTutorialTarget();
+  }
+
+  function scheduleTutorialGuide(focusTarget = false) {
+    window.clearTimeout(tutorialRenderTimer);
+    tutorialRenderTimer = window.setTimeout(() => renderTutorialGuide(focusTarget), 100);
+  }
+
+  function tutorialExpectedView() {
+    if (["story", "story_read", "select"].includes(state.tutorialStep)) return "storage";
+    if (state.tutorialStep === "lab") return "lab";
+    if (["gallery", "income", "report", "complete"].includes(state.tutorialStep)) return "gallery";
+    return "storage";
+  }
+
+  function focusTutorialTarget() {
+    if (!tutorialTargetElement?.isConnected || tutorialTargetElement.getClientRects().length === 0) {
+      const expectedView = tutorialExpectedView();
+      const activeView = $(".tab-button.is-active")?.dataset.view;
+      if (activeView !== expectedView && !["story_read", "result", "report"].includes(state.tutorialStep)) {
+        switchView(expectedView);
+        scheduleTutorialGuide(true);
+        return;
+      }
+      renderTutorialGuide(false);
+    }
+    if (!tutorialTargetElement) return;
+    tutorialTargetElement.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    if (tutorialTargetElement.matches("button, [href], input, select, [tabindex]")) {
+      tutorialTargetElement.focus({ preventScroll: true });
+    }
+    el.tutorialSpotlight.classList.add("is-pulsing");
+    window.setTimeout(() => {
+      el.tutorialSpotlight.classList.remove("is-pulsing");
+      updateTutorialSpotlight();
+    }, 260);
+    window.setTimeout(() => {
+      updateTutorialSpotlight();
+      flashTutorialDimmer();
+    }, 520);
+  }
+
+  function finishFirstRotationTutorial(skipped) {
+    state.tutorialComplete = true;
+    state.tutorialStep = "complete";
+    saveState();
+    clearTutorialTarget();
+    el.tutorialGuide.classList.add("is-hidden");
+    el.tutorialGuide.classList.remove("is-top");
+    document.body.classList.remove("is-tutorial-running");
+    showToast(skipped ? "처음 안내를 건너뛰었어요. 윤슬에게 언제든 다음 할 일을 물어보세요." : "첫 운영 안내 완료! 이제 자유롭게 미술관을 운영하세요.");
+    playTone("complete");
+  }
+
+  function formatNumber(value) {
+    return new Intl.NumberFormat("ko-KR").format(Math.round(value));
+  }
+
+  function createRankingPlayerId() {
+    if (typeof window.crypto?.randomUUID === "function") return window.crypto.randomUUID();
+    const randomPart = Math.random().toString(36).slice(2, 14);
+    return `player-${Date.now().toString(36)}-${randomPart}`;
+  }
+
+  function isValidRankingPlayerId(value) {
+    return typeof value === "string" && /^[a-zA-Z0-9-]{16,64}$/.test(value);
+  }
+
+  function isRankingEndpointConfigured() {
+    return /^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec(?:\?.*)?$/.test(RANKING_CONFIG.endpoint);
+  }
+
+  function compactRankingRecords() {
+    const seen = new Set();
+    return state.records.flatMap(record => {
+      const art = getArtwork(record.artId);
+      if (!art || seen.has(art.id)) return [];
+      seen.add(art.id);
+      return [{
+        artId: art.id,
+        day: Math.max(1, Math.round(Number(record.day) || 1)),
+        accuracy: Math.max(0, Math.min(100, Math.round(Number(record.accuracy) || 0))),
+        risk: Math.max(0, Math.min(100, Math.round(Number(record.risk) || 0))),
+        durationSeconds: Math.max(0, Math.min(86400, Math.round(Number(record.durationSeconds) || 0)))
+      }];
+    }).reverse();
+  }
+
+  function rankingSpeedScore(record) {
+    if (record.accuracy < 80 || record.durationSeconds <= 0) return 0;
+    const safeTarget = 300;
+    if (record.durationSeconds <= safeTarget * .55) return 300;
+    if (record.durationSeconds <= safeTarget * .8) return 200;
+    if (record.durationSeconds <= safeTarget) return 100;
+    return 0;
+  }
+
+  function rankingIncomeScore(totalMuseumIncome) {
+    return Math.min(5000, Math.floor(Math.max(0, Number(totalMuseumIncome) || 0) / 25));
+  }
+
+  function rankingVisitorScore(totalVisitors) {
+    return Math.min(5000, Math.floor(Math.max(0, Number(totalVisitors) || 0) / 5));
+  }
+
+  function rankingStorySpeedScore(storyMilestone, storyCompletionDay) {
+    if (Number(storyMilestone) < FINAL_STORY_THRESHOLD || Number(storyCompletionDay) <= 0) return 0;
+    if (storyCompletionDay <= 20) return 5000;
+    if (storyCompletionDay <= 25) return 4500;
+    if (storyCompletionDay <= 35) return 3500;
+    if (storyCompletionDay <= 50) return 2500;
+    return 1500;
+  }
+
+  function rankingSummaryFor(records = compactRankingRecords(), progress = state) {
+    const count = records.length;
+    const totals = records.reduce((summary, record) => {
+      summary.accuracy += record.accuracy;
+      summary.risk += record.risk;
+      summary.time += record.durationSeconds;
+      summary.score += Math.max(0, record.accuracy * 100 + rankingSpeedScore(record) - record.risk * 10 + 250);
+      return summary;
+    }, { accuracy: 0, risk: 0, time: 0, score: 0 });
+    const totalMuseumIncome = Math.max(0, Math.round(Number(progress.museumIncomeEarned ?? progress.totalMuseumIncome) || 0));
+    const totalVisitors = Math.max(0, Math.round(Number(progress.totalVisitors) || 0));
+    const storyMilestone = Math.min(FINAL_STORY_THRESHOLD, Math.max(0, Math.round(Number(progress.storyMilestone) || 0)));
+    const storyCompletionDay = storyMilestone >= FINAL_STORY_THRESHOLD
+      ? Math.max(0, Math.round(Number(progress.storyCompletionDay) || 0))
+      : 0;
+    const incomeScore = rankingIncomeScore(totalMuseumIncome);
+    const visitorScore = rankingVisitorScore(totalVisitors);
+    const storySpeedScore = rankingStorySpeedScore(storyMilestone, storyCompletionDay);
+    const restorationScore = Math.round(totals.score);
+    return {
+      restoredCount: count,
+      averageAccuracy: count ? Math.round(totals.accuracy / count) : 0,
+      averageRisk: count ? Math.round(totals.risk / count) : 0,
+      totalTimeSeconds: totals.time,
+      restorationScore,
+      totalMuseumIncome,
+      totalVisitors,
+      storyMilestone,
+      storyCompletionDay,
+      incomeScore,
+      visitorScore,
+      storySpeedScore,
+      directorScore: restorationScore + incomeScore + visitorScore + storySpeedScore
+    };
+  }
+
+  function stableSubmissionHash(value) {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index += 1) {
+      hash ^= value.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(36).padStart(7, "0");
+  }
+
+  function buildRankingSubmission() {
+    const records = compactRankingRecords();
+    const summary = rankingSummaryFor(records);
+    const snapshot = JSON.stringify({
+      playerId: state.rankingPlayerId,
+      season: RANKING_CONFIG.season,
+      records,
+      day: state.day,
+      totalVisitors: state.totalVisitors,
+      totalMuseumIncome: state.museumIncomeEarned,
+      storyMilestone: state.storyMilestone,
+      storyCompletionDay: state.storyCompletionDay,
+      upgrades: Object.keys(state.upgrades).filter(id => state.upgrades[id]).sort()
+    });
+    return {
+      format: "sparkle-restoration-ranking-submission",
+      schemaVersion: 1,
+      season: RANKING_CONFIG.season,
+      gameVersion: RANKING_CONFIG.gameVersion,
+      rulesVersion: RANKING_CONFIG.rulesVersion,
+      submissionId: `${RANKING_CONFIG.rulesVersion}-${stableSubmissionHash(snapshot)}`,
+      submittedAt: new Date().toISOString(),
+      playerId: state.rankingPlayerId,
+      directorName: state.directorName,
+      museumName: state.museumName,
+      progress: {
+        day: state.day,
+        totalVisitors: state.totalVisitors,
+        totalMuseumIncome: state.museumIncomeEarned,
+        storyMilestone: state.storyMilestone,
+        storyCompletionDay: state.storyCompletionDay,
+        reputation: state.reputation,
+        upgradeCount: Object.keys(state.upgrades).filter(id => state.upgrades[id]).length
+      },
+      records,
+      clientSummary: summary
+    };
+  }
+
+  function renderRankingPanel() {
+    const summary = rankingSummaryFor();
+    const connected = isRankingEndpointConfigured();
+    el.rankingSummary.innerHTML = [
+      `관장 ${state.directorName || "서리"}`,
+      `복원 ${formatNumber(summary.restoredCount)}점`,
+      `평균 정확도 ${summary.averageAccuracy}%`,
+      `평균 위험도 ${summary.averageRisk}%`,
+      `누적 수입 ${formatNumber(summary.totalMuseumIncome)}코인`,
+      `누적 관람객 ${formatNumber(summary.totalVisitors)}명`,
+      summary.storyCompletionDay ? `이야기 ${formatNumber(summary.storyCompletionDay)}일 완주` : `이야기 ${Math.round(summary.storyMilestone / 100)}/${STORY_CHAPTERS.length}`,
+      `예상 ${formatNumber(summary.directorScore)}점`
+    ].map(text => `<span>${escapeHTML(text)}</span>`).join("");
+    el.rankingConnectionBadge.textContent = connected ? "전체 랭킹 연결됨" : "연결 전 미리보기";
+    el.rankingConnectionBadge.classList.toggle("is-connected", connected);
+    el.rankingStatus.textContent = connected
+      ? ""
+      : "랭킹 주소를 연결하면 현재 기록을 전체 랭킹에 올릴 수 있어요.";
+    el.rankingStatus.classList.toggle("visually-hidden", connected);
+    el.submitRankingButton.disabled = summary.restoredCount === 0;
+    el.submitRankingButton.title = summary.restoredCount ? "현재 복원 성과를 랭킹에 제출" : "작품을 하나 이상 복원해야 제출할 수 있습니다.";
+    el.viewRankingButton.textContent = connected ? "전체 랭킹 확인" : "랭킹 구현 미리보기";
+  }
+
+  function openRankingPreview(payload, submitted = false) {
+    const summary = payload?.clientSummary || rankingSummaryFor();
+    el.resultModal.classList.add("is-hidden");
+    el.dayModal.classList.add("is-hidden");
+    el.storyModal.classList.add("is-hidden");
+    el.artInfoModal.classList.add("is-hidden");
+    el.directorModal.classList.add("is-hidden");
+    el.rankingPreviewLabel.textContent = submitted ? "CONTEST DEMO SUBMISSION" : "RANKING IMPLEMENTATION";
+    el.rankingPreviewTitle.textContent = submitted ? "랭킹 제출 기록 준비 완료" : "관장 랭킹 시스템";
+    el.rankingPreviewMessage.textContent = submitted
+      ? "실제 제출과 똑같이 현재 저장 기록에서 랭킹 자료를 만들었어요. 지금은 랭킹 주소가 비어 있어 보내지는 않았고, 주소를 연결하면 같은 버튼으로 Google Sheets에 등록돼요."
+      : "현재 저장 기록에서 공개해도 되는 복원 성과만 골라 보내고, 랭킹 점수를 다시 계산한 뒤 같은 관장의 가장 높은 기록 하나만 보관해요.";
+    el.rankingPreviewRestored.textContent = `${formatNumber(summary.restoredCount)}점`;
+    el.rankingPreviewAccuracy.textContent = `${summary.averageAccuracy}%`;
+    el.rankingPreviewRisk.textContent = `${summary.averageRisk}%`;
+    el.rankingPreviewIncome.textContent = `${formatNumber(summary.totalMuseumIncome)}코인`;
+    el.rankingPreviewVisitors.textContent = `${formatNumber(summary.totalVisitors)}명`;
+    el.rankingPreviewStory.textContent = summary.storyCompletionDay ? `${formatNumber(summary.storyCompletionDay)}일 완주` : "미완주";
+    el.rankingPreviewScore.textContent = `${formatNumber(summary.directorScore)}점`;
+    el.rankingPreviewModal.classList.remove("is-hidden");
+    el.modalBackdrop.classList.remove("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "false");
+    window.setTimeout(() => el.rankingPreviewConfirmButton.focus(), 100);
+  }
+
+  function closeRankingPreview() {
+    el.rankingPreviewModal.classList.add("is-hidden");
+    el.modalBackdrop.classList.add("is-hidden");
+    el.modalBackdrop.setAttribute("aria-hidden", "true");
+  }
+
+  function submitCurrentRanking() {
+    saveState();
+    const payload = buildRankingSubmission();
+    if (!payload.records.length) {
+      showToast("작품을 하나 이상 복원한 뒤 랭킹에 제출해 주세요.");
+      playTone("wrong");
+      return;
+    }
+    if (!isRankingEndpointConfigured()) {
+      openRankingPreview(payload, true);
+      el.rankingStatus.textContent = "제출할 기록을 만들었어요. 랭킹 주소를 연결하면 전체 랭킹에 보낼 수 있어요.";
+      playTone("success");
+      return;
+    }
+
+    try {
+      const serialized = JSON.stringify(payload);
+      if (serialized.length > 400000) throw new Error("Ranking payload is too large.");
+      const targetName = `museumRankingSubmission${Date.now()}`;
+      const popup = window.open("", targetName);
+      if (!popup) {
+        showToast("새 탭이 막혀 있어요. 이 사이트에서 새 탭 열기를 허용하고 다시 제출해 주세요.");
+        playTone("wrong");
+        return;
+      }
+      popup.document.title = "관장 랭킹 제출 중";
+      popup.document.body.textContent = "현재 기록을 확인하고 랭킹에 올리고 있습니다…";
+      const form = document.createElement("form");
+      const input = document.createElement("input");
+      form.method = "POST";
+      form.action = RANKING_CONFIG.endpoint;
+      form.target = targetName;
+      input.type = "hidden";
+      input.name = "payload";
+      input.value = serialized;
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+      el.rankingStatus.textContent = "새 탭에서 기록을 확인하고 현재 순위를 올리고 있어요.";
+      showToast("현재 기록을 랭킹 서버로 보냈습니다.");
+      playTone("success");
+    } catch (error) {
+      console.warn("Ranking submission failed", error);
+      showToast("랭킹 제출을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      playTone("wrong");
+    }
+  }
+
+  function openLeaderboard() {
+    if (!isRankingEndpointConfigured()) {
+      openRankingPreview(state.records.length ? buildRankingSubmission() : null, false);
+      return;
+    }
+    try {
+      const url = new URL(RANKING_CONFIG.endpoint);
+      url.searchParams.set("season", RANKING_CONFIG.season);
+      window.open(url.href, "museumRankingLeaderboard", "noopener");
+    } catch (error) {
+      console.warn("Leaderboard open failed", error);
+      showToast("랭킹 주소를 열지 못했습니다.");
+    }
+  }
+
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    })[character]);
+  }
+
+  function shuffle(array) {
+    const copy = array.slice();
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function showToast(message) {
+    el.toast.textContent = easyCopy(message);
+    el.toast.classList.add("is-visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.toast.classList.remove("is-visible"), 2200);
+  }
+
+  function saveState() {
+    try {
+      state = normalizeState(state);
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.warn("Save failed", error);
+      showToast("자동 저장에 실패했습니다. 저장 파일 받기로 백업해 주세요.");
+    }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      return normalizeState(parsed);
+    } catch (error) {
+      console.warn("Load failed", error);
+      return defaultState();
+    }
+  }
+
+  function normalizeState(candidate) {
+    const fallback = defaultState();
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return fallback;
+    const asNumber = (value, defaultValue, minimum, maximum) => {
+      const number = Number(value);
+      return Number.isFinite(number) ? Math.max(minimum, Math.min(maximum, Math.round(number))) : defaultValue;
+    };
+    const asMap = value => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+      return Object.fromEntries(Object.entries(value).filter(([key]) => typeof key === "string"));
+    };
+    const records = Array.isArray(candidate.records)
+      ? candidate.records.slice(0, ARTWORKS.length).map(record => ({
+        artId: String(record?.artId || ""),
+        day: asNumber(record?.day, 1, 1, 999999),
+        accuracy: asNumber(record?.accuracy, 100, 0, 100),
+        risk: asNumber(record?.risk, 0, 0, 100),
+        grade: typeof record?.grade === "string" ? record.grade.slice(0, 3) : "",
+        bonusCoins: asNumber(record?.bonusCoins, 0, 0, 999999999),
+        speedBonusCoins: asNumber(record?.speedBonusCoins, 0, 0, 999999999),
+        speedScore: asNumber(record?.speedScore, 0, 0, 999999999),
+        durationSeconds: asNumber(record?.durationSeconds, 0, 0, 86400),
+        skillScore: asNumber(record?.skillScore, 0, 0, 999999999),
+        overcleaned: Boolean(record?.overcleaned),
+        uvHistoryConfirmed: Boolean(record?.uvHistoryConfirmed),
+        appealPenalty: asNumber(record?.appealPenalty, 0, 0, 40),
+        cleaningOutcomes: Array.isArray(record?.cleaningOutcomes) ? record.cleaningOutcomes.slice(0, 5).map(result => ({
+          stepIndex: asNumber(result?.stepIndex, 0, 0, 4),
+          outcome: ["under", "optimal", "over"].includes(result?.outcome) ? result.outcome : "under",
+          removal: asNumber(result?.removal, 0, 0, 120)
+        })) : [],
+        steps: Array.isArray(record?.steps) ? record.steps.slice(0, 8).map(item => String(item).slice(0, 80)) : []
+      })).filter(record => record.artId)
+      : [];
+    const activeArtworkId = typeof candidate.activeArtworkId === "string"
+      && getArtwork(candidate.activeArtworkId)
+      && !getArtwork(candidate.activeArtworkId).licenseLocked
+      ? candidate.activeArtworkId
+      : null;
+    const normalizedDay = asNumber(candidate.day, fallback.day, 1, 999999);
+    const storyMilestone = Math.min(
+      FINAL_STORY_THRESHOLD,
+      Math.floor(asNumber(candidate.storyMilestone, 0, 0, 999999900) / 100) * 100
+    );
+    const storyCompletionDay = storyMilestone >= FINAL_STORY_THRESHOLD
+      ? asNumber(candidate.storyCompletionDay, normalizedDay, 1, normalizedDay)
+      : 0;
+    const tutorialSteps = new Set(["story", "story_read", "select", "lab", "result", "gallery", "income", "report", "complete"]);
+    const tutorialComplete = typeof candidate.tutorialComplete === "boolean"
+      ? candidate.tutorialComplete
+      : Boolean(candidate.started);
+    const tutorialStep = typeof candidate.tutorialStep === "string" && tutorialSteps.has(candidate.tutorialStep)
+      ? candidate.tutorialStep
+      : "story";
+    const loadedDirector = validateIdentityName(candidate.directorName, "관장 이름", 1, 12, true);
+    const loadedMuseum = validateIdentityName(candidate.museumName, "미술관 이름", 2, 20, true);
+    const restored = Object.fromEntries(Object.entries(asMap(candidate.restored)).map(([artId, record]) => {
+      if (!record || typeof record !== "object" || Array.isArray(record)) return [artId, record];
+      return [artId, {
+        ...record,
+        overcleaned: Boolean(record.overcleaned),
+        uvHistoryConfirmed: Boolean(record.uvHistoryConfirmed),
+        appealPenalty: asNumber(record.appealPenalty, 0, 0, 40),
+        cleaningOutcomes: Array.isArray(record.cleaningOutcomes) ? record.cleaningOutcomes.slice(0, 5).map(result => ({
+          stepIndex: asNumber(result?.stepIndex, 0, 0, 4),
+          outcome: ["under", "optimal", "over"].includes(result?.outcome) ? result.outcome : "under",
+          removal: asNumber(result?.removal, 0, 0, 120)
+        })) : []
+      }];
+    }));
+    const upgrades = asMap(candidate.upgrades);
+    const facilityPlans = Object.fromEntries(Object.entries(asMap(candidate.facilityPlans)).flatMap(([facilityId, plan]) => {
+      const programId = typeof plan?.programId === "string" ? plan.programId : "";
+      const validProgram = ANNEX_PROGRAMS[facilityId]?.some(program => program.id === programId);
+      if (!validProgram) return [];
+      return [[facilityId, {
+        day: asNumber(plan?.day, fallback.day, 1, 999999),
+        programId
+      }]];
+    }));
+    const migratedInvestmentBudget = asNumber(candidate.investmentBudget, fallback.investmentBudget, 0, 999999999);
+    const museumIncomeFallback = migratedInvestmentBudget > 0 || asNumber(candidate.lastDayVisitors, 0, 0, 999999999) > 0
+      ? Math.max(1, migratedInvestmentBudget)
+      : 0;
+    const museumIncomeEarned = asNumber(candidate.museumIncomeEarned, museumIncomeFallback, 0, 999999999);
+    const migratedSlotCount = Math.min(6, 4 + Math.round(UPGRADES.reduce((total, upgrade) => {
+      if (!upgrades[upgrade.id]) return total;
+      return total + (Number(upgrade.effect?.displaySlots) || 0);
+    }, 0)));
+    const candidateSelection = Array.isArray(candidate.gallerySelection) ? candidate.gallerySelection : [];
+    const gallerySeen = new Set();
+    let gallerySelection = candidateSelection
+      .map(id => String(id || ""))
+      .filter(id => {
+        if (!id || gallerySeen.has(id) || !restored[id] || !getArtwork(id)) return false;
+        gallerySeen.add(id);
+        return true;
+      })
+      .slice(0, migratedSlotCount);
+    if (!gallerySelection.length) {
+      gallerySelection = records
+        .map(record => record.artId)
+        .filter(id => restored[id] && getArtwork(id))
+        .filter((id, index, list) => list.indexOf(id) === index)
+        .slice(0, migratedSlotCount)
+        .reverse();
+      if (!gallerySelection.length) {
+        gallerySelection = ARTWORKS.filter(art => restored[art.id]).slice(-migratedSlotCount).map(art => art.id);
+      }
+    }
+
+    return {
+      started: Boolean(candidate.started),
+      coins: asNumber(candidate.coins, fallback.coins, 0, 999999999),
+      reputation: asNumber(candidate.reputation, fallback.reputation, 0, 999999999),
+      day: normalizedDay,
+      sound: candidate.sound !== false,
+      musicVolume: asNumber(candidate.musicVolume, fallback.musicVolume, 0, 100),
+      fontSize: asNumber(candidate.fontSize, fallback.fontSize, 1, 3),
+      difficultyFiveCueSeen: Boolean(candidate.difficultyFiveCueSeen),
+      alwaysShowSafeZones: Boolean(candidate.alwaysShowSafeZones),
+      extendedPuzzlePreview: Boolean(candidate.extendedPuzzlePreview),
+      directorName: loadedDirector.ok && loadedDirector.value ? loadedDirector.value : fallback.directorName,
+      museumName: loadedMuseum.ok && loadedMuseum.value ? loadedMuseum.value : fallback.museumName,
+      onboardingComplete: Boolean(candidate.onboardingComplete),
+      assistantSeen: Boolean(candidate.assistantSeen),
+      assistantNotice: typeof candidate.assistantNotice === "boolean" ? candidate.assistantNotice : !candidate.assistantSeen,
+      introStorySeen: Boolean(candidate.introStorySeen),
+      tutorialComplete,
+      tutorialStep,
+      storyMilestone,
+      endingSeen: Boolean(candidate.endingSeen) || storyMilestone >= 1000,
+      storyCompletionDay,
+      activeArtworkId,
+      activeRestorationElapsedMs: activeArtworkId ? asNumber(candidate.activeRestorationElapsedMs, 0, 0, 86400000) : 0,
+      restored,
+      records,
+      upgrades,
+      facilityPlans,
+      investmentBudget: migratedInvestmentBudget,
+      museumIncomeEarned,
+      gallerySelection,
+      galleryNextSlot: asNumber(candidate.galleryNextSlot, 0, 0, Math.max(0, migratedSlotCount - 1)),
+      practiceBest: Object.fromEntries(PRACTICE_CHALLENGES.map(challenge => [
+        challenge.id,
+        asNumber(candidate.practiceBest?.[challenge.id], 0, 0, 100)
+      ]).filter(([, score]) => score > 0)),
+      lastDayVisitors: asNumber(candidate.lastDayVisitors, 0, 0, 999999999),
+      totalVisitors: asNumber(candidate.totalVisitors, asNumber(candidate.lastDayVisitors, 0, 0, 999999999), 0, 999999999),
+      lastOpeningRestoredCount: asNumber(candidate.lastOpeningRestoredCount, 0, 0, ARTWORKS.length),
+      repeatOpeningCount: asNumber(candidate.repeatOpeningCount, 0, 0, 999999),
+      rankingPlayerId: isValidRankingPlayerId(candidate.rankingPlayerId) ? candidate.rankingPlayerId : fallback.rankingPlayerId
+    };
+  }
+
+  function exportSaveFile() {
+    try {
+      const payload = {
+        format: "sparkle-restoration-museum-save",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        state: normalizeState(state)
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `restoration-museum-save-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("저장 파일을 만들었습니다.");
+      playTone("success");
+    } catch (error) {
+      console.warn("Save export failed", error);
+      showToast("저장 파일을 만들지 못했습니다.");
+      playTone("wrong");
+    }
+  }
+
+  async function importSaveFile(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      if (file.size > 2 * 1024 * 1024) throw new Error("Save file is too large.");
+      const parsed = JSON.parse(await file.text());
+      const importedState = parsed?.format === "sparkle-restoration-museum-save" ? parsed.state : parsed;
+      if (!importedState || typeof importedState !== "object" || Array.isArray(importedState)) {
+        throw new Error("Invalid save data.");
+      }
+      if (!window.confirm("현재 진행 상황을 선택한 저장 파일로 바꿀까요?")) return;
+      state = normalizeState(importedState);
+      session = null;
+      saveState();
+      stopMusic();
+      showToast("저장을 불러왔습니다. 화면을 새로 고칩니다.");
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      console.warn("Save import failed", error);
+      showToast("올바른 저장 파일이 아닙니다.");
+      playTone("wrong");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  function getAudioContext() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) throw new Error("Web Audio is not supported.");
+    audioContext ||= new AudioContextClass();
+    return audioContext;
+  }
+
+  async function ensureAudioContext() {
+    const context = getAudioContext();
+    if (context.state === "suspended") await context.resume();
+    if (context.state !== "running") throw new Error(`AudioContext is ${context.state}.`);
+    return context;
+  }
+
+  async function startMusic(announce = false) {
+    if (!state.sound || document.hidden || !document.hasFocus() || el.gameScreen.classList.contains("is-hidden") || isMusicPlaying() || musicStarting) return;
+    musicStarting = true;
+    applyMusicVolume();
+    try {
+      const context = await ensureAudioContext();
+      if (!state.sound || document.hidden || el.gameScreen.classList.contains("is-hidden")) {
+        return;
+      }
+      el.bgmAudio.pause();
+      if (!synthMusicGain) {
+        synthMusicGain = context.createGain();
+        synthMusicGain.connect(context.destination);
+      }
+      musicSource = "synth";
+      musicBlocked = false;
+      musicBar = 0;
+      applyMusicVolume();
+      scheduleMusicPhrase();
+      musicTimer = window.setInterval(scheduleMusicPhrase, MUSIC_THEMES[activeMusicView].phraseMs);
+      updateSoundButton();
+      renderBgmStatus(`${MUSIC_THEMES[activeMusicView].label} 테마를 재생 중입니다.`);
+      if (announce) {
+        playTone("success");
+        showToast(`${MUSIC_THEMES[activeMusicView].label} BGM을 ${state.musicVolume}% 음량으로 재생합니다.`);
+      }
+    } catch (synthError) {
+      console.warn("Synth BGM could not start; trying audio element", synthError);
+      try {
+        el.bgmAudio.currentTime = 0;
+        await el.bgmAudio.play();
+        if (!state.sound || document.hidden || el.gameScreen.classList.contains("is-hidden")) return;
+        musicSource = "file";
+        musicBlocked = false;
+        updateSoundButton();
+        renderBgmStatus();
+        if (announce) {
+          playTone("success");
+          showToast("호환 재생 모드로 BGM을 시작했습니다.");
+        }
+      } catch (fileError) {
+        musicSource = "none";
+        musicBlocked = true;
+        updateSoundButton();
+        renderBgmStatus("재생이 차단되었습니다. BGM 버튼을 다시 눌러 주세요.");
+        console.warn("Background music could not start", fileError);
+        if (announce) showToast("브라우저가 소리를 막았습니다. 상단 BGM 버튼을 다시 눌러 주세요.");
+      }
+    } finally {
+      musicStarting = false;
+    }
+  }
+
+  function stopMusic() {
+    el.bgmAudio.pause();
+    if (musicTimer) {
+      window.clearInterval(musicTimer);
+      musicTimer = null;
+    }
+    stopScheduledMusicNodes();
+    musicSource = "none";
+    updateSoundButton();
+    renderBgmStatus();
+  }
+
+  function isMusicPlaying() {
+    return (musicSource === "file" && !el.bgmAudio.paused)
+      || (musicSource === "synth" && Boolean(musicTimer));
+  }
+
+  function applyMusicVolume() {
+    const normalizedVolume = Math.max(0, Math.min(1, Number(state.musicVolume) / 100));
+    const audibleVolume = Math.min(1, normalizedVolume * 1.15);
+    el.bgmAudio.defaultMuted = false;
+    el.bgmAudio.volume = audibleVolume;
+    el.bgmAudio.muted = false;
+    if (synthMusicGain && audioContext) synthMusicGain.gain.setTargetAtTime(audibleVolume, audioContext.currentTime, .035);
+    el.bgmVolume.value = String(state.musicVolume);
+    el.bgmVolumeValue.textContent = `${state.musicVolume}%`;
+  }
+
+  function renderBgmStatus(message = "") {
+    if (!el.bgmStatus) return;
+    const theme = MUSIC_THEMES[activeMusicView] || MUSIC_THEMES.storage;
+    if (el.bgmTrackTitle) el.bgmTrackTitle.textContent = theme.label;
+    el.bgmStatus.classList.remove("is-playing", "is-error");
+    if (message) {
+      el.bgmStatus.textContent = message;
+      el.bgmStatus.classList.toggle("is-error", musicBlocked);
+      el.bgmStatus.classList.toggle("is-playing", !musicBlocked && isMusicPlaying());
+      return;
+    }
+    if (!state.sound) {
+      el.bgmStatus.textContent = "꺼짐 · 상단 BGM 버튼으로 켜기";
+    } else if (musicSource === "file" && !el.bgmAudio.paused) {
+      el.bgmStatus.textContent = `${theme.label} · ${state.musicVolume}% · 파일 모드`;
+      el.bgmStatus.classList.add("is-playing");
+    } else if (musicSource === "synth" && musicTimer) {
+      el.bgmStatus.textContent = `${theme.label} · 실시간 생성 · ${state.musicVolume}%`;
+      el.bgmStatus.classList.add("is-playing");
+    } else if (musicBlocked) {
+      el.bgmStatus.textContent = "재생 차단 · 아래 버튼으로 다시 시도";
+      el.bgmStatus.classList.add("is-error");
+    } else {
+      el.bgmStatus.textContent = "재생 준비";
+    }
+  }
+
+  function stopScheduledMusicNodes() {
+    musicNodes.forEach(node => {
+      try { node.stop(); } catch (_) { /* already stopped */ }
+    });
+    musicNodes.clear();
+  }
+
+  function setMusicTheme(viewName) {
+    if (!MUSIC_THEMES[viewName]) return;
+    const changed = activeMusicView !== viewName;
+    activeMusicView = viewName;
+    const theme = MUSIC_THEMES[activeMusicView];
+    if (el.bgmTrackTitle) el.bgmTrackTitle.textContent = theme.label;
+    if (musicSource === "file") el.bgmAudio.playbackRate = activeMusicView === "practice" ? 1.05 : activeMusicView === "story" ? .94 : 1;
+    if (changed && musicSource === "synth" && musicTimer) {
+      window.clearInterval(musicTimer);
+      stopScheduledMusicNodes();
+      musicBar = 0;
+      scheduleMusicPhrase();
+      musicTimer = window.setInterval(scheduleMusicPhrase, theme.phraseMs);
+    }
+    renderBgmStatus();
+  }
+
+  function musicScaleFrequency(theme, degree, octaveOffset = 0) {
+    const length = theme.scale.length;
+    const normalized = ((degree % length) + length) % length;
+    const octave = Math.floor(degree / length) + octaveOffset;
+    const midi = theme.root + theme.scale[normalized] + octave * 12;
+    return 440 * (2 ** ((midi - 69) / 12));
+  }
+
+  function scheduleMusicPhrase() {
+    if (!state.sound || !audioContext) return;
+    const theme = MUSIC_THEMES[activeMusicView] || MUSIC_THEMES.storage;
+    const now = audioContext.currentTime + .06;
+    const beat = theme.phraseMs / 16000;
+    const chordDuration = theme.phraseMs / 4000;
+    theme.chords.forEach((chord, chordIndex) => {
+      chord.forEach((degree, noteIndex) => {
+        const frequency = musicScaleFrequency(theme, degree, noteIndex === 0 ? -1 : 0);
+        scheduleMusicNote(frequency, now + chordIndex * chordDuration, chordDuration + .18, .038, noteIndex === 0 ? "sine" : "triangle");
+      });
+    });
+    theme.melody.forEach((degree, index) => {
+      if (degree === null || ((index + musicBar) % 8 === 7 && activeMusicView !== "practice")) return;
+      const volume = activeMusicView === "practice" ? .045 : activeMusicView === "story" ? .054 : .067;
+      scheduleMusicNote(musicScaleFrequency(theme, degree, 1), now + index * beat, beat * .78, volume, theme.wave);
+    });
+    musicBar += 1;
+  }
+
+  function scheduleMusicNote(frequency, startTime, duration, volume, wave) {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = wave;
+    oscillator.frequency.setValueAtTime(frequency, startTime);
+    gain.gain.setValueAtTime(.0001, startTime);
+    gain.gain.linearRampToValueAtTime(volume, startTime + Math.min(.11, duration * .25));
+    gain.gain.exponentialRampToValueAtTime(.0001, startTime + duration);
+    oscillator.connect(gain);
+    gain.connect(synthMusicGain || audioContext.destination);
+    musicNodes.add(oscillator);
+    oscillator.onended = () => musicNodes.delete(oscillator);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration + .02);
+  }
+
+  function playTone(type) {
+    if (!state.sound) return;
+    const nowMs = performance.now();
+    if (nowMs - (lastSfxTimes.get(type) || 0) < 35) return;
+    lastSfxTimes.set(type, nowMs);
+    el.soundButton.dataset.lastSfx = type;
+
+    const pool = sfxPools.get(type) || sfxPools.get("click");
+    if (pool?.length) {
+      const cursor = sfxPoolCursors.get(type) || 0;
+      const audio = pool[cursor % pool.length];
+      sfxPoolCursors.set(type, cursor + 1);
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.muted = false;
+        audio.volume = type === "click" ? .72 : .9;
+        const playback = audio.play();
+        playback?.catch(() => {});
+      } catch (_) {
+        // Web Audio support layer below still runs.
+      }
+    }
+
+    try {
+      const context = getAudioContext();
+      if (context.state === "suspended") {
+        context.resume().then(() => {
+          if (state.sound) scheduleInterfaceTone(context, type);
+        }).catch(() => {});
+        return;
+      }
+      scheduleInterfaceTone(context, type);
+    } catch (_) {
+      // Audio is optional and may be blocked by the browser.
+    }
+  }
+
+  function scheduleInterfaceTone(context, type) {
+    try {
+      const now = context.currentTime;
+      const osc = context.createOscillator();
+      const gain = context.createGain();
+      osc.connect(gain);
+      gain.connect(context.destination);
+
+      const presets = {
+        click: [520, .075, "sine", .075],
+        hit: [820, .11, "triangle", .1],
+        wrong: [190, .2, "sawtooth", .09],
+        success: [660, .18, "sine", .12],
+        open: [392, .2, "triangle", .11],
+        complete: [880, .3, "sine", .14],
+        coin: [1318.5, .18, "sine", .13]
+      };
+      const [freq, duration, wave, volume] = presets[type] || presets.click;
+      osc.type = wave;
+      osc.frequency.setValueAtTime(freq, now);
+      if (type === "complete") osc.frequency.exponentialRampToValueAtTime(1320, now + duration);
+      if (type === "wrong") osc.frequency.exponentialRampToValueAtTime(110, now + duration);
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+      osc.start(now);
+      osc.stop(now + duration);
+    } catch (_) {
+      // Audio is optional and may be blocked by the browser.
+    }
+  }
+})();

@@ -1,0 +1,15 @@
+# Local backups and research references
+*.zip
+*.pdf
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+
+# Generated caches and dependencies
+__pycache__/
+*.pyc
+node_modules/
