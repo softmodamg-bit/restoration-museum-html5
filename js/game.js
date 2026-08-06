@@ -1051,6 +1051,7 @@
     labArtworkArtist: $("#labArtworkArtist"),
     labArtworkStory: $("#labArtworkStory"),
     toolSelectionCard: $("#toolSelectionCard"),
+    mobileToolBriefText: $("#mobileToolBriefText"),
     toolGrid: $("#toolGrid"),
     toolHint: $("#toolHint"),
     returnToStorage: $("#returnToStorage"),
@@ -2451,8 +2452,11 @@
     el.stepCounter.textContent = practice
       ? `보존 연습 · 난이도 ${mechanicDifficulty(art)} · 보상 없음`
       : `${session.stepIndex + 1} / ${art.steps.length} 단계`;
-    el.stepName.textContent = easyCopy(current.name);
-    el.stepInstruction.textContent = easyCopy(current.instruction);
+    const currentStepName = easyCopy(current.name);
+    const currentStepInstruction = easyCopy(current.instruction);
+    el.stepName.textContent = currentStepName;
+    el.stepInstruction.textContent = currentStepInstruction;
+    el.mobileToolBriefText.textContent = `${currentStepName} · ${currentStepInstruction}`;
     const mechanicGuide = mechanicGuideForArtwork(currentMechanic, art, current.tool);
     el.minigameFormalName.textContent = mechanicDisplayName(current.tool, currentMechanic);
     el.minigameMaterialBadge.textContent = mechanicGuide.materialLabel;
