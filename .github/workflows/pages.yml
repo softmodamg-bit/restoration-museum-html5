@@ -25,10 +25,17 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Prepare runtime files
+        run: |
+          mkdir -p _site
+          cp index.html styles.css _site/
+          cp -R js assets _site/
+          touch _site/.nojekyll
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: _site
 
   deploy:
     needs: build
