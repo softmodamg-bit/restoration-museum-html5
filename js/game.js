@@ -25,6 +25,53 @@
       greeting: "“관장님, 첫 작품이 도착했습니다. 제가 곁에서 차근차근 안내할게요.”"
     })
   });
+  const DAILY_ASSISTANT_GREETINGS = Object.freeze([
+    "좋은 하루예요, 관장님. 오늘은 어떤 작품이 먼저 눈에 들어올지 궁금하네요.",
+    "창가 빛이 부드러운 날이에요. 작품에 직접 닿지 않도록 커튼부터 살펴뒀어요.",
+    "수장고가 유난히 조용하네요. 작은 변화도 놓치지 않기 좋은 날이에요.",
+    "따뜻한 차를 준비해 뒀어요. 서두르지 말고 오늘 할 일을 하나씩 시작해 봐요.",
+    "어제 복원한 작품을 다시 봤어요. 차분히 고른 흔적이 잘 남아 있더라고요.",
+    "관람객이 오기 전 전시실을 한 바퀴 돌았어요. 오늘도 준비가 잘됐습니다.",
+    "작품 앞에서 오래 머무는 관람객을 보면 마음이 조금 뿌듯해져요.",
+    "오늘은 기록장을 먼저 펼쳐 뒀어요. 작은 발견도 잊지 않고 남겨 봐요.",
+    "미술관 문을 여는 소리는 매일 같지만, 시작되는 이야기는 늘 다르네요.",
+    "바쁜 날일수록 잠깐 숨을 고르는 게 좋아요. 작품도 사람도 쉼이 필요하니까요.",
+    "전시실 공기가 산뜻해요. 천천히 둘러보며 오늘의 우선순위를 정해 볼까요?",
+    "오늘 첫 관람객은 어떤 작품 앞에 멈출까요? 조용히 지켜보는 재미가 있겠어요.",
+    "복원은 빠르게 끝내는 것보다 알맞은 순간에 멈추는 일이 더 중요할 때가 있어요.",
+    "수장고 선반을 정리하다 반가운 작품을 다시 만났어요. 오늘 살펴봐도 좋겠네요.",
+    "작은 먼지 하나도 기록이 되면 다음 판단에 도움이 돼요. 오늘도 꼼꼼히 살펴봐요.",
+    "미술관의 하루는 조용히 시작해도 금세 이야기로 가득 차는 것 같아요.",
+    "관장님이 고른 전시 순서를 보니 작품끼리 서로 인사하는 것처럼 느껴져요.",
+    "오늘은 익숙한 작품도 조금 다른 자리에서 바라보면 새롭게 보일지 몰라요.",
+    "문을 열기 전에 조명과 온도, 습도를 확인했어요. 작품들도 편안해 보입니다.",
+    "어려운 복원 앞에서는 기록부터 천천히 읽어 봐요. 답은 흔적 안에 있는 경우가 많아요.",
+    "오늘 관람객의 한마디가 내일 전시를 바꾸는 좋은 힌트가 될지도 몰라요.",
+    "새 작품을 만나는 날은 늘 조금 설레네요. 어떤 이야기를 들려줄지 함께 찾아봐요.",
+    "복원실 도구를 제자리에 정리해 뒀어요. 필요한 순간에 바로 찾을 수 있을 거예요.",
+    "잠시 전시실 의자에 앉아 봤어요. 관람객이 보는 풍경을 살피는 것도 좋은 점검이에요.",
+    "오늘은 완벽함보다 한 걸음의 진전을 목표로 해 봐요. 그걸로도 충분히 좋은 하루예요.",
+    "작품을 오래 지키는 일은 매일의 작은 확인에서 시작되는 것 같아요.",
+    "관장님, 오늘도 혼자 결정할 필요는 없어요. 필요하면 언제든 저를 불러 주세요.",
+    "전시 라벨을 다시 읽어 봤어요. 짧은 문장 안에도 작품의 시간이 담겨 있네요.",
+    "비가 와도 미술관 안은 포근하네요. 천천히 작품을 보기 좋은 날이에요.",
+    "햇살이 좋은 날에는 조명도 조금 다르게 느껴져요. 전시실을 함께 살펴볼까요?",
+    "오늘 할 일이 많아 보여도 우선 하나만 골라 봐요. 시작하면 다음 길이 보일 거예요.",
+    "관람객이 남긴 따뜻한 말을 기록해 뒀어요. 힘이 필요할 때 다시 읽어 봐요.",
+    "어제보다 조금 나아진 미술관을 발견했어요. 매일의 선택이 쌓이고 있나 봐요.",
+    "오늘은 어떤 도구를 쓰느냐만큼 왜 쓰는지도 함께 생각해 보면 좋겠어요.",
+    "전시실의 빈자리는 아쉬움이 아니라 다음 작품을 기다리는 자리일지도 몰라요.",
+    "복원한 흔적을 숨기지 않고 잘 설명하면 관람객도 작품을 더 깊이 이해해요.",
+    "조용한 음악과 함께 하루를 시작해 볼까요? 미술관의 걸음이 한결 가벼워질 거예요.",
+    "오늘은 관람객의 눈높이에서 안내 문구를 살펴봤어요. 어려운 말은 없는지 같이 봐요.",
+    "미술관이 조금씩 자라는 모습을 가장 가까이에서 볼 수 있어 기뻐요.",
+    "작품의 상처에는 지나온 시간이 담겨 있어요. 오늘도 함부로 지우지 않고 잘 들여다봐요.",
+    "관장님이 쉬어 가는 동안에도 기록은 사라지지 않아요. 너무 급하게 생각하지 마세요.",
+    "오늘의 작은 선택이 작품의 긴 내일을 만들 거예요. 차분하게 시작해 봐요.",
+    "전시실을 둘러보니 서로 다른 작품들이 제법 한 팀처럼 어울리고 있어요.",
+    "처음 문을 열던 날보다 미술관이 훨씬 따뜻해졌네요. 관장님의 시간이 남은 덕분이에요.",
+    "새로운 하루가 왔어요. 오늘도 작품과 사람 사이에 좋은 이야기를 하나 더 이어 봐요."
+  ]);
   const SFX_FILES = {
     click: "assets/sfx-click.wav",
     hit: "assets/sfx-hit.wav",
@@ -1013,6 +1060,8 @@
     assistantChoices: $$('[data-assistant-choice]'),
     assistantPanel: $("#assistantPanel"),
     assistantCloseButton: $("#assistantCloseButton"),
+    assistantDailyLabel: $("#assistantDailyLabel"),
+    assistantDailyMessage: $("#assistantDailyMessage"),
     assistantGreeting: $("#assistantGreeting"),
     assistantMessage: $("#assistantMessage"),
     assistantBriefing: $("#assistantBriefing"),
@@ -1197,6 +1246,17 @@
     return Object.hasOwn(ASSISTANTS, state.assistantId) ? ASSISTANTS[state.assistantId] : ASSISTANTS[DEFAULT_ASSISTANT_ID];
   }
 
+  function assistantDailyGreetingFor(day = state.day) {
+    const normalizedDay = Math.max(1, Math.floor(Number(day) || 1));
+    return DAILY_ASSISTANT_GREETINGS[(normalizedDay - 1) % DAILY_ASSISTANT_GREETINGS.length];
+  }
+
+  function updateAssistantDailyGreeting() {
+    const day = Math.max(1, Math.floor(Number(state.day) || 1));
+    if (el.assistantDailyLabel) el.assistantDailyLabel.textContent = `${day}일차 · 오늘의 인사`;
+    if (el.assistantDailyMessage) el.assistantDailyMessage.textContent = assistantDailyGreetingFor(day);
+  }
+
   function assistantCopy(value) {
     return String(value ?? "").replaceAll("윤슬", selectedAssistant().name);
   }
@@ -1223,6 +1283,7 @@
     if (practiceMode && el.labArtworkEra) {
       el.labArtworkEra.textContent = `${assistant.name}의 보존 연습실 · 실제 작품 기록과 분리`;
     }
+    updateAssistantDailyGreeting();
     updateAssistantNotice();
   }
 
@@ -1797,6 +1858,7 @@
 
   function openAssistantPanel() {
     pauseRestoration();
+    updateAssistantDailyGreeting();
     el.assistantPanel.classList.remove("is-hidden");
     el.assistantPanel.setAttribute("aria-hidden", "false");
     el.assistantButton.setAttribute("aria-expanded", "true");
@@ -1886,7 +1948,7 @@
     const hasUnread = Boolean(state.assistantNotice);
     const assistantName = selectedAssistant().name;
     el.assistantButton.classList.toggle("has-unread", hasUnread);
-    el.assistantButton.title = hasUnread ? `${assistantName}의 새 안내가 있어요` : `${assistantName}에게 운영 조언 듣기`;
+    el.assistantButton.title = hasUnread ? `${assistantName}의 새 안내가 있어요` : `${assistantName}의 오늘 인사와 운영 조언 듣기`;
   }
 
   function updateAssistant(viewName) {
@@ -2213,6 +2275,7 @@
     el.repValue.textContent = formatNumber(state.reputation);
     el.dayValue.textContent = `${state.day}일`;
     el.totalVisitorValue.textContent = `${formatNumber(state.totalVisitors)}명`;
+    updateAssistantDailyGreeting();
     updateAssistantNotice();
     const brandName = $(".brand-mini span:last-child");
     if (brandName) brandName.textContent = state.museumName || "반짝! 복원 미술관";
