@@ -2191,12 +2191,23 @@
     playTone("click");
   }
 
+  function sortStorageArtworksPendingFirst(artworks, restoredMap) {
+    return artworks
+      .map((art, originalIndex) => ({
+        art,
+        originalIndex,
+        restored: Boolean(restoredMap?.[art.id])
+      }))
+      .sort((a, b) => Number(a.restored) - Number(b.restored) || a.originalIndex - b.originalIndex)
+      .map(item => item.art);
+  }
+
   function renderStorage() {
     const query = el.artworkSearch.value.trim().toLocaleLowerCase("ko-KR");
     const material = el.materialFilter.value;
     const status = el.statusFilter.value;
     const knownRestoredCount = ARTWORKS.reduce((count, art) => count + (state.restored[art.id] ? 1 : 0), 0);
-    const filteredArts = ARTWORKS.filter(art => {
+    const filteredArts = sortStorageArtworksPendingFirst(ARTWORKS.filter(art => {
       const isRestored = Boolean(state.restored[art.id]);
       const unlocked = !art.licenseLocked && (state.reputation >= art.unlockRep || isRestored);
       const matchesQuery = !query || `${art.title} ${art.material} ${art.rarity} ${art.era || ""} ${art.artist || ""} ${art.sourceReference || ""}`.toLocaleLowerCase("ko-KR").includes(query);
@@ -2206,7 +2217,7 @@
         || (status === "available" && unlocked && !isRestored && !art.licenseLocked)
         || (status === "locked" && (!unlocked || art.licenseLocked));
       return matchesQuery && matchesMaterial && matchesStatus;
-    });
+    }), state.restored);
     const visibleArts = filteredArts.slice(0, storageVisibleCount);
     const remainingCount = Math.max(0, filteredArts.length - visibleArts.length);
 

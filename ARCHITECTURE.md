@@ -28,6 +28,8 @@
 
 `index.html`의 `.sticky-navigation`은 상단 상태 바(`.topbar`), 좁은 모바일용 메뉴 버튼(`.mobile-menu-toggle`), 메인 메뉴(`.main-tabs`)를 한 묶음으로 고정한다. 스크롤 중에도 같은 묶음이 유지되어야 하므로 이 요소들을 다시 개별 `sticky`로 분리하지 않는다. 820px 이하에서는 현재 공간만 표시하는 버튼으로 메뉴를 접고, 버튼을 누르면 기존 3×2 메뉴가 열린다. 비서 안내와 모달은 이 영역보다 높은 레이어를 사용한다.
 
+수장고의 `renderStorage()`는 검색어·재료·복원 상태 필터를 먼저 적용한 뒤 `sortStorageArtworksPendingFirst()`로 미복원 작품을 앞에, 복원 완료 작품을 뒤에 안정 정렬하고 마지막에 24개씩 나누어 표시한다. 따라서 모든 상태 보기에서는 새 복원 후보가 먼저 보이고, `복원 완료` 필터를 고르면 완료 작품만 기존 카탈로그 순서로 확인할 수 있다. 이 정렬은 화면 표시만 바꾸며 작품 데이터와 세이브 순서는 수정하지 않는다.
+
 첫 운영 안내는 데스크톱과 넓은 화면에서 기존 안내 카드로 표시한다. 820px 이하에서는 `#tutorialMobileToggle`의 원형 선택 비서 프로필로 접고, 사용자가 누를 때만 `#tutorialGuideCard`를 펼친다. 접힌 동안에는 강조 테두리와 어두운 배경도 숨기며, `강조 위치 보기`를 직접 누른 뒤에만 잠시 목표를 강조한다.
 
 전시관은 조작 UI와 장면의 반응형 전략을 분리한다. `#galleryDioramaViewport` 안의 `#galleryDiorama`만 680px 이하에서 760×670 기준 장면 전체를 폭에 맞춰 축소한다. 따라서 작품 수를 줄이거나 페이지 가로 스크롤을 만들지 않는다. 편의동(`.gallery-annex`)과 운영 패널은 축소하지 않고 정상 글자·터치 크기로 배치한다. 같은 680px 이하에서 `.management-panel`을 `display: contents`로 풀어 `.upgrade-panel-card`를 장면보다 먼저 배치하고, `#mobileUpgradeToggle`로 시설 목록을 접고 편다. 펼친 목록은 제한된 높이 안에서 독립적으로 스크롤하며, 화면을 벗어나거나 넓은 화면으로 전환하면 `setMobileUpgradeOpen()`이 접힌 상태로 정리한다. 장면 배율은 `updateGalleryDioramaScale()`이 `ResizeObserver`와 화면 전환 뒤에 다시 계산한다.
