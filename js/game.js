@@ -2191,14 +2191,16 @@
     playTone("click");
   }
 
-  function sortStorageArtworksPendingFirst(artworks, restoredMap) {
+  function sortStorageArtworksByPriority(artworks, restoredMap, reputation) {
     return artworks
       .map((art, originalIndex) => ({
         art,
         originalIndex,
-        restored: Boolean(restoredMap?.[art.id])
+        priority: restoredMap?.[art.id]
+          ? 2
+          : (!art.licenseLocked && reputation >= art.unlockRep ? 0 : 1)
       }))
-      .sort((a, b) => Number(a.restored) - Number(b.restored) || a.originalIndex - b.originalIndex)
+      .sort((a, b) => a.priority - b.priority || a.originalIndex - b.originalIndex)
       .map(item => item.art);
   }
 
@@ -2207,7 +2209,7 @@
     const material = el.materialFilter.value;
     const status = el.statusFilter.value;
     const knownRestoredCount = ARTWORKS.reduce((count, art) => count + (state.restored[art.id] ? 1 : 0), 0);
-    const filteredArts = sortStorageArtworksPendingFirst(ARTWORKS.filter(art => {
+    const filteredArts = sortStorageArtworksByPriority(ARTWORKS.filter(art => {
       const isRestored = Boolean(state.restored[art.id]);
       const unlocked = !art.licenseLocked && (state.reputation >= art.unlockRep || isRestored);
       const matchesQuery = !query || `${art.title} ${art.material} ${art.rarity} ${art.era || ""} ${art.artist || ""} ${art.sourceReference || ""}`.toLocaleLowerCase("ko-KR").includes(query);
@@ -2217,7 +2219,7 @@
         || (status === "available" && unlocked && !isRestored && !art.licenseLocked)
         || (status === "locked" && (!unlocked || art.licenseLocked));
       return matchesQuery && matchesMaterial && matchesStatus;
-    }), state.restored);
+    }), state.restored, state.reputation);
     const visibleArts = filteredArts.slice(0, storageVisibleCount);
     const remainingCount = Math.max(0, filteredArts.length - visibleArts.length);
 
