@@ -7339,6 +7339,18 @@
     return /^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec(?:\?.*)?$/.test(RANKING_CONFIG.endpoint);
   }
 
+  function rankingLeaderboardUrl() {
+    if (!isRankingEndpointConfigured()) return "";
+    try {
+      const url = new URL(RANKING_CONFIG.endpoint);
+      url.searchParams.set("season", RANKING_CONFIG.season);
+      return url.href;
+    } catch (error) {
+      console.warn("Leaderboard URL creation failed", error);
+      return "";
+    }
+  }
+
   function compactRankingRecords() {
     const seen = new Set();
     return state.records.flatMap(record => {
@@ -7468,6 +7480,7 @@
   function renderRankingPanel() {
     const summary = rankingSummaryFor();
     const connected = isRankingEndpointConfigured();
+    const leaderboardUrl = connected ? rankingLeaderboardUrl() : "";
     el.rankingSummary.innerHTML = [
       `관장 ${state.directorName || "서리"}`,
       `복원 ${formatNumber(summary.restoredCount)}점`,
@@ -7487,6 +7500,14 @@
     el.submitRankingButton.disabled = summary.restoredCount === 0;
     el.submitRankingButton.title = summary.restoredCount ? "현재 복원 성과를 랭킹에 제출" : "작품을 하나 이상 복원해야 제출할 수 있습니다.";
     el.viewRankingButton.textContent = connected ? "전체 랭킹 확인" : "랭킹 구현 미리보기";
+    el.viewRankingButton.href = leaderboardUrl || "#";
+    if (leaderboardUrl) {
+      el.viewRankingButton.setAttribute("target", "_blank");
+      el.viewRankingButton.setAttribute("rel", "noopener noreferrer");
+    } else {
+      el.viewRankingButton.removeAttribute("target");
+      el.viewRankingButton.removeAttribute("rel");
+    }
   }
 
   function openRankingPreview(payload, submitted = false) {
@@ -7569,19 +7590,20 @@
     }
   }
 
-  function openLeaderboard() {
+  function openLeaderboard(event) {
     if (!isRankingEndpointConfigured()) {
+      event.preventDefault();
       openRankingPreview(state.records.length ? buildRankingSubmission() : null, false);
       return;
     }
-    try {
-      const url = new URL(RANKING_CONFIG.endpoint);
-      url.searchParams.set("season", RANKING_CONFIG.season);
-      window.open(url.href, "museumRankingLeaderboard", "noopener");
-    } catch (error) {
-      console.warn("Leaderboard open failed", error);
+    const leaderboardUrl = rankingLeaderboardUrl();
+    if (!leaderboardUrl) {
+      event.preventDefault();
       showToast("랭킹 주소를 열지 못했습니다.");
+      playTone("wrong");
+      return;
     }
+    el.viewRankingButton.href = leaderboardUrl;
   }
 
   function escapeHTML(value) {

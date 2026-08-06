@@ -7,7 +7,7 @@
   <meta name="description" content="밝고 캐주얼한 HTML5 미술품 복원·미술관 운영 게임 프로토타입" />
   <title>반짝! 복원 미술관</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=20260806-mobile-gallery-upgrades-v1" />
+  <link rel="stylesheet" href="styles.css?v=20260806-mobile-ranking-link-v1" />
 </head>
 <body>
   <div class="background-decor" aria-hidden="true">
@@ -391,7 +391,7 @@
             </div>
             <div class="save-actions">
               <button id="submitRankingButton" class="button button-primary">🏆 현재 기록 제출</button>
-              <button id="viewRankingButton" class="button button-soft">전체 랭킹 확인</button>
+              <a id="viewRankingButton" class="button button-soft ranking-page-link" href="#" target="_blank" rel="noopener noreferrer">전체 랭킹 확인</a>
               <button id="exportSaveButton" class="button button-soft">저장 파일 받기</button>
               <button id="importSaveButton" class="button button-ghost">저장 파일 불러오기</button>
               <button id="resetButton" class="button button-danger-soft">저장 초기화</button>
@@ -633,6 +633,6 @@
 
   <script src="js/artworks-data.js?v=20260804-particles"></script>
   <script src="js/ranking-config.js?v=20260805-ranking-v1"></script>
-  <script src="js/game.js?v=20260806-mobile-gallery-upgrades-v1"></script>
+  <script src="js/game.js?v=20260806-mobile-ranking-link-v1"></script>
 </body>
 </html>

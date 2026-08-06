@@ -39,5 +39,11 @@ assert.match(backend, /function calculateIncomeScore_/);
 assert.match(backend, /function calculateVisitorScore_/);
 assert.match(backend, /function calculateStorySpeedScore_/);
 assert.match(backend, /entry\.rulesVersion === RANKING_RULES_VERSION/);
+assert.match(index, /<a id="viewRankingButton"[^>]+target="_blank"[^>]+rel="noopener noreferrer"/);
+assert.match(game, /function rankingLeaderboardUrl\(\)/);
+assert.match(game, /el\.viewRankingButton\.href = leaderboardUrl \|\| "#"/);
+const leaderboardHandler = game.match(/function openLeaderboard\(event\) \{[\s\S]*?\n  \}/)?.[0] || "";
+assert.match(leaderboardHandler, /event\.preventDefault\(\)/);
+assert.doesNotMatch(leaderboardHandler, /window\.open/);
 
 console.log("Story and ranking validation passed: 15 authored chapters, 1500 finale, compatible completion-day migration and director-score-v2 fields");
