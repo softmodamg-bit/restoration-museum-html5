@@ -6,7 +6,7 @@ const styles = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8"
 const game = fs.readFileSync(new URL("../js/game.js", import.meta.url), "utf8");
 
 assert.match(index, /id="toolSelectionCard" class="panel-card tool-selection-card"/);
-assert.match(index, /styles\.css\?v=20260806-mobile-tool-tray-v1/);
+assert.match(index, /styles\.css\?v=20260806-hangyeol-preview-v2/);
 assert.match(index, /js\/game\.js\?v=20260806-mobile-tool-tray-v1/);
 assert.match(styles, /@media \(max-width: 900px\)[\s\S]*?\.tool-panel \{ display: contents; \}/);
 assert.match(styles, /\.tool-selection-card \{ order: -1;/);

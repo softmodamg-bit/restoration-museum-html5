@@ -515,3 +515,10 @@ Python is not installed in this environment, so the browser check used the depen
 - 390×844에서 도구 네 개의 노출, 선택 후 미니게임 잠금 해제, 페이지 가로 넘침 없음과 작업 화면보다 앞선 배치를 확인했다.
 - 750×832에서도 네 버튼이 각각 146px 폭으로 한 줄 배치됐고, 1280×900에서는 기존 2열 배치와 오른쪽 도구 패널이 유지됐다.
 - `node --check js/game.js`, `scripts/test-mobile-tool-tray.mjs`, 미니게임 공통·쉬운말 검증을 통과했다.
+
+## 2026-08-06 한결 링크 미리보기 캐시 보강
+
+- 기존 공개 Pages의 `og:image`와 실제 이미지가 이미 한결임을 확인했다. 외부 앱이 이전 링크 카드를 캐시하거나 Open Graph 대신 본문의 첫 윤슬 이미지를 고를 가능성을 확인했다.
+- 한결 전용 새 파일명과 버전이 붙은 공유 URL을 사용하고, `og:image:secure_url`, Twitter 대체 설명, `itemprop=image`, `image_src`를 함께 제공했다.
+- Open Graph를 무시하는 서비스용으로 본문의 첫 이미지도 화면 밖 한결 대체 이미지로 고정했다. 이 이미지는 접근성 트리와 게임 화면에는 노출되지 않는다.
+- `node --check js/game.js`와 전체 `scripts/test-*.mjs`를 통과했다. 로컬 브라우저의 1280×900·390×844에서 첫 이미지가 한결이면서 화면에는 보이지 않고, 가로 넘침도 없음을 확인했다.

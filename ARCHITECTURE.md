@@ -21,6 +21,7 @@
 | `js/artworks-data.js` | 생성 작품 496점의 재질 프로필, 복원 단계·도구·설명 데이터 |
 | `js/game.js` | 핵심 작품 4점, 전역 상태, 14종 미니게임, 복원 진행, 전시·관람객·수익·저장·랭킹 연계 |
 | `assets/assistant-yoonseul.png`, `assets/assistant-hangyeol.png` | 선택 가능한 비서 윤슬·한결의 정사각형 초상화 |
+| `assets/link-preview-hangyeol-v2.png` | 외부 링크 공유 캐시와 본문 첫 이미지 추출에 사용하는 한결 전용 홍보 초상화 |
 | `ranking-apps-script.gs` | Google Apps Script 랭킹 제출·조회 백엔드와 랭킹 페이지 |
 | `scripts/` | 데이터, 시각 다양성, 랭킹 백엔드 등 보조 검증 스크립트 |
 | `docs/` | 게임 기획, 구현 브리프, QA 기록 |
@@ -41,8 +42,8 @@
 - `updateAssistantIdentity()`가 `[data-assistant-image]`, `[data-assistant-template]`, 선택 버튼의 `aria-pressed`를 한 번에 갱신한다. 새 비서 노출 지점을 만들 때 이미지나 이름을 직접 고정하지 말고 이 속성을 사용한다.
 - 스토리 원고는 기존 윤슬 기준 원문을 유지한다. 화면에 표시할 때만 `assistantCopy()`가 현재 비서 이름으로 바꾸므로 저장된 이야기 진행과 원고 데이터는 달라지지 않는다.
 - 비서 선택은 안내 인물·초상화·첫 인사만 바꾸며 보상, 난이도, 작품 배정과 랭킹 점수에는 영향을 주지 않는다.
-- 외부 메신저와 SNS의 링크 미리보기는 저장 선택과 무관한 고정 홍보 이미지다. `index.html`의 Open Graph·Twitter 메타 태그가 한결 초상화의 절대 Pages URL을 가리킨다.
-- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 구형 세이브 기본값, 동적 스토리 치환, 반응형 카드와 한결 초상화 규격을 검사한다.
+- 외부 메신저와 SNS의 링크 미리보기는 저장 선택과 무관한 고정 홍보 이미지다. `index.html`의 Open Graph·Twitter·`image_src` 메타 태그가 캐시 버전이 붙은 한결 전용 절대 Pages URL을 가리킨다. Open Graph를 무시하고 본문의 첫 `<img>`를 고르는 서비스에 대비해 화면 밖의 `.link-preview-fallback`도 같은 한결 이미지를 먼저 제공한다.
+- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 구형 세이브 기본값, 동적 스토리 치환, 반응형 카드, 한결 초상화 규격과 공유 메타·본문 대체 이미지의 일치를 검사한다.
 
 ## 시설 업그레이드 1·2단계
 
