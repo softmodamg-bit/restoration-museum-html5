@@ -6,5 +6,5 @@ window.RESTORATION_RANKING_CONFIG = Object.freeze({
   endpoint: "https://script.google.com/macros/s/AKfycbzfYtHzUa5xrrZjkr4FZLxoB3q6iMxEbhXShIu4Z692ZjmOP3RhKFbvg97lUw0AxOkf/exec",
   season: "공모전 시즌 1",
   gameVersion: "prototype-2026-08",
-  rulesVersion: "director-score-v2"
+  rulesVersion: "director-score-v3"
 });

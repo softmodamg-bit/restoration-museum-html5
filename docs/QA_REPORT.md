@@ -188,7 +188,7 @@ Test date: 2026-07-27
 - HTML duplicate ID check: 0 duplicates across 176 IDs
 - Existing saves without `rankingPlayerId` receive a new anonymous ID; save export/import preserves it afterward
 - Ranking submissions contain only identity labels, progress summary, and compact restoration records; the full save and settings are excluded
-- Client and Apps Script now use the same versioned score formula; the current rule is `director-score-v2`
+- Client and Apps Script now use the same versioned score formula; the current rule is `director-score-v3`
 - Apps Script revalidates names and record ranges, hashes the player ID, protects writes with `LockService`, and upserts one best score per player and season
 
 ### Browser checks
@@ -488,10 +488,10 @@ Python is not installed in this environment, so the browser check used the depen
 
 ## 2026-08-05 후일담 5편과 관장 랭킹 v2
 
-- 매력도 1,000 엔딩 뒤에 1,100~1,500 구간의 고정 후일담 5편을 추가하고, 무한 자동 생성 에필로그를 종료했다.
+- 매력도 1,000 엔딩 뒤에 1,300·1,600·1,900·2,200·2,500 구간의 고정 후일담 5편을 배치하고, 무한 자동 생성 에필로그를 종료했다.
 - 마지막 후일담을 연 게임 날짜를 선택적 `storyCompletionDay`로 저장한다. 구형 세이브가 이미 1,500 이상 진행됐다면 현재 저장 날짜를 안전한 완주일로 보완한다.
 - 랭킹은 기존 복원 점수에 누적 개관 수입, 누적 관람객, 후일담 5편 완주 속도 보너스를 더한다. 수입·관람객은 각각 최대 5,000점이며, 25일 완주는 4,500점이다.
-- 클라이언트와 Apps Script를 `director-score-v2`로 맞췄다. 서버가 운영 수치를 다시 제한·계산하며, v1 행은 삭제하지 않고 v2 공개 목록과 최고 기록 비교에서 제외한다.
+- 클라이언트와 Apps Script를 `director-score-v3`로 맞췄다. 서버가 운영 수치를 다시 제한·계산하며, 이전 규칙 행은 삭제하지 않고 v3 공개 목록과 최고 기록 비교에서 제외한다.
 - `node --check js/game.js`와 전체 `scripts/test-*.mjs`를 통과했다. 서버 예제 기록은 복원 19,360점 + 수입 1,000점 + 관람객 240점 + 25일 완주 4,500점 = 25,100점으로 재계산됐다.
 - 실제 브라우저에서 스토리 0/15, 후일담 5편 제목, 기록실의 누적 수입·관람객·이야기 진행·예상 점수를 확인했다.
 - 390×844에서 페이지 전체 가로 넘침이 없었고, 브라우저 콘솔 경고·오류도 없었다.

@@ -12,21 +12,23 @@ assert(chapterMatch, "STORY_CHAPTERS could not be extracted");
 const chapters = vm.runInNewContext(`(${chapterMatch[1]})`);
 
 assert.equal(chapters.length, 15, "story archive must contain 10 main chapters and 5 epilogues");
-assert.deepEqual(Array.from(chapters, chapter => chapter.threshold), Array.from({ length: 15 }, (_, index) => (index + 1) * 100));
+assert.deepEqual(Array.from(chapters, chapter => chapter.threshold), [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1300, 1600, 1900, 2200, 2500]);
 assert.equal(chapters.filter(chapter => chapter.epilogue).length, 5);
-assert.equal(chapters.at(-1).threshold, 1500);
+assert.equal(chapters.at(-1).threshold, 2500);
 assert.equal(chapters.at(-1).finale, true);
 assert.match(index, /이야기 0\/15/);
-assert.match(index, /매력도 1,500까지 후일담 5편/);
+assert.match(index, /매력도 300마다 후일담이 열리며, 매력도 2,500에서 5편/);
 
 assert.match(game, /const FINAL_STORY_THRESHOLD = STORY_CHAPTERS\[STORY_CHAPTERS\.length - 1\]\.threshold/);
-assert.match(game, /Math\.min\(FINAL_STORY_THRESHOLD, Math\.floor\(appeal \/ 100\) \* 100\)/);
+assert.match(game, /filter\(chapter => chapter\.threshold > state\.storyMilestone && chapter\.threshold <= appeal\)/);
+assert.match(game, /const STORY_PROGRESS_VERSION = 2/);
+assert.match(game, /rawStoryMilestone >= 1500 \? 2500/);
 assert.match(game, /if \(story\.finale && !state\.storyCompletionDay\) state\.storyCompletionDay = state\.day/);
 assert.match(game, /storyCompletionDay: 0/);
 assert.match(game, /const storyCompletionDay = storyMilestone >= FINAL_STORY_THRESHOLD/);
 
 for (const source of [game, config, backend]) {
-  assert.match(source, /director-score-v2/, "client, config and backend must share score rules v2");
+  assert.match(source, /director-score-v3/, "client, config and backend must share score rules v3");
 }
 for (const field of ["totalMuseumIncome", "totalVisitors", "storyMilestone", "storyCompletionDay"]) {
   assert(game.includes(field), `client ranking payload is missing ${field}`);
@@ -46,4 +48,4 @@ const leaderboardHandler = game.match(/function openLeaderboard\(event\) \{[\s\S
 assert.match(leaderboardHandler, /event\.preventDefault\(\)/);
 assert.doesNotMatch(leaderboardHandler, /window\.open/);
 
-console.log("Story and ranking validation passed: 15 authored chapters, 1500 finale, compatible completion-day migration and director-score-v2 fields");
+console.log("Story and ranking validation passed: 15 authored chapters, 300-appeal epilogue spacing, 2500 finale, compatible legacy migration and director-score-v3 fields");

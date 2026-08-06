@@ -24,7 +24,7 @@
   <link rel="image_src" href="https://softmodamg-bit.github.io/restoration-museum-html5/assets/link-preview-hangyeol-v2.png" />
   <title>반짝! 복원 미술관</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=20260806-assistant-story-v3" />
+  <link rel="stylesheet" href="styles.css?v=20260806-assistant-greeting-v4" />
 </head>
 <body>
   <img class="link-preview-fallback" src="assets/link-preview-hangyeol-v2.png" alt="" aria-hidden="true" width="1254" height="1254" />
@@ -100,7 +100,7 @@
             <div class="resource-chip"><span>📅</span><strong id="dayValue">1일</strong></div>
             <div class="resource-chip" title="누적 관람객"><span>👥</span><strong id="totalVisitorValue">0명</strong></div>
           </div>
-          <button id="assistantButton" class="assistant-button" aria-expanded="false" aria-controls="assistantPanel">
+          <button id="assistantButton" class="assistant-button" aria-expanded="false" aria-controls="assistantGreetingModal">
             <img src="assets/assistant-yoonseul.png" alt="" data-assistant-image />
             <span><small>관장실 비서</small><strong data-assistant-template="{name}">윤슬</strong></span>
             <i aria-hidden="true">!</i>
@@ -396,9 +396,9 @@
               <section class="panel-card story-guide-card">
                 <p class="panel-label">이야기 진행 규칙</p>
                 <ul>
-                  <li>전시 매력도 100마다 새 이야기가 열립니다.</li>
+                  <li>본편은 전시 매력도 100마다 새 이야기가 열립니다.</li>
                   <li>매력도 1,000에서 중요한 마지막 이야기가 열립니다.</li>
-                  <li>마지막 이야기 뒤에는 매력도 1,500까지 후일담 5편이 이어집니다.</li>
+                  <li>마지막 이야기 뒤에는 매력도 300마다 후일담이 열리며, 매력도 2,500에서 5편을 모두 확인할 수 있습니다.</li>
                 </ul>
               </section>
             </aside>
@@ -489,6 +489,28 @@
   </div>
   <div id="tutorialSpotlight" class="tutorial-spotlight is-hidden" aria-hidden="true"></div>
 
+  <div id="assistantGreetingBackdrop" class="assistant-greeting-backdrop is-hidden" aria-hidden="true">
+    <section id="assistantGreetingModal" class="assistant-greeting-modal" role="dialog" aria-modal="true" aria-labelledby="assistantGreetingTitle">
+      <button id="assistantGreetingCloseButton" class="assistant-close assistant-greeting-close" type="button" aria-label="오늘의 인사 닫기">×</button>
+      <img class="assistant-greeting-portrait" src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+      <div class="assistant-greeting-copy">
+        <p class="eyebrow">TODAY'S GREETING</p>
+        <h2 id="assistantGreetingTitle" data-assistant-template="비서 {name}">비서 윤슬</h2>
+        <section class="assistant-daily-greeting" aria-labelledby="assistantDailyLabel">
+          <div class="assistant-daily-heading">
+            <span aria-hidden="true">☀️</span>
+            <strong id="assistantDailyLabel">1일차 · 오늘의 인사</strong>
+          </div>
+          <p id="assistantDailyMessage">오늘도 미술관의 문을 함께 열어 볼까요?</p>
+        </section>
+        <div class="assistant-greeting-actions">
+          <button id="assistantDailyReplyButton" type="button" class="button button-primary">오늘도 잘 부탁해</button>
+          <button id="assistantGreetingSettingsButton" type="button" class="button button-ghost">비서실 설정 열기</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <aside id="assistantPanel" class="assistant-panel is-hidden" aria-hidden="true" aria-labelledby="assistantPanelTitle">
     <div class="assistant-panel-head">
       <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
@@ -498,13 +520,6 @@
       </div>
       <button id="assistantCloseButton" class="assistant-close" aria-label="비서 안내 닫기">×</button>
     </div>
-    <section class="assistant-daily-greeting" aria-labelledby="assistantDailyLabel">
-      <div class="assistant-daily-heading">
-        <span aria-hidden="true">☀️</span>
-        <strong id="assistantDailyLabel">1일차 · 오늘의 인사</strong>
-      </div>
-      <p id="assistantDailyMessage">오늘도 미술관의 문을 함께 열어 볼까요?</p>
-    </section>
     <div class="assistant-dialogue">
       <strong class="assistant-dialogue-label">오늘의 운영 메모</strong>
       <span id="assistantGreeting">관장님,</span>
@@ -606,11 +621,6 @@
     <section id="storyModal" class="story-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
       <div class="story-visual">
         <img id="storyIllustration" class="story-illustration" src="assets/story/story-000.webp" alt="황동 열쇠와 봉인된 편지가 놓인 관장실 책상" />
-        <div class="story-assistant-badge">
-          <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
-          <strong data-assistant-template="비서 {name}">비서 윤슬</strong>
-        </div>
-        <span id="storyIcon" aria-hidden="true">✉️</span>
       </div>
       <div class="story-modal-copy">
         <p id="storyChapterLabel" class="eyebrow">START STORY</p>
@@ -714,6 +724,6 @@
 
   <script src="js/artworks-data.js?v=20260804-particles"></script>
   <script src="js/ranking-config.js?v=20260805-ranking-v1"></script>
-  <script src="js/game.js?v=20260806-assistant-story-v3"></script>
+  <script src="js/game.js?v=20260806-assistant-greeting-v4"></script>
 </body>
 </html>

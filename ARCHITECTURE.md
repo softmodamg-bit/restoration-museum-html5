@@ -21,7 +21,7 @@
 | `js/artworks-data.js` | 생성 작품 496점의 재질 프로필, 복원 단계·도구·설명 데이터 |
 | `js/game.js` | 핵심 작품 4점, 전역 상태, 14종 미니게임, 복원 진행, 전시·관람객·수익·저장·랭킹 연계 |
 | `assets/assistant-yoonseul.png`, `assets/assistant-hangyeol.png` | 선택 가능한 비서 윤슬·한결의 정사각형 초상화 |
-| `assets/story/story-000.webp` ~ `story-1500.webp` | 프롤로그와 매력도 100~1,500 이야기 16장의 상황별 삽화 |
+| `assets/story/story-000.webp` ~ `story-1500.webp` | 프롤로그와 본편·후일담 16장의 상황별 삽화. 파일명은 기존 번호를 유지하지만 후일담은 매력도 1,300~2,500에 열린다. |
 | `assets/link-preview-hangyeol-v2.png` | 외부 링크 공유 캐시와 본문 첫 이미지 추출에 사용하는 한결 전용 홍보 초상화 |
 | `ranking-apps-script.gs` | Google Apps Script 랭킹 제출·조회 백엔드와 랭킹 페이지 |
 | `scripts/` | 데이터, 시각 다양성, 랭킹 백엔드 등 보조 검증 스크립트 |
@@ -47,9 +47,9 @@
 - 스토리 원고는 기존 윤슬 기준 원문을 유지한다. 화면에 표시할 때만 `assistantCopy()`가 현재 비서 이름으로 바꾸므로 저장된 이야기 진행과 원고 데이터는 달라지지 않는다.
 - 비서 선택은 안내 인물·초상화·첫 인사만 바꾸며 보상, 난이도, 작품 배정과 랭킹 점수에는 영향을 주지 않는다.
 - 외부 메신저와 SNS의 링크 미리보기는 저장 선택과 무관한 고정 홍보 이미지다. `index.html`의 Open Graph·Twitter·`image_src` 메타 태그가 캐시 버전이 붙은 한결 전용 절대 Pages URL을 가리킨다. Open Graph를 무시하고 본문의 첫 `<img>`를 고르는 서비스에 대비해 화면 밖의 `.link-preview-fallback`도 같은 한결 이미지를 먼저 제공한다.
-- 스토리 모달의 `#storyIllustration`은 `storyIllustrationFor(threshold)`가 장마다 다른 WebP 삽화와 대체 문구로 바꾼다. 삽화는 비서 성별과 무관한 사건·장소 중심이며, `.story-assistant-badge` 안의 `[data-assistant-image]`가 현재 비서 얼굴을 모든 장에서 함께 보여 준다. `index.html`의 CSS·게임 스크립트와 동적 스토리 삽화 URL에는 배포 버전 쿼리를 붙여 GitHub Pages 갱신 뒤 이전 HTML·CSS·JS가 섞여 보이지 않게 한다.
-- 상단의 비서 버튼은 기존 `#assistantPanel`을 연다. 패널의 `.assistant-daily-greeting`은 `DAILY_ASSISTANT_GREETINGS` 45종 중 `state.day`에 해당하는 한 문장을 보여 주며, 46일차부터 같은 순서로 다시 순환한다. 문장은 윤슬·한결 공용이고 `assistantDailyGreetingFor()`가 날짜만으로 결정하므로 새 세이브 필드를 만들지 않는다. 기존 운영 조언·비서 선택·명패·접근성 설정은 같은 패널 아래에 유지한다.
-- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 서로 다른 하루 인사 45종과 날짜 순환, 첫 튜토리얼 선택, 구형 세이브 기본값, 동적 스토리 치환, 16장 삽화의 WebP 형식·모바일 용량, 반응형 비서 배지, 한결 초상화 규격과 공유 메타·본문 대체 이미지의 일치를 검사한다.
+- 스토리 모달의 `#storyIllustration`은 `storyIllustrationFor(threshold)`가 장마다 다른 WebP 삽화와 대체 문구로 바꾼다. 삽화는 비서 성별과 무관한 사건·장소 중심이며, 이야기 화면의 왼쪽 영역에는 편지 아이콘이나 비서 배지를 겹치지 않고 삽화만 표시한다. `index.html`의 CSS·게임 스크립트와 동적 스토리 삽화 URL에는 배포 버전 쿼리를 붙여 GitHub Pages 갱신 뒤 이전 HTML·CSS·JS가 섞여 보이지 않게 한다.
+- 상단의 작은 비서 버튼은 `#assistantGreetingModal`을 열어 `DAILY_ASSISTANT_GREETINGS` 45종 중 `state.day`에 해당하는 한 문장과 짝지어진 `DAILY_DIRECTOR_REPLIES`의 관장 대답 버튼을 보여 준다. 46일차부터 같은 순서로 다시 순환하며 날짜만으로 결정하므로 새 세이브 필드를 만들지 않는다. 팝업의 `비서실 설정 열기`를 누르면 기존 `#assistantPanel`로 이동하고, 운영 조언·비서 선택·명패·접근성 설정은 그 패널에 유지한다.
+- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 서로 다른 하루 인사 45종과 짝지어진 관장 대답 45종, 작은 인사 팝업에서 비서실로 이어지는 경로, 첫 튜토리얼 선택, 구형 세이브 기본값, 동적 스토리 치환, 배지 없이 표시되는 16장 삽화의 WebP 형식·모바일 용량, 한결 초상화 규격과 공유 메타·본문 대체 이미지의 일치를 검사한다.
 
 ## 시설 업그레이드 1·2단계
 
@@ -360,28 +360,29 @@
 
 전시 매력도는 작품의 고정 `appeal`에서 복원 기록의 선택적 `appealPenalty`를 뺀 뒤 시설 배수를 적용한다. `budget`에서 겉모습 손질을 미룬 작품은 관람객·수입 계산에 소폭 직접 반영된다. 복원 정확도와 위험도는 평판과 보상, 랭킹에는 직접 반영되며, 정확도가 높아 평판이 오르면 관람객 계산에도 간접적으로 영향을 준다.
 
-## 스토리 완주와 랭킹 v2
+## 스토리 완주와 랭킹 v3
 
-`STORY_CHAPTERS`는 매력도 100~1,000의 본편 10장과 1,100~1,500의 고정 후일담 5편으로 끝난다. `FINAL_STORY_THRESHOLD`는 배열 마지막 항목에서 계산하며, 이후 진행을 무한 생성하지 않는다.
+`STORY_CHAPTERS`는 매력도 100~1,000의 본편 10장과 1,300·1,600·1,900·2,200·2,500의 고정 후일담 5편으로 끝난다. `FINAL_STORY_THRESHOLD`는 배열 마지막 항목에서 계산하며, 이후 진행을 무한 생성하지 않는다.
 
 ```text
 전시 매력도 변화
-→ checkStoryProgress(): 100 단위, 최대 FINAL_STORY_THRESHOLD로 제한
+→ checkStoryProgress(): STORY_CHAPTERS에 적힌 다음 임계값까지 도달한 장만 대기열에 추가
 → storyForThreshold(): STORY_CHAPTERS의 고정 원고 반환
 → openStoryEvent(): storyMilestone 갱신
-→ 1,500 후일담을 처음 열 때 storyCompletionDay = state.day
+→ 2,500 후일담을 처음 열 때 storyCompletionDay = state.day
 → normalizeState(): 구형 세이브 보완
 ```
 
-- `storyCompletionDay`는 선택적 세이브 필드다. 구형 세이브가 이미 매력도 1,500 이야기를 연 상태라면 불러온 현재 `day`를 최초 완주일로 보완하고, 미완주 세이브는 `0`을 유지한다.
-- `storyMilestone`은 불러올 때 100 단위와 1,500 상한으로 정리한다. 기존 `endingSeen`은 본편 엔딩인 1,000 기준을 그대로 유지한다.
+- `storyProgressVersion: 2`는 후일담 간격 변경을 구분하는 선택적 세이브 필드다. 필드가 없는 구형 세이브의 1,100~1,500 진행은 새 1,300~2,500 진행으로 순서대로 옮겨 기존 해금 장수를 보존한다.
+- `storyCompletionDay`는 선택적 세이브 필드다. 구형 세이브가 이미 매력도 1,500 이야기를 연 상태라면 새 최종 임계값 2,500 완주로 옮기고, 기존 완주일이 없으면 불러온 현재 `day`로 보완한다. 미완주 세이브는 `0`을 유지한다.
+- `storyMilestone`은 불러올 때 `STORY_CHAPTERS`에 실제로 존재하는 가장 가까운 이전 임계값으로 정리한다. 기존 `endingSeen`은 본편 엔딩인 1,000 기준을 그대로 유지한다.
 - 기록실의 랭킹 제출은 전체 세이브 대신 복원 기록과 `museumIncomeEarned`, `totalVisitors`, `storyMilestone`, `storyCompletionDay`만 추린다.
-- 클라이언트 미리보기와 `ranking-apps-script.gs`는 `director-score-v2`를 사용한다. 서버는 제출된 `clientSummary`를 믿지 않고 작품 점수와 운영 보너스를 다시 계산한다.
+- 클라이언트 미리보기와 `ranking-apps-script.gs`는 `director-score-v3`를 사용한다. 서버는 제출된 `clientSummary`를 믿지 않고 작품 점수와 운영 보너스를 다시 계산한다.
 - 수입 보너스는 누적 개관 수입 25코인당 1점, 관람객 보너스는 5명당 1점이며 각각 최대 5,000점이다. 이야기 보너스는 후일담 5편 완주일에 따라 20일 이내 5,000점, 25일 이내 4,500점, 35일 이내 3,500점, 50일 이내 2,500점, 이후 1,500점이고 미완주는 0점이다.
-- Google Sheet의 기존 19개 열 뒤에 운영 성과와 보너스 6개 열을 추가한다. v1 행은 삭제하지 않지만 v2 최고 기록 비교와 공개 목록에서 제외한다.
+- Google Sheet의 기존 행은 삭제하지 않지만 현재 v3 최고 기록 비교와 공개 목록에서는 이전 규칙 행을 제외한다.
 - `전체 랭킹 확인`은 모바일 팝업 차단을 피하기 위해 `window.open()`을 쓰지 않는다. `renderRankingPanel()`이 Apps Script 조회 주소를 `#viewRankingButton`의 실제 `href`에 넣고, 사용자의 일반 링크 클릭으로 새 탭을 연다. 랭킹 주소가 비어 있을 때만 클릭 기본 동작을 막고 기존 미리보기 모달을 연다.
 - `exportSaveFile()`은 세이브를 만든 로컬 시각과 현재 관장명·미술관명을 `YYMMDD_HHMMSS_관장이름_미술관이름.json` 형식의 다운로드 파일명으로 쓴다. `saveFileNameSegment()`가 운영체제에서 금지된 문자를 제거하지만 JSON 내용과 불러오기 형식은 바꾸지 않는다.
-- `scripts/test-story-ranking.mjs`가 고정 원고 15편, 1,500 상한, 완주일 마이그레이션과 클라이언트·서버 v2 필드를 검사한다. `scripts/test-ranking-backend.mjs`가 서버 점수, 보너스 상한, 미완주 0점과 결과 페이지 표시를 검사한다.
+- `scripts/test-story-ranking.mjs`가 고정 원고 15편, 후일담 300 간격, 2,500 상한, 구형 진행 마이그레이션과 클라이언트·서버 v3 필드를 검사한다. `scripts/test-ranking-backend.mjs`가 서버 점수, 보너스 상한, 미완주 0점과 결과 페이지 표시를 검사한다.
 
 ## 난이도 5의 수치형 재료 상태 신호
 

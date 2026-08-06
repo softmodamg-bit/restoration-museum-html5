@@ -37,8 +37,8 @@ const validSubmission = {
   schemaVersion: 1,
   season: "공모전 시즌 1",
   gameVersion: "prototype-2026-08",
-  rulesVersion: "director-score-v2",
-  submissionId: "director-score-v2-test123",
+  rulesVersion: "director-score-v3",
+  submissionId: "director-score-v3-test123",
   playerId: "player-test-1234567890",
   directorName: "서리",
   museumName: "반짝 복원 미술관",
@@ -46,7 +46,7 @@ const validSubmission = {
     day: 25,
     totalVisitors: 1200,
     totalMuseumIncome: 25000,
-    storyMilestone: 1500,
+    storyMilestone: 2500,
     storyCompletionDay: 25,
     upgradeCount: 2
   },
@@ -73,15 +73,15 @@ assert.equal(scored.playerHash.length, 64);
 
 const unfinishedStory = context.validateAndScore_({
   ...validSubmission,
-  submissionId: "director-score-v2-unfinished",
-  progress: { ...validSubmission.progress, storyMilestone: 1400, storyCompletionDay: 20 }
+  submissionId: "director-score-v3-unfinished",
+  progress: { ...validSubmission.progress, storyMilestone: 2200, storyCompletionDay: 20 }
 });
 assert.equal(unfinishedStory.storyCompletionDay, 0);
 assert.equal(unfinishedStory.storySpeedScore, 0);
 
 const cappedOperations = context.validateAndScore_({
   ...validSubmission,
-  submissionId: "director-score-v2-capped",
+  submissionId: "director-score-v3-capped",
   progress: { ...validSubmission.progress, totalVisitors: 999999999, totalMuseumIncome: 999999999 }
 });
 assert.equal(cappedOperations.visitorScore, 5000);

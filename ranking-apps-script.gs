@@ -13,8 +13,8 @@
 var RANKING_SHEET_NAME = "관장 랭킹";
 var RANKING_SEASON = "공모전 시즌 1";
 var RANKING_GAME_VERSION = "prototype-2026-08";
-var RANKING_RULES_VERSION = "director-score-v2";
-var FINAL_STORY_THRESHOLD = 1500;
+var RANKING_RULES_VERSION = "director-score-v3";
+var FINAL_STORY_THRESHOLD = 2500;
 var MAX_RECORDS = 500;
 var MAX_PAYLOAD_CHARS = 400000;
 var HEADERS = [

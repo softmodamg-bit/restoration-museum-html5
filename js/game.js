@@ -6,7 +6,7 @@
     endpoint: String(window.RESTORATION_RANKING_CONFIG?.endpoint || "").trim(),
     season: String(window.RESTORATION_RANKING_CONFIG?.season || "공모전 시즌 1").slice(0, 40),
     gameVersion: String(window.RESTORATION_RANKING_CONFIG?.gameVersion || "prototype-2026-08").slice(0, 40),
-    rulesVersion: String(window.RESTORATION_RANKING_CONFIG?.rulesVersion || "director-score-v2").slice(0, 40)
+    rulesVersion: String(window.RESTORATION_RANKING_CONFIG?.rulesVersion || "director-score-v3").slice(0, 40)
   });
   const DEFAULT_ASSISTANT_ID = "yoonseul";
   const ASSISTANTS = Object.freeze({
@@ -71,6 +71,53 @@
     "전시실을 둘러보니 서로 다른 작품들이 제법 한 팀처럼 어울리고 있어요.",
     "처음 문을 열던 날보다 미술관이 훨씬 따뜻해졌네요. 관장님의 시간이 남은 덕분이에요.",
     "새로운 하루가 왔어요. 오늘도 작품과 사람 사이에 좋은 이야기를 하나 더 이어 봐요."
+  ]);
+  const DAILY_DIRECTOR_REPLIES = Object.freeze([
+    "오늘도 잘 부탁해",
+    "고마워, 빛부터 함께 살펴보자",
+    "좋아, 조용히 흔적을 찾아보자",
+    "고마워, 차 한 잔 하고 시작하자",
+    "잘 지켜봐 줘서 고마워",
+    "좋아, 오늘도 문을 열어 보자",
+    "우리도 뿌듯한 하루를 만들어 보자",
+    "좋아, 작은 발견도 꼭 기록하자",
+    "오늘 이야기도 함께 만들어 보자",
+    "맞아, 잠깐 숨을 고르고 시작하자",
+    "좋아, 우선순위부터 함께 정하자",
+    "오늘 첫 관람객도 기대되네",
+    "맞아, 멈출 때를 잘 살펴보자",
+    "좋아, 그 작품부터 만나 보자",
+    "오늘도 꼼꼼하게 부탁해",
+    "함께라면 좋은 하루가 될 거야",
+    "작품들이 잘 어울리도록 더 살펴보자",
+    "좋아, 새로운 자리에서 다시 보자",
+    "고마워, 준비가 든든하네",
+    "좋아, 기록부터 천천히 읽어 보자",
+    "관람객의 말도 잘 들어 보자",
+    "좋아, 새 작품을 함께 만나 보자",
+    "고마워, 필요한 도구부터 확인하자",
+    "좋아, 관람객 눈높이에서 둘러보자",
+    "그래, 오늘의 한 걸음을 시작하자",
+    "작은 확인부터 함께 이어 가자",
+    "고마워, 오늘도 잘 부탁해",
+    "좋아, 작품의 시간을 함께 읽어 보자",
+    "비 오는 날의 미술관도 좋네",
+    "좋아, 햇살과 조명부터 살펴보자",
+    "그래, 가장 중요한 일 하나부터 하자",
+    "고마워, 그 말을 꼭 기억할게",
+    "우리 미술관이 자라는 게 기쁘네",
+    "좋아, 이유까지 생각하며 골라 보자",
+    "그 자리에 어울릴 작품을 찾아보자",
+    "좋아, 복원한 과정도 잘 알려 주자",
+    "그래, 음악과 함께 시작하자",
+    "좋아, 쉬운 안내문으로 다듬어 보자",
+    "나도 함께 자라는 기분이야",
+    "맞아, 상처를 함부로 지우지 말자",
+    "고마워, 필요하면 꼭 쉬어 갈게",
+    "좋아, 차분하게 시작하자",
+    "정말이네, 오늘도 좋은 팀이 되어 보자",
+    "함께해 줘서 고마워",
+    "좋아, 오늘의 이야기도 잘 부탁해"
   ]);
   const SFX_FILES = {
     click: "assets/sfx-click.wav",
@@ -886,17 +933,19 @@
     800: "도시 주민들이 사진과 받침, 기록을 함께 만드는 작업대",
     900: "최종 심사 전날 밤 열린 한미라의 마지막 편지",
     1000: "폐관 결정이 철회되어 다시 활짝 열린 미술관 정문",
-    1100: "재개관 다음 날 아침 미술관 앞에 길게 늘어선 관람객",
-    1200: "돌아온 한미라가 관장에게 황동 열쇠를 다시 건네는 순간",
-    1300: "바다 건너 미술관과 복원 기록을 나누는 공동 작업 계획",
-    1400: "어린 관람객의 손거울과 가족 기록을 함께 살피는 상담 책상",
-    1500: "새 보존 연습생과 관람객을 맞이하는 다음 백 년의 열린 문"
+    1300: "재개관 다음 날 아침 미술관 앞에 길게 늘어선 관람객",
+    1600: "돌아온 한미라가 관장에게 황동 열쇠를 다시 건네는 순간",
+    1900: "바다 건너 미술관과 복원 기록을 나누는 공동 작업 계획",
+    2200: "어린 관람객의 손거울과 가족 기록을 함께 살피는 상담 책상",
+    2500: "새 보존 연습생과 관람객을 맞이하는 다음 백 년의 열린 문"
   };
+  const STORY_ILLUSTRATION_FILES = Object.freeze({ 1300: 1100, 1600: 1200, 1900: 1300, 2200: 1400, 2500: 1500 });
 
   function storyIllustrationFor(threshold) {
     const safeThreshold = Object.hasOwn(STORY_ILLUSTRATION_ALTS, threshold) ? threshold : 0;
+    const fileThreshold = STORY_ILLUSTRATION_FILES[safeThreshold] || safeThreshold;
     return {
-      src: `assets/story/story-${String(safeThreshold).padStart(3, "0")}.webp?v=20260806-story-scenes-v1`,
+      src: `assets/story/story-${String(fileThreshold).padStart(3, "0")}.webp?v=20260806-story-scenes-v1`,
       alt: STORY_ILLUSTRATION_ALTS[safeThreshold]
     };
   }
@@ -927,14 +976,23 @@
     { threshold: 800, icon: "🧵", title: "도시가 잇는 한 땀", text: "학생들은 작품 소개를 쓰고, 공방 장인들은 받침을 만들며, 주민들은 오래된 사진을 가져옵니다. 손상된 컬렉션은 도시 전체가 함께 복원하는 기억의 지도가 됩니다.", emphasis: ["도시 전체가 함께 복원", "기억의 지도"], quote: "“이제 이 미술관은 혼자 운영하는 건물이 아니라 모두의 작업실이에요.”" },
     { threshold: 900, icon: "🌟", title: "마지막 봉인의 밤", text: "최종 심사를 하루 앞둔 밤, 한미라의 마지막 편지가 열립니다. 그녀는 관장직을 물려준 것이 아니라, 미술관의 의미를 새롭게 정의할 사람에게 질문을 맡겼다고 썼습니다.", emphasis: ["최종 심사", "한미라의 마지막 편지", "미술관의 의미를 새롭게 정의"], quote: "“이곳의 마지막 작품은 건물도 소장품도 아닌, 서로를 돌보는 마음이다.”" },
     { threshold: 1000, icon: "🏛️", title: "마지막 이야기 · 다시 열리는 문", text: "최종 심사 날, 관람객들의 말풍선과 복원 기록이 전시장을 가득 채웁니다. 심사단은 폐관 결정을 철회하고 이곳을 ‘온별 시민 복원 미술관’으로 지정합니다. 한미라는 멀리서 보낸 짧은 편지로 정식 관장 취임을 축하합니다.", emphasis: ["폐관 결정을 철회", "온별 시민 복원 미술관", "정식 관장 취임"], quote: "“관장님, 마지막은 문을 닫는 장면이 아니네요. 우리가 지킬 다음 이야기를 향해 문을 여는 장면이에요.” — 윤슬", ending: true },
-    { threshold: 1100, icon: "🌅", title: "문을 연 뒤의 첫 아침", text: "폐관 결정이 철회된 다음 날, 문을 열기도 전에 골목 끝까지 관람객이 줄을 섭니다. 관장과 윤슬은 상처를 감추지 않고 구조 과정과 복원 기록을 함께 보여 주기로 합니다. 미술관을 살린 일은 끝이 아니라 오래 지킬 약속의 시작이었습니다.", emphasis: ["골목 끝까지 관람객이 줄", "상처를 감추지 않고", "오래 지킬 약속의 시작"], quote: "“살아남았다는 말은 이제부터 잘 돌보겠다는 약속과 같아요.” — 윤슬", epilogue: true },
-    { threshold: 1200, icon: "🗝️", title: "한미라가 돌아온 날", text: "비가 내리는 오후, 전임 관장 한미라가 평범한 관람객처럼 조용히 들어옵니다. 달라진 전시를 오래 바라본 그녀는 처음 도착했던 황동 열쇠를 관장에게 다시 건넵니다. 열쇠가 연 것은 지하 수장고가 아니라 다음 사람에게 책임을 맡길 수 있는 믿음이었습니다.", emphasis: ["전임 관장 한미라", "황동 열쇠", "책임을 맡길 수 있는 믿음"], quote: "“내가 지키던 미술관보다, 여러분이 함께 바꾼 미술관이 훨씬 좋구나.” — 한미라", epilogue: true },
-    { threshold: 1300, icon: "🌏", title: "바다 건너 온 복원 의뢰", text: "해외의 작은 미술관에서 범람으로 손상된 작품을 함께 조사해 달라는 편지가 옵니다. 유명한 작품을 들여오는 대신, 관장은 복원 기록과 배운 방법을 나누고 현지 담당자와 공동 전시를 열기로 합니다. 반짝 복원 미술관의 이름은 소유한 보물보다 나눈 지식으로 멀리 퍼집니다.", emphasis: ["함께 조사해 달라는 편지", "복원 기록과 배운 방법을 나누고", "나눈 지식"], quote: "“도움은 작품을 가져오는 일이 아니라, 그곳에서 계속 지킬 수 있게 하는 일이겠죠.” — 관장의 답장", epilogue: true },
-    { threshold: 1400, icon: "🎁", title: "어린 관람객의 기증 상자", text: "한 어린이가 할머니의 낡은 손거울과 가족 이야기가 담긴 상자를 가져옵니다. 관장은 모든 물건을 곧바로 복원하거나 소장할 필요는 없다고 설명하고, 가족이 스스로 기록하고 보관할 수 있도록 돕습니다. 미술관에는 시민의 기억을 상담하는 작은 책상이 새로 생깁니다.", emphasis: ["할머니의 낡은 손거울", "곧바로 복원하거나 소장할 필요는 없다고", "시민의 기억을 상담"], quote: "“반짝이게 만드는 것보다, 왜 소중한지 잊지 않게 돕는 일이 먼저예요.” — 윤슬", epilogue: true },
-    { threshold: 1500, icon: "✨", title: "다음 백 년의 첫날", text: "도시의 학교와 공방, 작은 전시관들이 작품을 함께 돌보는 협약에 서명합니다. 새로 온 보존 연습생들은 첫 구조품 앞에서 기록장을 펼치고, 관장과 윤슬은 활짝 열린 문 너머의 긴 줄을 바라봅니다. 오늘은 미술관이 살아남은 마지막 날이 아니라 다음 백 년을 시작하는 첫날입니다.", emphasis: ["함께 돌보는 협약", "새로 온 보존 연습생", "다음 백 년을 시작하는 첫날"], quote: "“관장님, 이제 이 문은 우리가 없어도 계속 열릴 거예요. 그래도 내일 아침도 함께 열어 볼까요?” — 윤슬", epilogue: true, finale: true }
+    { threshold: 1300, icon: "🌅", title: "문을 연 뒤의 첫 아침", text: "폐관 결정이 철회된 다음 날, 문을 열기도 전에 골목 끝까지 관람객이 줄을 섭니다. 관장과 윤슬은 상처를 감추지 않고 구조 과정과 복원 기록을 함께 보여 주기로 합니다. 미술관을 살린 일은 끝이 아니라 오래 지킬 약속의 시작이었습니다.", emphasis: ["골목 끝까지 관람객이 줄", "상처를 감추지 않고", "오래 지킬 약속의 시작"], quote: "“살아남았다는 말은 이제부터 잘 돌보겠다는 약속과 같아요.” — 윤슬", epilogue: true },
+    { threshold: 1600, icon: "🗝️", title: "한미라가 돌아온 날", text: "비가 내리는 오후, 전임 관장 한미라가 평범한 관람객처럼 조용히 들어옵니다. 달라진 전시를 오래 바라본 그녀는 처음 도착했던 황동 열쇠를 관장에게 다시 건넵니다. 열쇠가 연 것은 지하 수장고가 아니라 다음 사람에게 책임을 맡길 수 있는 믿음이었습니다.", emphasis: ["전임 관장 한미라", "황동 열쇠", "책임을 맡길 수 있는 믿음"], quote: "“내가 지키던 미술관보다, 여러분이 함께 바꾼 미술관이 훨씬 좋구나.” — 한미라", epilogue: true },
+    { threshold: 1900, icon: "🌏", title: "바다 건너 온 복원 의뢰", text: "해외의 작은 미술관에서 범람으로 손상된 작품을 함께 조사해 달라는 편지가 옵니다. 유명한 작품을 들여오는 대신, 관장은 복원 기록과 배운 방법을 나누고 현지 담당자와 공동 전시를 열기로 합니다. 반짝 복원 미술관의 이름은 소유한 보물보다 나눈 지식으로 멀리 퍼집니다.", emphasis: ["함께 조사해 달라는 편지", "복원 기록과 배운 방법을 나누고", "나눈 지식"], quote: "“도움은 작품을 가져오는 일이 아니라, 그곳에서 계속 지킬 수 있게 하는 일이겠죠.” — 관장의 답장", epilogue: true },
+    { threshold: 2200, icon: "🎁", title: "어린 관람객의 기증 상자", text: "한 어린이가 할머니의 낡은 손거울과 가족 이야기가 담긴 상자를 가져옵니다. 관장은 모든 물건을 곧바로 복원하거나 소장할 필요는 없다고 설명하고, 가족이 스스로 기록하고 보관할 수 있도록 돕습니다. 미술관에는 시민의 기억을 상담하는 작은 책상이 새로 생깁니다.", emphasis: ["할머니의 낡은 손거울", "곧바로 복원하거나 소장할 필요는 없다고", "시민의 기억을 상담"], quote: "“반짝이게 만드는 것보다, 왜 소중한지 잊지 않게 돕는 일이 먼저예요.” — 윤슬", epilogue: true },
+    { threshold: 2500, icon: "✨", title: "다음 백 년의 첫날", text: "도시의 학교와 공방, 작은 전시관들이 작품을 함께 돌보는 협약에 서명합니다. 새로 온 보존 연습생들은 첫 구조품 앞에서 기록장을 펼치고, 관장과 윤슬은 활짝 열린 문 너머의 긴 줄을 바라봅니다. 오늘은 미술관이 살아남은 마지막 날이 아니라 다음 백 년을 시작하는 첫날입니다.", emphasis: ["함께 돌보는 협약", "새로 온 보존 연습생", "다음 백 년을 시작하는 첫날"], quote: "“관장님, 이제 이 문은 우리가 없어도 계속 열릴 거예요. 그래도 내일 아침도 함께 열어 볼까요?” — 윤슬", epilogue: true, finale: true }
   ];
 
   const FINAL_STORY_THRESHOLD = STORY_CHAPTERS[STORY_CHAPTERS.length - 1].threshold;
+  const STORY_PROGRESS_VERSION = 2;
+
+  function nextStoryChapterAfter(threshold) {
+    return STORY_CHAPTERS.find(chapter => chapter.threshold > threshold) || null;
+  }
+
+  function epilogueNumberForThreshold(threshold) {
+    return STORY_CHAPTERS.filter(chapter => chapter.epilogue).findIndex(chapter => chapter.threshold === threshold) + 1;
+  }
 
   function step(name, instruction, tool, diagnosis, targets) {
     return { name, instruction, tool, diagnosis, targets };
@@ -961,6 +1019,7 @@
       introStorySeen: false,
       tutorialComplete: false,
       tutorialStep: "story",
+      storyProgressVersion: STORY_PROGRESS_VERSION,
       storyMilestone: 0,
       endingSeen: false,
       storyCompletionDay: 0,
@@ -1058,6 +1117,11 @@
     upgradePanelCard: $(".upgrade-panel-card"),
     assistantButton: $("#assistantButton"),
     assistantChoices: $$('[data-assistant-choice]'),
+    assistantGreetingBackdrop: $("#assistantGreetingBackdrop"),
+    assistantGreetingModal: $("#assistantGreetingModal"),
+    assistantGreetingCloseButton: $("#assistantGreetingCloseButton"),
+    assistantDailyReplyButton: $("#assistantDailyReplyButton"),
+    assistantGreetingSettingsButton: $("#assistantGreetingSettingsButton"),
     assistantPanel: $("#assistantPanel"),
     assistantCloseButton: $("#assistantCloseButton"),
     assistantDailyLabel: $("#assistantDailyLabel"),
@@ -1177,7 +1241,6 @@
     dayModal: $("#dayModal"),
     storyModal: $("#storyModal"),
     storyIllustration: $("#storyIllustration"),
-    storyIcon: $("#storyIcon"),
     storyChapterLabel: $("#storyChapterLabel"),
     storyAppealBadge: $("#storyAppealBadge"),
     storyTitle: $("#storyTitle"),
@@ -1251,10 +1314,16 @@
     return DAILY_ASSISTANT_GREETINGS[(normalizedDay - 1) % DAILY_ASSISTANT_GREETINGS.length];
   }
 
+  function assistantDailyReplyFor(day = state.day) {
+    const normalizedDay = Math.max(1, Math.floor(Number(day) || 1));
+    return DAILY_DIRECTOR_REPLIES[(normalizedDay - 1) % DAILY_DIRECTOR_REPLIES.length];
+  }
+
   function updateAssistantDailyGreeting() {
     const day = Math.max(1, Math.floor(Number(state.day) || 1));
     if (el.assistantDailyLabel) el.assistantDailyLabel.textContent = `${day}일차 · 오늘의 인사`;
     if (el.assistantDailyMessage) el.assistantDailyMessage.textContent = assistantDailyGreetingFor(day);
+    if (el.assistantDailyReplyButton) el.assistantDailyReplyButton.textContent = assistantDailyReplyFor(day);
   }
 
   function assistantCopy(value) {
@@ -1591,7 +1660,18 @@
         renderBgmStatus("음원 파일을 불러오지 못했습니다.");
       }
     });
-    el.assistantButton.addEventListener("click", toggleAssistantPanel);
+    el.assistantButton.addEventListener("click", toggleAssistantGreeting);
+    el.assistantGreetingCloseButton.addEventListener("click", () => closeAssistantGreeting());
+    el.assistantDailyReplyButton.addEventListener("click", () => closeAssistantGreeting());
+    el.assistantGreetingSettingsButton.addEventListener("click", openAssistantPanelFromGreeting);
+    el.assistantGreetingBackdrop.addEventListener("click", event => {
+      if (event.target === el.assistantGreetingBackdrop) closeAssistantGreeting();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !el.assistantGreetingBackdrop.classList.contains("is-hidden")) {
+        closeAssistantGreeting();
+      }
+    });
     el.assistantCloseButton.addEventListener("click", closeAssistantPanel);
     el.assistantChoices.forEach(button => {
       button.addEventListener("click", () => {
@@ -1851,17 +1931,44 @@
     showToast(withTutorial ? `${selectedAssistant().name} 비서와 첫 운영 안내를 시작합니다.` : `${state.museumName}의 첫 비밀 기록을 엽니다.`);
   }
 
-  function toggleAssistantPanel() {
-    if (el.assistantPanel.classList.contains("is-hidden")) openAssistantPanel();
-    else closeAssistantPanel();
+  function toggleAssistantGreeting() {
+    if (el.assistantGreetingBackdrop.classList.contains("is-hidden")) openAssistantGreeting();
+    else closeAssistantGreeting();
+  }
+
+  function openAssistantGreeting() {
+    if (!el.assistantPanel.classList.contains("is-hidden")) closeAssistantPanel(false);
+    pauseRestoration();
+    updateAssistantDailyGreeting();
+    el.assistantGreetingBackdrop.classList.remove("is-hidden");
+    el.assistantGreetingBackdrop.setAttribute("aria-hidden", "false");
+    el.assistantButton.setAttribute("aria-expanded", "true");
+    state.assistantNotice = false;
+    state.assistantSeen = true;
+    updateAssistantNotice();
+    saveState();
+    window.setTimeout(() => el.assistantDailyReplyButton.focus(), 0);
+  }
+
+  function closeAssistantGreeting(shouldResume = true) {
+    el.assistantGreetingBackdrop.classList.add("is-hidden");
+    el.assistantGreetingBackdrop.setAttribute("aria-hidden", "true");
+    el.assistantButton.setAttribute("aria-expanded", "false");
+    if (shouldResume && el.assistantPanel.classList.contains("is-hidden") && el.modalBackdrop.classList.contains("is-hidden")) {
+      resumeRestoration();
+    }
+  }
+
+  function openAssistantPanelFromGreeting() {
+    closeAssistantGreeting(false);
+    openAssistantPanel();
   }
 
   function openAssistantPanel() {
+    if (!el.assistantGreetingBackdrop.classList.contains("is-hidden")) closeAssistantGreeting(false);
     pauseRestoration();
-    updateAssistantDailyGreeting();
     el.assistantPanel.classList.remove("is-hidden");
     el.assistantPanel.setAttribute("aria-hidden", "false");
-    el.assistantButton.setAttribute("aria-expanded", "true");
     el.assistantDirectorName.value = state.directorName || "";
     el.assistantMuseumName.value = state.museumName || "반짝 복원 미술관";
     el.assistantDirectorName.removeAttribute("aria-invalid");
@@ -1875,11 +1982,12 @@
     saveState();
   }
 
-  function closeAssistantPanel() {
+  function closeAssistantPanel(shouldResume = true) {
     el.assistantPanel.classList.add("is-hidden");
     el.assistantPanel.setAttribute("aria-hidden", "true");
-    el.assistantButton.setAttribute("aria-expanded", "false");
-    resumeRestoration();
+    if (shouldResume && el.assistantGreetingBackdrop.classList.contains("is-hidden") && el.modalBackdrop.classList.contains("is-hidden")) {
+      resumeRestoration();
+    }
   }
 
   function normalizeNameForModeration(value) {
@@ -2046,7 +2154,7 @@
   function storyForThreshold(threshold) {
     const fixedChapter = STORY_CHAPTERS.find(chapter => chapter.threshold === threshold);
     if (fixedChapter) {
-      const epilogueNumber = fixedChapter.epilogue ? threshold / 100 - 10 : 0;
+      const epilogueNumber = fixedChapter.epilogue ? epilogueNumberForThreshold(threshold) : 0;
       return {
         threshold,
         label: fixedChapter.ending ? "마지막 이야기" : fixedChapter.epilogue ? `후일담 ${epilogueNumber}` : `이야기 ${threshold / 100}`,
@@ -2085,7 +2193,6 @@
     const illustration = storyIllustrationFor(story.threshold);
     el.storyIllustration.src = illustration.src;
     el.storyIllustration.alt = illustration.alt;
-    el.storyIcon.textContent = story.icon;
     el.storyChapterLabel.textContent = story.label;
     el.storyAppealBadge.textContent = story.threshold ? `전시 매력도 ${formatNumber(story.threshold)} 달성` : "관장 취임일";
     el.storyTitle.textContent = story.title;
@@ -2157,12 +2264,9 @@
   function checkStoryProgress() {
     if (!state.introStorySeen || !el.storyModal.classList.contains("is-hidden")) return false;
     const appeal = getMuseumEstimates().appeal;
-    const reachedMilestone = Math.min(FINAL_STORY_THRESHOLD, Math.floor(appeal / 100) * 100);
-    if (reachedMilestone <= state.storyMilestone) return false;
-    storyQueue = [];
-    for (let threshold = state.storyMilestone + 100; threshold <= reachedMilestone; threshold += 100) {
-      storyQueue.push(storyForThreshold(threshold));
-    }
+    storyQueue = STORY_CHAPTERS
+      .filter(chapter => chapter.threshold > state.storyMilestone && chapter.threshold <= appeal)
+      .map(chapter => storyForThreshold(chapter.threshold));
     const nextStory = storyQueue.shift();
     if (!nextStory) return false;
     openStoryEvent(nextStory);
@@ -2178,9 +2282,12 @@
       el.storyNextText.textContent = `후일담 5편까지 모두 열었습니다. · ${formatNumber(state.storyCompletionDay)}일 완주`;
       return;
     }
-    const nextThreshold = Math.max(100, state.storyMilestone + 100);
-    const segmentStart = nextThreshold - 100;
-    const segmentProgress = Math.max(0, Math.min(100, appeal - segmentStart));
+    const nextChapter = nextStoryChapterAfter(state.storyMilestone);
+    if (!nextChapter) return;
+    const nextThreshold = nextChapter.threshold;
+    const previousThreshold = STORY_CHAPTERS.filter(chapter => chapter.threshold < nextThreshold).at(-1)?.threshold || 0;
+    const segmentLength = Math.max(1, nextThreshold - previousThreshold);
+    const segmentProgress = Math.max(0, Math.min(100, ((appeal - previousThreshold) / segmentLength) * 100));
     const nextStory = storyForThreshold(nextThreshold);
     el.storyProgressText.textContent = `${formatNumber(appeal)} / ${formatNumber(nextThreshold)}`;
     el.storyProgressFill.style.width = `${segmentProgress}%`;
@@ -2194,7 +2301,7 @@
     const appeal = getMuseumEstimates().appeal;
     const completedChapters = STORY_CHAPTERS.filter(chapter => state.storyMilestone >= chapter.threshold).length;
     const storiesComplete = state.storyMilestone >= FINAL_STORY_THRESHOLD;
-    const nextThreshold = storiesComplete ? FINAL_STORY_THRESHOLD : Math.max(100, state.storyMilestone + 100);
+    const nextThreshold = storiesComplete ? FINAL_STORY_THRESHOLD : nextStoryChapterAfter(state.storyMilestone)?.threshold || FINAL_STORY_THRESHOLD;
     const nextStory = state.introStorySeen ? (storyForThreshold(nextThreshold) || STORY_CHAPTERS[STORY_CHAPTERS.length - 1]) : PROLOGUE_STORY;
     const remainingAppeal = state.introStorySeen && !storiesComplete ? Math.max(0, nextThreshold - appeal) : 0;
 
@@ -2220,7 +2327,7 @@
         label: chapter.ending
           ? "마지막 이야기 · 1000"
           : chapter.epilogue
-            ? `후일담 ${chapter.threshold / 100 - 10} · ${chapter.threshold}`
+            ? `후일담 ${epilogueNumberForThreshold(chapter.threshold)} · ${chapter.threshold}`
             : `이야기 ${chapter.threshold / 100} · ${chapter.threshold}`,
         icon: chapter.icon,
         title: chapter.title,
@@ -7724,7 +7831,7 @@
       `평균 위험도 ${summary.averageRisk}%`,
       `누적 수입 ${formatNumber(summary.totalMuseumIncome)}코인`,
       `누적 관람객 ${formatNumber(summary.totalVisitors)}명`,
-      summary.storyCompletionDay ? `이야기 ${formatNumber(summary.storyCompletionDay)}일 완주` : `이야기 ${Math.round(summary.storyMilestone / 100)}/${STORY_CHAPTERS.length}`,
+      summary.storyCompletionDay ? `이야기 ${formatNumber(summary.storyCompletionDay)}일 완주` : `이야기 ${STORY_CHAPTERS.filter(chapter => summary.storyMilestone >= chapter.threshold).length}/${STORY_CHAPTERS.length}`,
       `예상 ${formatNumber(summary.directorScore)}점`
     ].map(text => `<span>${escapeHTML(text)}</span>`).join("");
     el.rankingConnectionBadge.textContent = connected ? "전체 랭킹 연결됨" : "연결 전 미리보기";
@@ -7930,10 +8037,18 @@
       ? candidate.activeArtworkId
       : null;
     const normalizedDay = asNumber(candidate.day, fallback.day, 1, 999999);
-    const storyMilestone = Math.min(
-      FINAL_STORY_THRESHOLD,
-      Math.floor(asNumber(candidate.storyMilestone, 0, 0, 999999900) / 100) * 100
-    );
+    const rawStoryMilestone = asNumber(candidate.storyMilestone, 0, 0, 999999900);
+    const hasCurrentStorySpacing = asNumber(candidate.storyProgressVersion, 0, 0, STORY_PROGRESS_VERSION) >= STORY_PROGRESS_VERSION;
+    const legacyStoryMilestone = rawStoryMilestone >= 1500 ? 2500
+      : rawStoryMilestone >= 1400 ? 2200
+        : rawStoryMilestone >= 1300 ? 1900
+          : rawStoryMilestone >= 1200 ? 1600
+            : rawStoryMilestone >= 1100 ? 1300
+              : Math.floor(rawStoryMilestone / 100) * 100;
+    const comparableStoryMilestone = hasCurrentStorySpacing ? rawStoryMilestone : legacyStoryMilestone;
+    const storyMilestone = STORY_CHAPTERS
+      .filter(chapter => chapter.threshold <= comparableStoryMilestone)
+      .at(-1)?.threshold || 0;
     const storyCompletionDay = storyMilestone >= FINAL_STORY_THRESHOLD
       ? asNumber(candidate.storyCompletionDay, normalizedDay, 1, normalizedDay)
       : 0;
@@ -8021,6 +8136,7 @@
       introStorySeen: Boolean(candidate.introStorySeen),
       tutorialComplete,
       tutorialStep,
+      storyProgressVersion: STORY_PROGRESS_VERSION,
       storyMilestone,
       endingSeen: Boolean(candidate.endingSeen) || storyMilestone >= 1000,
       storyCompletionDay,

@@ -28,7 +28,7 @@ window.RESTORATION_RANKING_CONFIG = Object.freeze({
   endpoint: "https://script.google.com/macros/s/배포_ID/exec",
   season: "공모전 시즌 1",
   gameVersion: "prototype-2026-08",
-  rulesVersion: "director-score-v2"
+  rulesVersion: "director-score-v3"
 });
 ```
 
@@ -78,6 +78,6 @@ window.RESTORATION_RANKING_CONFIG = Object.freeze({
 
 - 밸런스가 바뀌면 `season` 또는 `rulesVersion`을 바꾸고 Apps Script의 같은 상수도 맞춥니다.
 - Apps Script를 수정한 뒤에는 기존 배포를 **새 버전으로 다시 배포**해야 반영됩니다.
-- `director-score-v2`는 기존 v1 행과 같은 시트에 보존되지만 공개 랭킹과 최고 기록 비교에는 v2 행만 사용합니다.
+- `director-score-v3`는 기존 행과 같은 시트에 보존되지만 공개 랭킹과 최고 기록 비교에는 v3 행만 사용합니다.
 - 시트에서 `검토 필요` 기록을 확인한 뒤 정상 기록이면 `status` 셀을 `정상`으로 바꿀 수 있습니다.
 - 공개 배포 전에 실제 배포 URL로 제출, 최고 기록 갱신, 모바일 새 창 열기를 한 번씩 시험합니다.
