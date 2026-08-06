@@ -21,6 +21,7 @@
 | `js/artworks-data.js` | 생성 작품 496점의 재질 프로필, 복원 단계·도구·설명 데이터 |
 | `js/game.js` | 핵심 작품 4점, 전역 상태, 14종 미니게임, 복원 진행, 전시·관람객·수익·저장·랭킹 연계 |
 | `assets/assistant-yoonseul.png`, `assets/assistant-hangyeol.png` | 선택 가능한 비서 윤슬·한결의 정사각형 초상화 |
+| `assets/story/story-000.webp` ~ `story-1500.webp` | 프롤로그와 매력도 100~1,500 이야기 16장의 상황별 삽화 |
 | `assets/link-preview-hangyeol-v2.png` | 외부 링크 공유 캐시와 본문 첫 이미지 추출에 사용하는 한결 전용 홍보 초상화 |
 | `ranking-apps-script.gs` | Google Apps Script 랭킹 제출·조회 백엔드와 랭킹 페이지 |
 | `scripts/` | 데이터, 시각 다양성, 랭킹 백엔드 등 보조 검증 스크립트 |
@@ -41,11 +42,13 @@
 `js/game.js`의 `ASSISTANTS`는 여자 비서 `yoonseul`과 남자 비서 `hangyeol`의 이름·초상화·첫 인사를 정의한다. `state.assistantId`는 선택적 세이브 필드이며 기본값은 `yoonseul`이다. `normalizeState()`는 이 필드가 없는 구형 세이브와 알 수 없는 값을 모두 윤슬로 보완한다.
 
 - 첫 관장 취임 화면과 비서실의 `[data-assistant-choice]` 버튼이 같은 선택값을 사용한다. 첫 취임 중에는 미리보기만 바꾸고, 취임을 끝낸 뒤 비서실에서 바꾸면 즉시 저장한다.
+- 새 게임의 첫 취임은 `#directorSetupStep`에서 비서·관장명·미술관명을 정한 뒤 `#directorTutorialStep`으로 넘어간다. 선택한 비서가 첫 인사를 하고 운영 안내 여부를 묻는다. 안내를 선택하면 기존 첫 로테이션 튜토리얼을 `story` 단계부터 시작하고, 건너뛰면 `tutorialComplete=true`, `tutorialStep="complete"`로 저장한 뒤 같은 프롤로그를 연다. 별도의 새 세이브 필드는 만들지 않는다.
 - `updateAssistantIdentity()`가 `[data-assistant-image]`, `[data-assistant-template]`, 선택 버튼의 `aria-pressed`를 한 번에 갱신한다. 새 비서 노출 지점을 만들 때 이미지나 이름을 직접 고정하지 말고 이 속성을 사용한다.
 - 스토리 원고는 기존 윤슬 기준 원문을 유지한다. 화면에 표시할 때만 `assistantCopy()`가 현재 비서 이름으로 바꾸므로 저장된 이야기 진행과 원고 데이터는 달라지지 않는다.
 - 비서 선택은 안내 인물·초상화·첫 인사만 바꾸며 보상, 난이도, 작품 배정과 랭킹 점수에는 영향을 주지 않는다.
 - 외부 메신저와 SNS의 링크 미리보기는 저장 선택과 무관한 고정 홍보 이미지다. `index.html`의 Open Graph·Twitter·`image_src` 메타 태그가 캐시 버전이 붙은 한결 전용 절대 Pages URL을 가리킨다. Open Graph를 무시하고 본문의 첫 `<img>`를 고르는 서비스에 대비해 화면 밖의 `.link-preview-fallback`도 같은 한결 이미지를 먼저 제공한다.
-- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 구형 세이브 기본값, 동적 스토리 치환, 반응형 카드, 한결 초상화 규격과 공유 메타·본문 대체 이미지의 일치를 검사한다.
+- 스토리 모달의 `#storyIllustration`은 `storyIllustrationFor(threshold)`가 장마다 다른 WebP 삽화와 대체 문구로 바꾼다. 삽화는 비서 성별과 무관한 사건·장소 중심이며, `.story-assistant-badge` 안의 `[data-assistant-image]`가 현재 비서 얼굴을 모든 장에서 함께 보여 준다.
+- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 첫 튜토리얼 선택, 구형 세이브 기본값, 동적 스토리 치환, 16장 삽화의 WebP 형식·모바일 용량, 반응형 비서 배지, 한결 초상화 규격과 공유 메타·본문 대체 이미지의 일치를 검사한다.
 
 ## 시설 업그레이드 1·2단계
 
@@ -376,6 +379,7 @@
 - 수입 보너스는 누적 개관 수입 25코인당 1점, 관람객 보너스는 5명당 1점이며 각각 최대 5,000점이다. 이야기 보너스는 후일담 5편 완주일에 따라 20일 이내 5,000점, 25일 이내 4,500점, 35일 이내 3,500점, 50일 이내 2,500점, 이후 1,500점이고 미완주는 0점이다.
 - Google Sheet의 기존 19개 열 뒤에 운영 성과와 보너스 6개 열을 추가한다. v1 행은 삭제하지 않지만 v2 최고 기록 비교와 공개 목록에서 제외한다.
 - `전체 랭킹 확인`은 모바일 팝업 차단을 피하기 위해 `window.open()`을 쓰지 않는다. `renderRankingPanel()`이 Apps Script 조회 주소를 `#viewRankingButton`의 실제 `href`에 넣고, 사용자의 일반 링크 클릭으로 새 탭을 연다. 랭킹 주소가 비어 있을 때만 클릭 기본 동작을 막고 기존 미리보기 모달을 연다.
+- `exportSaveFile()`은 세이브를 만든 로컬 시각과 현재 관장명·미술관명을 `YYMMDD_HHMMSS_관장이름_미술관이름.json` 형식의 다운로드 파일명으로 쓴다. `saveFileNameSegment()`가 운영체제에서 금지된 문자를 제거하지만 JSON 내용과 불러오기 형식은 바꾸지 않는다.
 - `scripts/test-story-ranking.mjs`가 고정 원고 15편, 1,500 상한, 완주일 마이그레이션과 클라이언트·서버 v2 필드를 검사한다. `scripts/test-ranking-backend.mjs`가 서버 점수, 보너스 상한, 미완주 0점과 결과 페이지 표시를 검사한다.
 
 ## 난이도 5의 수치형 재료 상태 신호

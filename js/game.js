@@ -827,6 +827,33 @@
     { text: "평온한 하루였어요. 작품과 공간이 제 역할을 충실히 해냈습니다.", visitorBonus: 0, incomeBonus: 0, repBonus: 1 }
   ];
 
+  const STORY_ILLUSTRATION_ALTS = {
+    0: "황동 열쇠와 봉인된 편지가 놓인 관장실 책상",
+    100: "붉은 별표가 표시된 오래된 미술관 작품 목록",
+    200: "범람한 수장고에서 작품을 높은 선반으로 옮기는 구조 현장",
+    300: "학교와 극장, 공방의 사진과 편지가 담긴 오래된 상자",
+    400: "황동 열쇠로 열린 지하 수장고와 안쪽의 긴급 복원 기록",
+    500: "한미라의 음성 기록기와 금이 남은 오래된 오르골",
+    600: "기증자와 구조자의 기억을 함께 소개하는 새 전시 라벨",
+    700: "폐관 심사 통지서 옆에서 준비하는 열린 수장고 전시 계획",
+    800: "도시 주민들이 사진과 받침, 기록을 함께 만드는 작업대",
+    900: "최종 심사 전날 밤 열린 한미라의 마지막 편지",
+    1000: "폐관 결정이 철회되어 다시 활짝 열린 미술관 정문",
+    1100: "재개관 다음 날 아침 미술관 앞에 길게 늘어선 관람객",
+    1200: "돌아온 한미라가 관장에게 황동 열쇠를 다시 건네는 순간",
+    1300: "바다 건너 미술관과 복원 기록을 나누는 공동 작업 계획",
+    1400: "어린 관람객의 손거울과 가족 기록을 함께 살피는 상담 책상",
+    1500: "새 보존 연습생과 관람객을 맞이하는 다음 백 년의 열린 문"
+  };
+
+  function storyIllustrationFor(threshold) {
+    const safeThreshold = Object.hasOwn(STORY_ILLUSTRATION_ALTS, threshold) ? threshold : 0;
+    return {
+      src: `assets/story/story-${String(safeThreshold).padStart(3, "0")}.webp`,
+      alt: STORY_ILLUSTRATION_ALTS[safeThreshold]
+    };
+  }
+
   const PROLOGUE_STORY = {
     threshold: 0,
     label: "처음 이야기 · 관장 취임일",
@@ -1100,6 +1127,7 @@
     resultModal: $("#resultModal"),
     dayModal: $("#dayModal"),
     storyModal: $("#storyModal"),
+    storyIllustration: $("#storyIllustration"),
     storyIcon: $("#storyIcon"),
     storyChapterLabel: $("#storyChapterLabel"),
     storyAppealBadge: $("#storyAppealBadge"),
@@ -1119,10 +1147,14 @@
     artInfoValue: $("#artInfoValue"),
     artInfoStory: $("#artInfoStory"),
     directorModal: $("#directorModal"),
+    directorSetupStep: $("#directorSetupStep"),
+    directorTutorialStep: $("#directorTutorialStep"),
     directorNameInput: $("#directorNameInput"),
     museumNameInput: $("#museumNameInput"),
     directorNameStatus: $("#directorNameStatus"),
     directorConfirmButton: $("#directorConfirmButton"),
+    directorTutorialStartButton: $("#directorTutorialStartButton"),
+    directorTutorialSkipButton: $("#directorTutorialSkipButton"),
     rankingPreviewModal: $("#rankingPreviewModal"),
     rankingPreviewCloseButton: $("#rankingPreviewCloseButton"),
     rankingPreviewConfirmButton: $("#rankingPreviewConfirmButton"),
@@ -1547,6 +1579,8 @@
     new ResizeObserver(updateScrollTopButton).observe(el.tutorialGuide);
     new ResizeObserver(updateGalleryDioramaScale).observe(el.galleryDioramaViewport);
     el.directorConfirmButton.addEventListener("click", confirmDirectorOnboarding);
+    el.directorTutorialStartButton.addEventListener("click", () => completeDirectorOnboarding(true));
+    el.directorTutorialSkipButton.addEventListener("click", () => completeDirectorOnboarding(false));
     [el.directorNameInput, el.museumNameInput].forEach(input => {
       input.addEventListener("input", () => {
         input.removeAttribute("aria-invalid");
@@ -1704,6 +1738,9 @@
 
   function openDirectorOnboarding() {
     updateAssistantIdentity();
+    el.directorModal.setAttribute("aria-labelledby", "directorModalTitle");
+    el.directorSetupStep.classList.remove("is-hidden");
+    el.directorTutorialStep.classList.add("is-hidden");
     el.directorNameInput.value = state.directorName || "서리";
     el.museumNameInput.value = state.museumName || "반짝 복원 미술관";
     el.directorNameInput.removeAttribute("aria-invalid");
@@ -1729,17 +1766,28 @@
     }
     state.directorName = validation.directorName;
     state.museumName = validation.museumName;
-    state.onboardingComplete = true;
     updateAssistantIdentity();
+    saveState();
+    el.directorModal.setAttribute("aria-labelledby", "directorTutorialTitle");
+    el.directorSetupStep.classList.add("is-hidden");
+    el.directorTutorialStep.classList.remove("is-hidden");
+    el.directorTutorialStartButton.focus();
+    playTone("open");
+  }
+
+  function completeDirectorOnboarding(withTutorial) {
+    state.onboardingComplete = true;
+    state.tutorialComplete = !withTutorial;
+    state.tutorialStep = withTutorial ? "story" : "complete";
     saveState();
     el.directorModal.classList.add("is-hidden");
     el.modalBackdrop.classList.add("is-hidden");
     el.modalBackdrop.setAttribute("aria-hidden", "true");
     renderTopbar();
     updateAssistant("storage");
-    storyReturnToAssistant = true;
+    storyReturnToAssistant = withTutorial;
     openStoryEvent(PROLOGUE_STORY);
-    showToast(`${state.museumName}의 첫 비밀 기록을 엽니다.`);
+    showToast(withTutorial ? `${selectedAssistant().name} 비서와 첫 운영 안내를 시작합니다.` : `${state.museumName}의 첫 비밀 기록을 엽니다.`);
   }
 
   function toggleAssistantPanel() {
@@ -1972,6 +2020,9 @@
     el.storyModal.classList.add("is-hidden");
     el.artInfoModal.classList.add("is-hidden");
     el.directorModal.classList.add("is-hidden");
+    const illustration = storyIllustrationFor(story.threshold);
+    el.storyIllustration.src = illustration.src;
+    el.storyIllustration.alt = illustration.alt;
     el.storyIcon.textContent = story.icon;
     el.storyChapterLabel.textContent = story.label;
     el.storyAppealBadge.textContent = story.threshold ? `전시 매력도 ${formatNumber(story.threshold)} 달성` : "관장 취임일";
@@ -7932,19 +7983,40 @@
     };
   }
 
+  function saveFileNameSegment(value, fallback) {
+    const safeValue = String(value || fallback)
+      .normalize("NFKC")
+      .replace(/[\u0000-\u001f<>:"/\\|?*]+/g, "")
+      .replace(/_+/g, "-")
+      .replace(/\s+/g, " ")
+      .replace(/[. ]+$/g, "")
+      .trim();
+    return safeValue || fallback;
+  }
+
+  function localSaveTimestamp(date = new Date()) {
+    const part = value => String(value).padStart(2, "0");
+    const calendar = `${part(date.getFullYear() % 100)}${part(date.getMonth() + 1)}${part(date.getDate())}`;
+    const clock = `${part(date.getHours())}${part(date.getMinutes())}${part(date.getSeconds())}`;
+    return `${calendar}_${clock}`;
+  }
+
   function exportSaveFile() {
     try {
+      const exportedAt = new Date();
       const payload = {
         format: "sparkle-restoration-museum-save",
         version: 1,
-        exportedAt: new Date().toISOString(),
+        exportedAt: exportedAt.toISOString(),
         state: normalizeState(state)
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `restoration-museum-save-${new Date().toISOString().slice(0, 10)}.json`;
+      const directorName = saveFileNameSegment(state.directorName, "관장");
+      const museumName = saveFileNameSegment(state.museumName, "미술관");
+      anchor.download = `${localSaveTimestamp(exportedAt)}_${directorName}_${museumName}.json`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();

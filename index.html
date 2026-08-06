@@ -597,8 +597,12 @@
 
     <section id="storyModal" class="story-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
       <div class="story-visual">
+        <img id="storyIllustration" class="story-illustration" src="assets/story/story-000.webp" alt="황동 열쇠와 봉인된 편지가 놓인 관장실 책상" />
+        <div class="story-assistant-badge">
+          <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+          <strong data-assistant-template="비서 {name}">비서 윤슬</strong>
+        </div>
         <span id="storyIcon" aria-hidden="true">✉️</span>
-        <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
       </div>
       <div class="story-modal-copy">
         <p id="storyChapterLabel" class="eyebrow">START STORY</p>
@@ -631,29 +635,44 @@
     <section id="directorModal" class="director-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="directorModalTitle">
       <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
       <div class="director-modal-copy">
-        <p class="eyebrow">WELCOME, DIRECTOR</p>
-        <h2 id="directorModalTitle">긴급 관장 취임을 부탁드려요</h2>
-        <p>전임 관장 한미라가 남긴 편지에 관장님의 이름이 적혀 있었어요. 문을 닫기까지 30일 남았습니다. 다친 작품의 이야기를 되찾아 미술관을 다시 열어 주세요.</p>
-        <section class="director-assistant-select" aria-labelledby="directorAssistantSelectTitle">
-          <strong id="directorAssistantSelectTitle">함께할 비서를 골라 주세요</strong>
-          <div class="assistant-choice-list" role="group" aria-label="처음 함께할 비서 선택">
-            <button type="button" class="assistant-choice" data-assistant-choice="yoonseul" aria-pressed="true">
-              <img src="assets/assistant-yoonseul.png" alt="여자 비서 윤슬" />
-              <span><strong>윤슬</strong><small>밝고 다정한 안내</small></span>
-              <i>선택됨</i>
-            </button>
-            <button type="button" class="assistant-choice" data-assistant-choice="hangyeol" aria-pressed="false">
-              <img src="assets/assistant-hangyeol.png" alt="남자 비서 한결" />
-              <span><strong>한결</strong><small>차분하고 든든한 안내</small></span>
-              <i>선택</i>
-            </button>
+        <div id="directorSetupStep" class="director-onboarding-step">
+          <p class="eyebrow">WELCOME, DIRECTOR</p>
+          <h2 id="directorModalTitle">긴급 관장 취임을 부탁드려요</h2>
+          <p>전임 관장 한미라가 남긴 편지에 관장님의 이름이 적혀 있었어요. 문을 닫기까지 30일 남았습니다. 다친 작품의 이야기를 되찾아 미술관을 다시 열어 주세요.</p>
+          <section class="director-assistant-select" aria-labelledby="directorAssistantSelectTitle">
+            <strong id="directorAssistantSelectTitle">함께할 비서를 골라 주세요</strong>
+            <div class="assistant-choice-list" role="group" aria-label="처음 함께할 비서 선택">
+              <button type="button" class="assistant-choice" data-assistant-choice="yoonseul" aria-pressed="true">
+                <img src="assets/assistant-yoonseul.png" alt="여자 비서 윤슬" />
+                <span><strong>윤슬</strong><small>밝고 다정한 안내</small></span>
+                <i>선택됨</i>
+              </button>
+              <button type="button" class="assistant-choice" data-assistant-choice="hangyeol" aria-pressed="false">
+                <img src="assets/assistant-hangyeol.png" alt="남자 비서 한결" />
+                <span><strong>한결</strong><small>차분하고 든든한 안내</small></span>
+                <i>선택</i>
+              </button>
+            </div>
+            <small>비서는 안내 말투와 이야기 속 인물이 달라지며, 게임 보상은 같습니다.</small>
+          </section>
+          <label>관장님 성함<input id="directorNameInput" maxlength="12" value="서리" placeholder="예: 서리" /></label>
+          <label>미술관 이름<input id="museumNameInput" maxlength="20" value="반짝 복원 미술관" /></label>
+          <p id="directorNameStatus" class="name-edit-status" role="status">한글·영문·숫자를 쓸 수 있어요. 욕설, 다른 사람을 괴롭히는 말, 연락처는 쓸 수 없어요.</p>
+          <button id="directorConfirmButton" class="button button-primary button-large">이 비서와 함께 시작</button>
+        </div>
+        <div id="directorTutorialStep" class="director-onboarding-step is-hidden">
+          <p class="eyebrow">YOUR MUSEUM ASSISTANT</p>
+          <h2 id="directorTutorialTitle" data-assistant-template="{name}입니다. 만나서 반가워요!">윤슬입니다. 만나서 반가워요!</h2>
+          <div class="director-tutorial-greeting">
+            <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+            <p>관장님께서는 미술관 운영이 처음이라고 들었습니다. 작품을 고르고 복원해 전시한 뒤 하루를 운영하는 방법까지 제가 차근차근 설명해 드릴까요?</p>
           </div>
-          <small>비서는 안내 말투와 이야기 속 인물이 달라지며, 게임 보상은 같습니다.</small>
-        </section>
-        <label>관장님 성함<input id="directorNameInput" maxlength="12" value="서리" placeholder="예: 서리" /></label>
-        <label>미술관 이름<input id="museumNameInput" maxlength="20" value="반짝 복원 미술관" /></label>
-        <p id="directorNameStatus" class="name-edit-status" role="status">한글·영문·숫자를 쓸 수 있어요. 욕설, 다른 사람을 괴롭히는 말, 연락처는 쓸 수 없어요.</p>
-        <button id="directorConfirmButton" class="button button-primary button-large">관장실 업무 시작</button>
+          <div class="director-tutorial-actions">
+            <button id="directorTutorialStartButton" class="button button-primary button-large">네, 처음부터 알려 주세요</button>
+            <button id="directorTutorialSkipButton" class="button button-soft button-large">아니요, 바로 시작할게요</button>
+          </div>
+          <small>처음 안내를 건너뛰어도 게임은 그대로 진행할 수 있습니다.</small>
+        </div>
       </div>
     </section>
 
