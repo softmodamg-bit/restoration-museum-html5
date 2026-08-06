@@ -7,7 +7,7 @@
   <meta name="description" content="밝고 캐주얼한 HTML5 미술품 복원·미술관 운영 게임 프로토타입" />
   <title>반짝! 복원 미술관</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=20260806-mobile-ranking-link-v1" />
+  <link rel="stylesheet" href="styles.css?v=20260806-assistant-choice-v1" />
 </head>
 <body>
   <div class="background-decor" aria-hidden="true">
@@ -49,12 +49,12 @@
         <h1 id="gameTitle"><span>반짝!</span><br />복원 미술관</h1>
         <p class="title-description">
           폐관 위기의 미술관을 맡은 신임 관장이 되어<br />
-          비서 윤슬과 함께 작품을 조사하고 복원해<br />
+          <span data-assistant-template="비서 {name}과 함께 작품을 조사하고 복원해">비서 윤슬과 함께 작품을 조사하고 복원해</span><br />
           작은 미술관을 모두가 찾는 명소로 성장시키세요.
         </p>
         <div class="title-assistant">
-          <img src="assets/assistant-yoonseul.png" alt="" />
-          <p><strong>비서 윤슬</strong><span>“관장님, 첫 작품이 도착했어요. 제가 곁에서 안내할게요!”</span></p>
+          <img src="assets/assistant-yoonseul.png" alt="" data-assistant-image />
+          <p><strong data-assistant-template="비서 {name}">비서 윤슬</strong><span data-assistant-greeting>“관장님, 첫 작품이 도착했어요. 제가 곁에서 안내할게요!”</span></p>
         </div>
         <div class="title-actions">
           <button id="startButton" class="button button-primary button-large">미술관 열기</button>
@@ -82,8 +82,8 @@
             <div class="resource-chip" title="누적 관람객"><span>👥</span><strong id="totalVisitorValue">0명</strong></div>
           </div>
           <button id="assistantButton" class="assistant-button" aria-expanded="false" aria-controls="assistantPanel">
-            <img src="assets/assistant-yoonseul.png" alt="" />
-            <span><small>관장실 비서</small><strong>윤슬</strong></span>
+            <img src="assets/assistant-yoonseul.png" alt="" data-assistant-image />
+            <span><small>관장실 비서</small><strong data-assistant-template="{name}">윤슬</strong></span>
             <i aria-hidden="true">!</i>
           </button>
           <button id="soundButton" class="icon-button" aria-label="효과음과 배경음악 끄기" title="효과음과 배경음악 끄기">🎵</button>
@@ -230,7 +230,7 @@
               <aside class="tool-panel">
                 <div class="panel-card lab-lore-card">
                   <div class="panel-title-row">
-                    <p class="panel-label">윤슬의 작품 안내</p>
+                    <p class="panel-label" data-assistant-template="{name}의 작품 안내">윤슬의 작품 안내</p>
                     <button id="labArtworkInfoButton" class="text-button">자세히</button>
                   </div>
                   <strong id="labArtworkEra">시대 정보</strong>
@@ -419,7 +419,7 @@
           <div class="section-heading practice-heading">
             <div>
               <p class="eyebrow">CONSERVATION PRACTICE</p>
-              <h2>윤슬의 복원 연습실</h2>
+              <h2 data-assistant-template="{name}의 복원 연습실">윤슬의 복원 연습실</h2>
               <p id="practiceCountDescription">복원 기술과 난이도 2~5를 골라 자유롭게 연습하세요. 재료비·보상·실제 작품 기록에는 영향을 주지 않습니다.</p>
             </div>
             <div id="practiceSummary" class="progress-badge">최고 기록 0 / 0</div>
@@ -436,15 +436,15 @@
 
   <section id="tutorialGuide" class="tutorial-guide is-hidden" role="status" aria-live="polite" aria-labelledby="tutorialTitle">
     <button id="tutorialMobileToggle" class="tutorial-mobile-toggle" type="button" aria-expanded="false" aria-controls="tutorialGuideCard">
-      <img src="assets/assistant-yoonseul.png" alt="비서 윤슬의 안내" />
-      <span class="tutorial-mobile-copy"><strong>윤슬 안내</strong><small>눌러서 보기</small></span>
+      <img src="assets/assistant-yoonseul.png" alt="비서 윤슬의 안내" data-assistant-image />
+      <span class="tutorial-mobile-copy"><strong data-assistant-template="{name} 안내">윤슬 안내</strong><small>눌러서 보기</small></span>
       <span id="tutorialMobileProgress" class="tutorial-mobile-progress">1 / 10</span>
     </button>
     <div id="tutorialGuideCard" class="tutorial-guide-card">
-      <img src="assets/assistant-yoonseul.png" alt="비서 윤슬" />
+      <img src="assets/assistant-yoonseul.png" alt="비서 윤슬" data-assistant-image />
       <div class="tutorial-guide-copy">
         <div class="tutorial-guide-topline">
-          <span>윤슬의 첫 운영 안내</span>
+          <span data-assistant-template="{name}의 첫 운영 안내">윤슬의 첫 운영 안내</span>
           <strong id="tutorialProgress">1 / 10</strong>
         </div>
         <h2 id="tutorialTitle">첫 작품부터 함께 해 볼게요</h2>
@@ -468,10 +468,10 @@
 
   <aside id="assistantPanel" class="assistant-panel is-hidden" aria-hidden="true" aria-labelledby="assistantPanelTitle">
     <div class="assistant-panel-head">
-      <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" />
+      <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
       <div>
         <p>DIRECTOR'S OFFICE</p>
-        <h2 id="assistantPanelTitle">비서 윤슬</h2>
+        <h2 id="assistantPanelTitle" data-assistant-template="비서 {name}">비서 윤슬</h2>
       </div>
       <button id="assistantCloseButton" class="assistant-close" aria-label="비서 안내 닫기">×</button>
     </div>
@@ -480,6 +480,21 @@
       <p id="assistantMessage">오늘의 업무를 정리해 드릴게요.</p>
     </div>
     <div id="assistantBriefing" class="assistant-briefing"></div>
+    <section class="assistant-switcher" aria-labelledby="assistantSwitcherTitle">
+      <div class="assistant-profile-title"><span>🤝</span><strong id="assistantSwitcherTitle">함께할 비서 선택</strong></div>
+      <div class="assistant-choice-list is-compact" role="group" aria-label="함께할 비서 선택">
+        <button type="button" class="assistant-choice" data-assistant-choice="yoonseul" aria-pressed="true">
+          <img src="assets/assistant-yoonseul.png" alt="여자 비서 윤슬" />
+          <span><strong>윤슬</strong><small>밝고 다정한 안내</small></span>
+          <i>선택됨</i>
+        </button>
+        <button type="button" class="assistant-choice" data-assistant-choice="hangyeol" aria-pressed="false">
+          <img src="assets/assistant-hangyeol.png" alt="남자 비서 한결" />
+          <span><strong>한결</strong><small>차분하고 든든한 안내</small></span>
+          <i>선택</i>
+        </button>
+      </div>
+    </section>
     <form id="assistantProfileForm" class="assistant-profile-form" novalidate>
       <div class="assistant-profile-title"><span>🏷️</span><strong>관장실 명패 수정</strong></div>
       <div class="assistant-profile-fields">
@@ -560,7 +575,7 @@
     <section id="storyModal" class="story-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
       <div class="story-visual">
         <span id="storyIcon" aria-hidden="true">✉️</span>
-        <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" />
+        <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
       </div>
       <div class="story-modal-copy">
         <p id="storyChapterLabel" class="eyebrow">START STORY</p>
@@ -568,7 +583,7 @@
         <h2 id="storyTitle">봉인된 관장실의 편지</h2>
         <div id="storyText" class="story-text"></div>
         <blockquote id="storyQuote"></blockquote>
-        <button id="storyConfirmButton" class="button button-primary button-large">윤슬과 이야기 계속하기</button>
+        <button id="storyConfirmButton" class="button button-primary button-large" data-assistant-template="{name}과 이야기 계속하기">윤슬과 이야기 계속하기</button>
       </div>
     </section>
 
@@ -591,11 +606,27 @@
     </section>
 
     <section id="directorModal" class="director-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="directorModalTitle">
-      <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" />
+      <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
       <div class="director-modal-copy">
         <p class="eyebrow">WELCOME, DIRECTOR</p>
         <h2 id="directorModalTitle">긴급 관장 취임을 부탁드려요</h2>
         <p>전임 관장 한미라가 남긴 편지에 관장님의 이름이 적혀 있었어요. 문을 닫기까지 30일 남았습니다. 다친 작품의 이야기를 되찾아 미술관을 다시 열어 주세요.</p>
+        <section class="director-assistant-select" aria-labelledby="directorAssistantSelectTitle">
+          <strong id="directorAssistantSelectTitle">함께할 비서를 골라 주세요</strong>
+          <div class="assistant-choice-list" role="group" aria-label="처음 함께할 비서 선택">
+            <button type="button" class="assistant-choice" data-assistant-choice="yoonseul" aria-pressed="true">
+              <img src="assets/assistant-yoonseul.png" alt="여자 비서 윤슬" />
+              <span><strong>윤슬</strong><small>밝고 다정한 안내</small></span>
+              <i>선택됨</i>
+            </button>
+            <button type="button" class="assistant-choice" data-assistant-choice="hangyeol" aria-pressed="false">
+              <img src="assets/assistant-hangyeol.png" alt="남자 비서 한결" />
+              <span><strong>한결</strong><small>차분하고 든든한 안내</small></span>
+              <i>선택</i>
+            </button>
+          </div>
+          <small>비서는 안내 말투와 이야기 속 인물이 달라지며, 게임 보상은 같습니다.</small>
+        </section>
         <label>관장님 성함<input id="directorNameInput" maxlength="12" value="서리" placeholder="예: 서리" /></label>
         <label>미술관 이름<input id="museumNameInput" maxlength="20" value="반짝 복원 미술관" /></label>
         <p id="directorNameStatus" class="name-edit-status" role="status">한글·영문·숫자를 쓸 수 있어요. 욕설, 다른 사람을 괴롭히는 말, 연락처는 쓸 수 없어요.</p>
@@ -633,6 +664,6 @@
 
   <script src="js/artworks-data.js?v=20260804-particles"></script>
   <script src="js/ranking-config.js?v=20260805-ranking-v1"></script>
-  <script src="js/game.js?v=20260806-mobile-ranking-link-v1"></script>
+  <script src="js/game.js?v=20260806-assistant-choice-v1"></script>
 </body>
 </html>

@@ -20,15 +20,26 @@
 | `styles.css` | 전체 화면 디자인, 반응형 규칙, 미니게임별 시각 상태와 애니메이션 |
 | `js/artworks-data.js` | 생성 작품 496점의 재질 프로필, 복원 단계·도구·설명 데이터 |
 | `js/game.js` | 핵심 작품 4점, 전역 상태, 14종 미니게임, 복원 진행, 전시·관람객·수익·저장·랭킹 연계 |
+| `assets/assistant-yoonseul.png`, `assets/assistant-hangyeol.png` | 선택 가능한 비서 윤슬·한결의 정사각형 초상화 |
 | `ranking-apps-script.gs` | Google Apps Script 랭킹 제출·조회 백엔드와 랭킹 페이지 |
 | `scripts/` | 데이터, 시각 다양성, 랭킹 백엔드 등 보조 검증 스크립트 |
 | `docs/` | 게임 기획, 구현 브리프, QA 기록 |
 
 `index.html`의 `.sticky-navigation`은 상단 상태 바(`.topbar`), 좁은 모바일용 메뉴 버튼(`.mobile-menu-toggle`), 메인 메뉴(`.main-tabs`)를 한 묶음으로 고정한다. 스크롤 중에도 같은 묶음이 유지되어야 하므로 이 요소들을 다시 개별 `sticky`로 분리하지 않는다. 480px 이하에서는 현재 공간만 표시하는 버튼으로 메뉴를 접고, 버튼을 누르면 기존 3×2 메뉴가 열린다. 비서 안내와 모달은 이 영역보다 높은 레이어를 사용한다.
 
-첫 운영 안내는 데스크톱과 넓은 화면에서 기존 안내 카드로 표시한다. 480px 이하에서는 `#tutorialMobileToggle`의 원형 윤슬 프로필로 접고, 사용자가 누를 때만 `#tutorialGuideCard`를 펼친다. 접힌 동안에는 강조 테두리와 어두운 배경도 숨기며, `강조 위치 보기`를 직접 누른 뒤에만 잠시 목표를 강조한다.
+첫 운영 안내는 데스크톱과 넓은 화면에서 기존 안내 카드로 표시한다. 480px 이하에서는 `#tutorialMobileToggle`의 원형 선택 비서 프로필로 접고, 사용자가 누를 때만 `#tutorialGuideCard`를 펼친다. 접힌 동안에는 강조 테두리와 어두운 배경도 숨기며, `강조 위치 보기`를 직접 누른 뒤에만 잠시 목표를 강조한다.
 
 전시관은 조작 UI와 장면의 반응형 전략을 분리한다. `#galleryDioramaViewport` 안의 `#galleryDiorama`만 680px 이하에서 760×670 기준 장면 전체를 폭에 맞춰 축소한다. 따라서 작품 수를 줄이거나 페이지 가로 스크롤을 만들지 않는다. 편의동(`.gallery-annex`)과 운영 패널은 축소하지 않고 정상 글자·터치 크기로 배치한다. 같은 680px 이하에서 `.management-panel`을 `display: contents`로 풀어 `.upgrade-panel-card`를 장면보다 먼저 배치하고, `#mobileUpgradeToggle`로 시설 목록을 접고 편다. 펼친 목록은 제한된 높이 안에서 독립적으로 스크롤하며, 화면을 벗어나거나 넓은 화면으로 전환하면 `setMobileUpgradeOpen()`이 접힌 상태로 정리한다. 장면 배율은 `updateGalleryDioramaScale()`이 `ResizeObserver`와 화면 전환 뒤에 다시 계산한다.
+
+## 선택 가능한 비서
+
+`js/game.js`의 `ASSISTANTS`는 여자 비서 `yoonseul`과 남자 비서 `hangyeol`의 이름·초상화·첫 인사를 정의한다. `state.assistantId`는 선택적 세이브 필드이며 기본값은 `yoonseul`이다. `normalizeState()`는 이 필드가 없는 구형 세이브와 알 수 없는 값을 모두 윤슬로 보완한다.
+
+- 첫 관장 취임 화면과 비서실의 `[data-assistant-choice]` 버튼이 같은 선택값을 사용한다. 첫 취임 중에는 미리보기만 바꾸고, 취임을 끝낸 뒤 비서실에서 바꾸면 즉시 저장한다.
+- `updateAssistantIdentity()`가 `[data-assistant-image]`, `[data-assistant-template]`, 선택 버튼의 `aria-pressed`를 한 번에 갱신한다. 새 비서 노출 지점을 만들 때 이미지나 이름을 직접 고정하지 말고 이 속성을 사용한다.
+- 스토리 원고는 기존 윤슬 기준 원문을 유지한다. 화면에 표시할 때만 `assistantCopy()`가 현재 비서 이름으로 바꾸므로 저장된 이야기 진행과 원고 데이터는 달라지지 않는다.
+- 비서 선택은 안내 인물·초상화·첫 인사만 바꾸며 보상, 난이도, 작품 배정과 랭킹 점수에는 영향을 주지 않는다.
+- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 구형 세이브 기본값, 동적 스토리 치환, 반응형 카드와 한결 초상화 규격을 검사한다.
 
 ## 시설 업그레이드 1·2단계
 

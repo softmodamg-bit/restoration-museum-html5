@@ -8,6 +8,23 @@
     gameVersion: String(window.RESTORATION_RANKING_CONFIG?.gameVersion || "prototype-2026-08").slice(0, 40),
     rulesVersion: String(window.RESTORATION_RANKING_CONFIG?.rulesVersion || "director-score-v2").slice(0, 40)
   });
+  const DEFAULT_ASSISTANT_ID = "yoonseul";
+  const ASSISTANTS = Object.freeze({
+    yoonseul: Object.freeze({
+      id: "yoonseul",
+      name: "윤슬",
+      image: "assets/assistant-yoonseul.png",
+      alt: "여자 비서 윤슬",
+      greeting: "“관장님, 첫 작품이 도착했어요. 제가 곁에서 안내할게요!”"
+    }),
+    hangyeol: Object.freeze({
+      id: "hangyeol",
+      name: "한결",
+      image: "assets/assistant-hangyeol.png",
+      alt: "남자 비서 한결",
+      greeting: "“관장님, 첫 작품이 도착했습니다. 제가 곁에서 차근차근 안내할게요.”"
+    })
+  });
   const SFX_FILES = {
     click: "assets/sfx-click.wav",
     hit: "assets/sfx-hit.wav",
@@ -863,6 +880,7 @@
       extendedPuzzlePreview: false,
       directorName: "서리",
       museumName: "반짝 복원 미술관",
+      assistantId: DEFAULT_ASSISTANT_ID,
       onboardingComplete: false,
       assistantSeen: false,
       assistantNotice: true,
@@ -965,6 +983,7 @@
     mobileUpgradeContent: $("#mobileUpgradeContent"),
     upgradePanelCard: $(".upgrade-panel-card"),
     assistantButton: $("#assistantButton"),
+    assistantChoices: $$('[data-assistant-choice]'),
     assistantPanel: $("#assistantPanel"),
     assistantCloseButton: $("#assistantCloseButton"),
     assistantGreeting: $("#assistantGreeting"),
@@ -1140,6 +1159,57 @@
     toast: $("#toast")
   };
 
+  function selectedAssistant() {
+    return Object.hasOwn(ASSISTANTS, state.assistantId) ? ASSISTANTS[state.assistantId] : ASSISTANTS[DEFAULT_ASSISTANT_ID];
+  }
+
+  function assistantCopy(value) {
+    return String(value ?? "").replaceAll("윤슬", selectedAssistant().name);
+  }
+
+  function updateAssistantIdentity() {
+    const assistant = selectedAssistant();
+    document.body.dataset.assistant = assistant.id;
+    $$('[data-assistant-image]').forEach(image => {
+      image.src = assistant.image;
+      image.alt = assistant.alt;
+    });
+    $$('[data-assistant-template]').forEach(node => {
+      node.textContent = String(node.dataset.assistantTemplate || "").replaceAll("{name}", assistant.name);
+    });
+    $$('[data-assistant-greeting]').forEach(node => {
+      node.textContent = assistant.greeting;
+    });
+    el.assistantChoices.forEach(button => {
+      const isSelected = button.dataset.assistantChoice === assistant.id;
+      button.setAttribute("aria-pressed", String(isSelected));
+      const status = $("i", button);
+      if (status) status.textContent = isSelected ? "선택됨" : "선택";
+    });
+    if (practiceMode && el.labArtworkEra) {
+      el.labArtworkEra.textContent = `${assistant.name}의 보존 연습실 · 실제 작품 기록과 분리`;
+    }
+    updateAssistantNotice();
+  }
+
+  function chooseAssistant(assistantId, persist = false) {
+    if (!Object.hasOwn(ASSISTANTS, assistantId)) return;
+    const changed = state.assistantId !== assistantId;
+    state.assistantId = assistantId;
+    updateAssistantIdentity();
+    if (!changed) return;
+    if (state.started) {
+      updateAssistant($('[data-view-panel].is-active')?.dataset.viewPanel || "storage");
+      renderStoryArchive();
+      if (isFirstRotationTutorialActive()) scheduleTutorialGuide(false);
+    }
+    if (persist) {
+      saveState();
+      showToast(`${selectedAssistant().name} 비서와 함께 일합니다.`);
+      playTone("open");
+    }
+  }
+
   init();
 
   function init() {
@@ -1151,7 +1221,7 @@
     applyFontSize();
     applySafetyRangePreference();
     applyPuzzlePreviewPreference();
-    updateAssistantNotice();
+    updateAssistantIdentity();
     el.bgmVolume.value = String(state.musicVolume);
     applyMusicVolume();
     renderBgmStatus();
@@ -1277,6 +1347,7 @@
       if (state.started && !window.confirm("현재 저장을 지우고 새로 시작할까요?")) return;
       state = defaultState();
       state.started = true;
+      updateAssistantIdentity();
       saveState();
       enterGame();
     });
@@ -1407,6 +1478,11 @@
     });
     el.assistantButton.addEventListener("click", toggleAssistantPanel);
     el.assistantCloseButton.addEventListener("click", closeAssistantPanel);
+    el.assistantChoices.forEach(button => {
+      button.addEventListener("click", () => {
+        chooseAssistant(button.dataset.assistantChoice, state.onboardingComplete);
+      });
+    });
     el.assistantProfileForm.addEventListener("submit", event => {
       event.preventDefault();
       saveAssistantProfile();
@@ -1605,6 +1681,7 @@
   }
 
   function openDirectorOnboarding() {
+    updateAssistantIdentity();
     el.directorNameInput.value = state.directorName || "서리";
     el.museumNameInput.value = state.museumName || "반짝 복원 미술관";
     el.directorNameInput.removeAttribute("aria-invalid");
@@ -1631,6 +1708,7 @@
     state.directorName = validation.directorName;
     state.museumName = validation.museumName;
     state.onboardingComplete = true;
+    updateAssistantIdentity();
     saveState();
     el.directorModal.classList.add("is-hidden");
     el.modalBackdrop.classList.add("is-hidden");
@@ -1736,8 +1814,9 @@
 
   function updateAssistantNotice() {
     const hasUnread = Boolean(state.assistantNotice);
+    const assistantName = selectedAssistant().name;
     el.assistantButton.classList.toggle("has-unread", hasUnread);
-    el.assistantButton.title = hasUnread ? "윤슬의 새 안내가 있어요" : "윤슬에게 운영 조언 듣기";
+    el.assistantButton.title = hasUnread ? `${assistantName}의 새 안내가 있어요` : `${assistantName}에게 운영 조언 듣기`;
   }
 
   function updateAssistant(viewName) {
@@ -1875,10 +1954,10 @@
     el.storyChapterLabel.textContent = story.label;
     el.storyAppealBadge.textContent = story.threshold ? `전시 매력도 ${formatNumber(story.threshold)} 달성` : "관장 취임일";
     el.storyTitle.textContent = story.title;
-    const easyEmphasis = (story.emphasis || []).map(easyCopy);
-    el.storyText.replaceChildren(...story.paragraphs.map(paragraph => createHighlightedStoryParagraph(easyCopy(paragraph), easyEmphasis)));
-    el.storyQuote.textContent = easyCopy(story.quote);
-    el.storyConfirmButton.textContent = story.button;
+    const easyEmphasis = (story.emphasis || []).map(phrase => easyCopy(assistantCopy(phrase)));
+    el.storyText.replaceChildren(...story.paragraphs.map(paragraph => createHighlightedStoryParagraph(easyCopy(assistantCopy(paragraph)), easyEmphasis)));
+    el.storyQuote.textContent = easyCopy(assistantCopy(story.quote));
+    el.storyConfirmButton.textContent = assistantCopy(story.button);
     el.storyModal.classList.remove("is-hidden");
     el.modalBackdrop.classList.remove("is-hidden");
     el.modalBackdrop.setAttribute("aria-hidden", "false");
@@ -2029,7 +2108,7 @@
         <span class="story-chapter-copy">
           <small>${entry.label}</small>
           <strong>${entry.title}</strong>
-          <span>${entry.unlocked ? easyCopy(entry.summary) : isNext ? "다음에 열릴 이야기" : "아직 열리지 않은 기록"}</span>
+          <span>${entry.unlocked ? easyCopy(assistantCopy(entry.summary)) : isNext ? "다음에 열릴 이야기" : "아직 열리지 않은 기록"}</span>
         </span>`;
       return entry.unlocked
         ? `<button type="button" class="${classes}" data-story-replay="${entry.threshold}">${content}</button>`
@@ -6570,7 +6649,7 @@
     el.labMaterial.textContent = `PRACTICE ${String(MECHANIC_IDS.indexOf(id) + 1).padStart(2, "0")} · LV.${selectedDifficulty}`;
     el.labTitle.textContent = MECHANIC_EASY_NAMES[id];
     el.labSubtitle.textContent = easyCopy(challenge.copy);
-    el.labArtworkEra.textContent = "윤슬의 보존 연습실 · 실제 작품 기록과 분리";
+    el.labArtworkEra.textContent = `${selectedAssistant().name}의 보존 연습실 · 실제 작품 기록과 분리`;
     el.labArtworkArtist.textContent = `사용 도구 · ${TOOLS[challenge.step.tool].name}`;
     el.labArtworkStory.textContent = easyCopy(challenge.step.diagnosis);
     el.labUpgradeBadge.classList.remove("is-hidden");
@@ -7164,7 +7243,7 @@
       progress: "10 / 10",
       title: "첫 운영 로테이션을 완료했어요!",
       message: "작품 이해 → 복원 → 기록 → 전시 → 수익의 전체 흐름을 익혔습니다. 이제 원하는 작품과 운영 전략을 자유롭게 선택하세요.",
-      tip: "막힐 때는 오른쪽 위 윤슬 버튼을 열면 현재 화면에서 할 일을 다시 안내받을 수 있어요.",
+      tip: `막힐 때는 오른쪽 위 ${selectedAssistant().name} 버튼을 열면 현재 화면에서 할 일을 다시 안내받을 수 있어요.`,
       target: null,
       complete: true
     };
@@ -7317,7 +7396,7 @@
     el.tutorialGuide.classList.remove("is-top");
     setTutorialMobileExpanded(false);
     document.body.classList.remove("is-tutorial-running");
-    showToast(skipped ? "처음 안내를 건너뛰었어요. 윤슬에게 언제든 다음 할 일을 물어보세요." : "첫 운영 안내 완료! 이제 자유롭게 미술관을 운영하세요.");
+    showToast(skipped ? `처음 안내를 건너뛰었어요. ${selectedAssistant().name}에게 언제든 다음 할 일을 물어보세요.` : "첫 운영 안내 완료! 이제 자유롭게 미술관을 운영하세요.");
     playTone("complete");
   }
 
@@ -7778,6 +7857,7 @@
       extendedPuzzlePreview: Boolean(candidate.extendedPuzzlePreview),
       directorName: loadedDirector.ok && loadedDirector.value ? loadedDirector.value : fallback.directorName,
       museumName: loadedMuseum.ok && loadedMuseum.value ? loadedMuseum.value : fallback.museumName,
+      assistantId: Object.hasOwn(ASSISTANTS, candidate.assistantId) ? candidate.assistantId : fallback.assistantId,
       onboardingComplete: Boolean(candidate.onboardingComplete),
       assistantSeen: Boolean(candidate.assistantSeen),
       assistantNotice: typeof candidate.assistantNotice === "boolean" ? candidate.assistantNotice : !candidate.assistantSeen,
