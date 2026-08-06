@@ -24,7 +24,7 @@
   <link rel="image_src" href="https://softmodamg-bit.github.io/restoration-museum-html5/assets/link-preview-hangyeol-v2.png" />
   <title>반짝! 복원 미술관</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=20260806-assistant-greeting-v4" />
+  <link rel="stylesheet" href="styles.css?v=20260807-assistant-conversation-v5" />
 </head>
 <body>
   <img class="link-preview-fallback" src="assets/link-preview-hangyeol-v2.png" alt="" aria-hidden="true" width="1254" height="1254" />
@@ -100,7 +100,7 @@
             <div class="resource-chip"><span>📅</span><strong id="dayValue">1일</strong></div>
             <div class="resource-chip" title="누적 관람객"><span>👥</span><strong id="totalVisitorValue">0명</strong></div>
           </div>
-          <button id="assistantButton" class="assistant-button" aria-expanded="false" aria-controls="assistantGreetingModal">
+          <button id="assistantButton" class="assistant-button" aria-expanded="false" aria-controls="assistantPanel">
             <img src="assets/assistant-yoonseul.png" alt="" data-assistant-image />
             <span><small>관장실 비서</small><strong data-assistant-template="{name}">윤슬</strong></span>
             <i aria-hidden="true">!</i>
@@ -498,14 +498,13 @@
         <h2 id="assistantGreetingTitle" data-assistant-template="비서 {name}">비서 윤슬</h2>
         <section class="assistant-daily-greeting" aria-labelledby="assistantDailyLabel">
           <div class="assistant-daily-heading">
-            <span aria-hidden="true">☀️</span>
+            <span id="assistantDailyIcon" aria-hidden="true">☀️</span>
             <strong id="assistantDailyLabel">1일차 · 오늘의 인사</strong>
           </div>
           <p id="assistantDailyMessage">오늘도 미술관의 문을 함께 열어 볼까요?</p>
         </section>
         <div class="assistant-greeting-actions">
           <button id="assistantDailyReplyButton" type="button" class="button button-primary">오늘도 잘 부탁해</button>
-          <button id="assistantGreetingSettingsButton" type="button" class="button button-ghost">비서실 설정 열기</button>
         </div>
       </div>
     </section>
@@ -513,7 +512,10 @@
 
   <aside id="assistantPanel" class="assistant-panel is-hidden" aria-hidden="true" aria-labelledby="assistantPanelTitle">
     <div class="assistant-panel-head">
-      <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+      <button id="assistantPortraitButton" type="button" class="assistant-panel-portrait-button" aria-label="윤슬의 오늘 이야기 듣기" title="오늘의 인사와 도움말 듣기">
+        <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+        <span class="visually-hidden">오늘 이야기 듣기</span>
+      </button>
       <div>
         <p>DIRECTOR'S OFFICE</p>
         <h2 id="assistantPanelTitle" data-assistant-template="비서 {name}">비서 윤슬</h2>
@@ -724,6 +726,6 @@
 
   <script src="js/artworks-data.js?v=20260804-particles"></script>
   <script src="js/ranking-config.js?v=20260805-ranking-v1"></script>
-  <script src="js/game.js?v=20260806-assistant-greeting-v4"></script>
+  <script src="js/game.js?v=20260807-assistant-conversation-v5"></script>
 </body>
 </html>

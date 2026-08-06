@@ -7,10 +7,10 @@ const styles = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8"
 const hangyeolImage = fs.readFileSync(new URL("../assets/assistant-hangyeol.png", import.meta.url));
 const linkPreviewImage = fs.readFileSync(new URL("../assets/link-preview-hangyeol-v2.png", import.meta.url));
 const storyAssetThresholds = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500];
-const dailyGreetingBlock = game.match(/const DAILY_ASSISTANT_GREETINGS = Object\.freeze\(\[([\s\S]*?)\]\);/)?.[1] || "";
-const dailyGreetings = Array.from(dailyGreetingBlock.matchAll(/^\s+"((?:[^"\\]|\\.)*)"[,]?$/gm), match => match[1]);
-const dailyReplyBlock = game.match(/const DAILY_DIRECTOR_REPLIES = Object\.freeze\(\[([\s\S]*?)\]\);/)?.[1] || "";
-const dailyReplies = Array.from(dailyReplyBlock.matchAll(/^\s+"((?:[^"\\]|\\.)*)"[,]?$/gm), match => match[1]);
+const dailyTopicBlock = game.match(/const DAILY_ASSISTANT_TOPICS = Object\.freeze\(\[([\s\S]*?)\]\);/)?.[1] || "";
+const dailyTopics = Array.from(dailyTopicBlock.matchAll(/assistantTopic\("([^"]+)",\s*"([^"]+)",\s*"([^"]+)",\s*"([^"]+)",\s*"([^"]+)"\)/g), match => ({
+  type: match[1], icon: match[2], label: match[3], message: match[4], reply: match[5]
+}));
 
 assert.match(game, /const DEFAULT_ASSISTANT_ID = "yoonseul"/);
 assert.match(game, /yoonseul: Object\.freeze\(\{[\s\S]*?name: "윤슬"/);
@@ -29,11 +29,11 @@ assert.match(game, /function storyIllustrationFor\(threshold\)/);
 assert.match(game, /story-\$\{String\(fileThreshold\)\.padStart\(3, "0"\)\}\.webp\?v=20260806-story-scenes-v1/, "스토리 삽화는 배포 캐시를 피하는 버전 주소를 사용해야 합니다.");
 assert.match(game, /el\.storyIllustration\.src = illustration\.src/);
 assert.match(game, /anchor\.download = `\$\{localSaveTimestamp\(exportedAt\)\}_\$\{directorName\}_\$\{museumName\}\.json`/);
-assert.equal(dailyGreetings.length, 45, "하루 인사는 정확히 45종이어야 합니다.");
-assert.equal(new Set(dailyGreetings).size, 45, "45종의 하루 인사는 서로 달라야 합니다.");
-assert.equal(dailyReplies.length, 45, "관장의 대답도 하루 인사와 짝을 이루는 45종이어야 합니다.");
-assert.match(game, /DAILY_ASSISTANT_GREETINGS\[\(normalizedDay - 1\) % DAILY_ASSISTANT_GREETINGS\.length\]/, "게임 날짜에 따라 45종을 순환해야 합니다.");
-assert.match(game, /DAILY_DIRECTOR_REPLIES\[\(normalizedDay - 1\) % DAILY_DIRECTOR_REPLIES\.length\]/, "관장의 대답도 게임 날짜에 따라 순환해야 합니다.");
+assert.equal(dailyTopics.length, 70, "하루 이야기는 정확히 70종이어야 합니다.");
+assert.equal(new Set(dailyTopics.map(topic => topic.message)).size, 70, "70종의 하루 이야기는 서로 달라야 합니다.");
+assert.equal(new Set(dailyTopics.map(topic => topic.reply)).size, 70, "관장의 대답도 70종의 이야기와 각각 짝을 이뤄야 합니다.");
+assert.deepEqual(new Set(dailyTopics.map(topic => topic.type)), new Set(["greeting", "game", "care", "story"]), "인사·게임 팁·작품 돌봄·미술 이야기가 모두 포함되어야 합니다.");
+assert.match(game, /DAILY_ASSISTANT_TOPICS\[\(normalizedDay - 1\) % DAILY_ASSISTANT_TOPICS\.length\]/, "게임 날짜에 따라 70종을 순환해야 합니다.");
 assert.match(game, /function updateAssistantDailyGreeting\(\)/);
 
 assert.equal((index.match(/data-assistant-choice="yoonseul"/g) || []).length, 2, "윤슬은 취임식과 비서실에 한 번씩 있어야 합니다.");
@@ -50,15 +50,18 @@ assert.doesNotMatch(index, /class="story-assistant-badge"/, "스토리 삽화 �
 assert.doesNotMatch(index, /id="storyIcon"/, "스토리 삽화 위에 편지 아이콘을 겹치면 안 됩니다.");
 assert.match(index, /id="directorTutorialStartButton"[\s\S]*?네, 처음부터 알려 주세요/);
 assert.match(index, /id="directorTutorialSkipButton"[\s\S]*?아니요, 바로 시작할게요/);
-assert.match(index, /id="assistantButton"[\s\S]*?aria-controls="assistantGreetingModal"/);
+assert.match(index, /id="assistantButton"[\s\S]*?aria-controls="assistantPanel"/);
 assert.match(index, /id="assistantGreetingBackdrop"[\s\S]*?class="assistant-daily-greeting"[\s\S]*?id="assistantDailyMessage"[\s\S]*?id="assistantDailyReplyButton"/);
-assert.match(index, /id="assistantGreetingSettingsButton"[\s\S]*?비서실 설정 열기/);
-assert.match(index, /styles\.css\?v=20260806-assistant-greeting-v4/);
-assert.match(index, /js\/game\.js\?v=20260806-assistant-greeting-v4/);
+assert.match(index, /id="assistantPanel"[\s\S]*?id="assistantPortraitButton"[\s\S]*?data-assistant-image/);
+assert.doesNotMatch(index, /assistantGreetingSettingsButton|비서실 설정 열기/);
+assert.match(index, /styles\.css\?v=20260807-assistant-conversation-v5/);
+assert.match(index, /js\/game\.js\?v=20260807-assistant-conversation-v5/);
 assert.match(game, /el\.directorModal\.setAttribute\("aria-labelledby", "directorTutorialTitle"\)/);
-assert.match(game, /el\.assistantButton\.addEventListener\("click", toggleAssistantGreeting\)/);
+assert.match(game, /el\.assistantButton\.addEventListener\("click", toggleAssistantPanel\)/);
+assert.match(game, /el\.assistantPortraitButton\.addEventListener\("click", openAssistantGreetingFromPanel\)/);
 assert.match(game, /function openAssistantGreeting\(\)/);
-assert.match(game, /function openAssistantPanelFromGreeting\(\)/);
+assert.match(game, /function closeAssistantGreeting\(shouldResume = true\)[\s\S]*?el\.assistantPortraitButton\.focus\(\)/);
+assert.doesNotMatch(game, /openAssistantPanelFromGreeting|assistantGreetingSettingsButton/);
 assert.match(styles, /\.assistant-choice\[aria-pressed="true"\]/);
 assert.match(styles, /@media \(max-width: 480px\)[\s\S]*?\.assistant-choice-list/);
 assert.doesNotMatch(styles, /\.story-assistant-badge/, "스토리 비서 배지 스타일이 남아 있으면 안 됩니다.");
@@ -83,4 +86,4 @@ assert.equal(width, height, "한결 초상화는 UI 크롭을 위한 정사각�
 assert.ok(width >= 1024, "한결 초상화 해상도는 1024px 이상이어야 합니다.");
 assert.deepEqual(linkPreviewImage, hangyeolImage, "한결 전용 링크 미리보기 파일은 검증된 한결 초상화와 같아야 합니다.");
 
-console.log(`Assistant choice OK: 윤슬/한결 selectors, 45 daily greetings and paired director replies, compact greeting popup, tutorial choice, 16 clean story illustrations, timestamped save name, responsive cards, and ${width}x${height} Hangyeol portrait verified.`);
+console.log(`Assistant choice OK: 윤슬/한결 selectors, 70 mixed daily topics and paired director replies, settings-to-greeting return flow, tutorial choice, 16 clean story illustrations, timestamped save name, responsive cards, and ${width}x${height} Hangyeol portrait verified.`);

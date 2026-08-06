@@ -48,20 +48,21 @@
 - 비서 선택은 안내 인물·초상화·첫 인사만 바꾸며 보상, 난이도, 작품 배정과 랭킹 점수에는 영향을 주지 않는다.
 - 외부 메신저와 SNS의 링크 미리보기는 저장 선택과 무관한 고정 홍보 이미지다. `index.html`의 Open Graph·Twitter·`image_src` 메타 태그가 캐시 버전이 붙은 한결 전용 절대 Pages URL을 가리킨다. Open Graph를 무시하고 본문의 첫 `<img>`를 고르는 서비스에 대비해 화면 밖의 `.link-preview-fallback`도 같은 한결 이미지를 먼저 제공한다.
 - 스토리 모달의 `#storyIllustration`은 `storyIllustrationFor(threshold)`가 장마다 다른 WebP 삽화와 대체 문구로 바꾼다. 삽화는 비서 성별과 무관한 사건·장소 중심이며, 이야기 화면의 왼쪽 영역에는 편지 아이콘이나 비서 배지를 겹치지 않고 삽화만 표시한다. `index.html`의 CSS·게임 스크립트와 동적 스토리 삽화 URL에는 배포 버전 쿼리를 붙여 GitHub Pages 갱신 뒤 이전 HTML·CSS·JS가 섞여 보이지 않게 한다.
-- 상단의 작은 비서 버튼은 `#assistantGreetingModal`을 열어 `DAILY_ASSISTANT_GREETINGS` 45종 중 `state.day`에 해당하는 한 문장과 짝지어진 `DAILY_DIRECTOR_REPLIES`의 관장 대답 버튼을 보여 준다. 46일차부터 같은 순서로 다시 순환하며 날짜만으로 결정하므로 새 세이브 필드를 만들지 않는다. 팝업의 `비서실 설정 열기`를 누르면 기존 `#assistantPanel`로 이동하고, 운영 조언·비서 선택·명패·접근성 설정은 그 패널에 유지한다.
-- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 서로 다른 하루 인사 45종과 짝지어진 관장 대답 45종, 작은 인사 팝업에서 비서실로 이어지는 경로, 첫 튜토리얼 선택, 구형 세이브 기본값, 동적 스토리 치환, 배지 없이 표시되는 16장 삽화의 WebP 형식·모바일 용량, 한결 초상화 규격과 공유 메타·본문 대체 이미지의 일치를 검사한다.
+- 상단의 작은 비서 버튼은 기존 `#assistantPanel`을 연다. 패널 머리의 `#assistantPortraitButton`을 눌러야 `#assistantGreetingModal`이 열리며, 닫기나 관장 대답 버튼을 누르면 패널을 닫지 않고 다시 비서실 설정 화면으로 돌아온다. 별도의 `비서실 설정 열기` 버튼은 두지 않는다.
+- `DAILY_ASSISTANT_TOPICS`는 일상 인사·게임 팁·작품 돌봄·미술 이야기 70종과 각각의 관장 대답을 한 객체로 묶는다. `state.day`만으로 순환하므로 71일차부터 같은 순서를 다시 쓰며 새 세이브 필드를 만들지 않는다.
+- `scripts/test-assistant-choice.mjs`가 두 선택 UI, 네 종류를 모두 포함하는 서로 다른 하루 이야기와 관장 대답 70쌍, 비서실→사진→인사→비서실 복귀 경로, 첫 튜토리얼 선택, 구형 세이브 기본값, 동적 스토리 치환, 배지 없이 표시되는 16장 삽화의 WebP 형식·모바일 용량, 한결 초상화 규격과 공유 메타·본문 대체 이미지의 일치를 검사한다.
 
-## 시설 업그레이드 1·2단계
+## 시설 업그레이드 1·2·3단계
 
-`js/game.js`의 `UPGRADES`에는 기본 시설 12개와 후기 2단계 개선 12개가 함께 들어 있다. 기본 시설은 `tier`가 없고, 2단계 개선은 `tier: 2`, `unlockDay: 15`, `requires: <기본 시설 ID>`를 가진다.
+`js/game.js`의 `UPGRADES`에는 기본 시설 12개, 2단계 개선 12개, 3단계 완성 12개가 함께 들어 있다. 기본 시설은 `tier`가 없고, 2단계는 `tier: 2`, `unlockDay: 15`, `requires: <기본 시설 ID>`, 3단계는 `tier: 3`, `unlockDay: 25`, `requires: <2단계 시설 ID>`를 가진다.
 
-- `BASE_UPGRADES`와 `ADVANCED_UPGRADES`가 화면 렌더링용 목록을 나눈다.
-- 15일차 전에는 `renderUpgrades()`가 2단계 예고 카드만 보여 주며, 15일차부터 구매 목록 12개를 연다.
-- `buyUpgrade()`는 날짜와 선행 기본 시설을 UI와 별개로 다시 검사한다. 잠긴 버튼을 우회해도 구매할 수 없어야 한다.
-- 2단계 시설은 기존 `state.upgrades` 불리언 맵에 새 ID로 저장된다. 저장 구조 자체는 바뀌지 않으며 구형 세이브는 새 ID가 없는 상태로 그대로 호환된다.
-- 전시관은 `gallery-scene-card.has-<2단계 ID>` CSS로 조명·해설·환경 설비·기록실·복원실·외관을 강화한다. 편의동은 `advancedUpgradeForBase()`와 `.annex-room.is-advanced`가 상점·쉼터·정원·카페·큰 전시실의 장면을 바꾼다.
-- 2단계 개선은 전시 슬롯을 더 늘리지 않는다. 전시 슬롯 상한은 기존 6칸을 유지하고, 후기 투자는 매력·관람객·수입·평판·복원 지원 효과를 강화한다.
-- `scripts/test-upgrade-progression.mjs`가 기본/2단계 각 12개, 15일차 개방, 선행 시설, 42,200코인 규모, 구매 방어 로직과 시각 클래스 존재 여부를 검사한다.
+- `BASE_UPGRADES`, `ADVANCED_UPGRADES`, `FINAL_UPGRADES`가 화면 렌더링용 목록을 나눈다.
+- `renderUpgrades()`는 15일차 전에는 2단계 예고, 15~24일차에는 3단계 예고를 보여 주며 15일차와 25일차에 각각 구매 목록 12개를 연다.
+- `buyUpgrade()`는 날짜와 바로 앞 단계 시설을 UI와 별개로 다시 검사한다. 잠긴 버튼을 우회해도 구매할 수 없어야 한다.
+- 2·3단계 시설도 기존 `state.upgrades` 불리언 맵에 새 ID로 저장된다. 저장 구조 자체는 바뀌지 않으며 구형 세이브는 새 ID가 없는 상태로 그대로 호환된다.
+- 시설 카드 색은 기본 설치(민트), 2단계(금빛), 3단계(하늘·보라·노랑)로 달라진다. 전시관은 `gallery-scene-card.has-<단계 ID>` CSS로 비편의 시설의 색과 빛을 바꾸고, 편의동은 `.annex-room.is-advanced`와 `.annex-room.is-final`로 단계가 눈에 보이게 바뀐다.
+- 2·3단계 개선은 전시 슬롯을 더 늘리지 않는다. 전시 슬롯 상한은 기존 6칸을 유지하고, 후기 투자는 매력·관람객·수입·평판·복원 지원 효과를 강화한다.
+- `scripts/test-upgrade-progression.mjs`가 기본/2단계/3단계 각 12개, 15·25일차 개방, 단계별 선행 시설, 후기 코인 소비 규모, 구매 방어 로직과 시각 클래스 존재 여부를 검사한다.
 
 ## 미니게임 14종의 정의 위치
 
