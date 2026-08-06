@@ -165,8 +165,9 @@ assert(css.includes(".practice-difficulty-select") && css.includes(".practice-ca
 assert(game.includes('el.artStage.classList.toggle("has-four-choice", currentMechanic === "choice" && session.choiceSampleCount === 4)'), "Choice D5 does not expand the artwork stage");
 assert(css.includes(".art-stage.has-four-choice") && css.includes("min-height: 720px"), "Choice D5 expanded stage styling is missing");
 assert(css.includes('body[data-font-size="2"] .art-stage.has-four-choice { min-height: 980px; }') && css.includes('body[data-font-size="3"] .art-stage.has-four-choice { min-height: 1180px; }'), "Choice D5 mobile stage does not grow with the large text settings");
-assert(css.includes('.art-stage[data-mechanic="choice"] { touch-action: pan-y; }'), "Choice stage does not allow vertical touch scrolling");
-assert(/\.mechanic-layer\[data-mechanic="choice"\][^}]*overflow-y: auto[^}]*touch-action: pan-y/.test(css), "Choice mechanic layer is not an independent vertical scroll area");
+assert(css.includes('.art-stage:not([data-mechanic="spot"]):not([data-mechanic="uv"]) { touch-action: pan-y; }'), "Mobile non-scan stages do not allow vertical touch scrolling");
+assert(/\.mechanic-layer:not\(\[data-mechanic="spot"\]\):not\(\[data-mechanic="uv"\]\)[^}]*overflow-y: auto[^}]*touch-action: pan-y/.test(css), "Mobile mechanic layers are not independent vertical scroll areas");
+assert(css.includes('.drag-piece { touch-action: none;') && css.includes('.layer-cleaning-board {') && css.includes('touch-action:none') && css.includes('.balance-board {') && css.includes('touch-action:none'), "Direct manipulation surfaces do not preserve touch input while their mechanic layer scrolls");
 assert(game.includes('class="test-scroll-hint"') && css.includes(".test-scroll-hint"), "Choice mobile scroll guidance is missing");
 assert(html.includes('class="sticky-navigation"'), "Top bar and main menu are not grouped into one sticky navigation region");
 assert(css.includes(".sticky-navigation { position: sticky") && css.includes("z-index: 60"), "Sticky main navigation styling is missing");

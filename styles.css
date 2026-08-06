@@ -283,7 +283,6 @@ button:focus-visible { outline: 4px solid rgba(99, 130, 255, .35); outline-offse
   overflow: hidden;
 }
 .art-stage.has-four-choice { min-height: 720px; }
-.art-stage[data-mechanic="choice"] { touch-action: pan-y; }
 .art-stage.has-balance { min-height: 760px; }
 .art-stage::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: 8%; height: 28px; border-radius: 50%; background: rgba(89,57,65,.12); filter: blur(8px); }
 .lab-workspace.has-upgrade-lab .art-stage { background: radial-gradient(circle at 50% 35%, rgba(255,255,255,.9) 0 18%, transparent 46%), repeating-linear-gradient(90deg,transparent 0 52px,rgba(80,177,145,.07) 53px 55px), linear-gradient(145deg,#d8f5ec,#e8f5ff 52%,#fff0c9); }
@@ -404,9 +403,6 @@ button:focus-visible { outline: 4px solid rgba(99, 130, 255, .35); outline-offse
 .mechanic-layer.is-paused { pointer-events: none; }
 .mechanic-layer.is-paused :is(.uv-finding,.uv-original-fluorescence) { animation-play-state:paused; }
 .mechanic-layer.is-paused > :not(.mechanic-pause-overlay) { filter: grayscale(.45) brightness(.72); opacity: .48; }
-.mechanic-layer[data-mechanic="choice"] { align-content: start; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
-.mechanic-layer[data-mechanic="choice"]::-webkit-scrollbar { width: 8px; }
-.mechanic-layer[data-mechanic="choice"]::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: #d49d89; background-clip: padding-box; }
 .mechanic-pause-overlay { position: absolute; z-index: 20; inset: 0; display: none; place-content: center; justify-items: center; gap: 6px; padding: 20px; color: #5b414c; background: rgba(255,248,238,.7); backdrop-filter: blur(3px); text-align: center; }
 .mechanic-layer.is-paused .mechanic-pause-overlay { display: grid; }
 .mechanic-pause-overlay span { width: 54px; height: 54px; display: grid; place-items: center; border: 3px solid white; border-radius: 18px; background: #ffd9b8; box-shadow: 0 10px 24px rgba(78,48,57,.18); font-size: 25px; }
@@ -1509,6 +1505,10 @@ body.is-tutorial-running .toast { bottom: 220px; }
   body[data-font-size="3"] .art-stage.has-budget { min-height: 1220px; }
   body[data-font-size="2"] .art-stage.has-balance { min-height: 990px; }
   body[data-font-size="3"] .art-stage.has-balance { min-height: 1140px; }
+  .art-stage:not([data-mechanic="spot"]):not([data-mechanic="uv"]) { touch-action: pan-y; }
+  .mechanic-layer:not([data-mechanic="spot"]):not([data-mechanic="uv"]) { align-content: start; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: 28px; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+  .mechanic-layer:not([data-mechanic="spot"]):not([data-mechanic="uv"])::-webkit-scrollbar { width: 7px; }
+  .mechanic-layer:not([data-mechanic="spot"]):not([data-mechanic="uv"])::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: #d49d89; background-clip: padding-box; }
   .mechanic-label { top: 10px; max-width: calc(100% - 14px); gap: 6px; padding: 6px 9px; font-size: 9px; }
   .inspection-beam { width: 128px; height: 128px; }
   .uv-finding,.uv-original-fluorescence { min-width:48px; min-height:48px; }
