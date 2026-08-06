@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ff8f6b" />
+  <meta name="description" content="밝고 캐주얼한 HTML5 미술품 복원·미술관 운영 게임 프로토타입" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="ko_KR" />
+  <meta property="og:title" content="반짝! 복원 미술관" />
+  <meta property="og:description" content="비서와 함께 작품을 복원하고 작은 미술관을 성장시키는 HTML5 게임" />
+  <meta property="og:url" content="https://softmodamg-bit.github.io/restoration-museum-html5/?share=hangyeol-v2" />
+  <meta property="og:image" content="https://softmodamg-bit.github.io/restoration-museum-html5/assets/link-preview-hangyeol-v2.png" />
+  <meta property="og:image:secure_url" content="https://softmodamg-bit.github.io/restoration-museum-html5/assets/link-preview-hangyeol-v2.png" />
+  <meta property="og:image:width" content="1254" />
+  <meta property="og:image:height" content="1254" />
+  <meta property="og:image:alt" content="반짝! 복원 미술관의 남자 비서 한결" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="반짝! 복원 미술관" />
+  <meta name="twitter:description" content="비서와 함께 작품을 복원하고 작은 미술관을 성장시키는 HTML5 게임" />
+  <meta name="twitter:image" content="https://softmodamg-bit.github.io/restoration-museum-html5/assets/link-preview-hangyeol-v2.png" />
+  <meta name="twitter:image:alt" content="반짝! 복원 미술관의 남자 비서 한결" />
+  <meta itemprop="image" content="https://softmodamg-bit.github.io/restoration-museum-html5/assets/link-preview-hangyeol-v2.png" />
+  <link rel="image_src" href="https://softmodamg-bit.github.io/restoration-museum-html5/assets/link-preview-hangyeol-v2.png" />
+  <title>반짝! 복원 미술관</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css?v=20260806-assistant-greeting-v4" />
+</head>
+<body>
+  <img class="link-preview-fallback" src="assets/link-preview-hangyeol-v2.png" alt="" aria-hidden="true" width="1254" height="1254" />
+  <div class="background-decor" aria-hidden="true">
+    <span class="blob blob-a"></span>
+    <span class="blob blob-b"></span>
+    <span class="blob blob-c"></span>
+  </div>
+
+  <main id="app" class="app-shell">
+    <section id="titleScreen" class="title-screen" aria-labelledby="gameTitle">
+      <div class="title-visual-column">
+        <div class="title-visual" aria-hidden="true">
+          <div class="museum-roof"></div>
+          <div class="museum-building">
+            <div class="museum-sign">ART MUSEUM</div>
+            <div class="museum-columns">
+              <i></i><i></i><i></i><i></i>
+            </div>
+            <div class="museum-door"></div>
+          </div>
+          <div class="spark spark-1">✦</div>
+          <div class="spark spark-2">✦</div>
+          <div class="spark spark-3">✦</div>
+          <div class="tool-float tool-brush">🖌️</div>
+          <div class="tool-float tool-glass">🔎</div>
+        </div>
+        <div class="title-credits" aria-label="제작자 정보">
+          <div class="title-credit-line title-credit-primary">
+            <strong>Created by Reyeon</strong><i aria-hidden="true">·</i><span>The softMODAM Production</span>
+          </div>
+          <div class="title-credit-line title-credit-tools">
+            <small>Built with HTML5, CSS &amp; JavaScript</small><i aria-hidden="true">·</i><small>Development assisted by Codex 5.6 Sol</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="title-copy">
+        <p class="eyebrow">CASUAL ART RESTORATION</p>
+        <h1 id="gameTitle"><span>반짝!</span><br />복원 미술관</h1>
+        <p class="title-description">
+          폐관 위기의 미술관을 맡은 신임 관장이 되어<br />
+          <span data-assistant-template="비서 {name}과 함께 작품을 조사하고 복원해">비서 윤슬과 함께 작품을 조사하고 복원해</span><br />
+          작은 미술관을 모두가 찾는 명소로 성장시키세요.
+        </p>
+        <div class="title-assistant">
+          <img src="assets/assistant-yoonseul.png" alt="" data-assistant-image />
+          <p><strong data-assistant-template="비서 {name}">비서 윤슬</strong><span data-assistant-greeting>“관장님, 첫 작품이 도착했어요. 제가 곁에서 안내할게요!”</span></p>
+        </div>
+        <div class="title-actions">
+          <button id="startButton" class="button button-primary button-large">미술관 열기</button>
+          <button id="continueButton" class="button button-soft button-large is-hidden">이어하기</button>
+        </div>
+        <p class="small-note">마우스와 터치 모두 지원 · 자동 저장</p>
+        <div class="title-start-tips" aria-label="게임 이용 안내">
+          <span>↻ PC에서는 <kbd>F5</kbd>를 누르면 언제든 타이틀 화면으로 돌아옵니다.</span>
+          <span>🔤 글자 크기는 게임 안의 <strong>비서실</strong>에서 변경할 수 있습니다.</span>
+          <span>🌐 원활한 플레이는 <strong>최신 Chrome</strong>을 권장합니다. Safari는 15.4 이상에서 이용할 수 있으며, 일부 기능이 다르게 작동할 수 있습니다.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="game-screen is-hidden" aria-live="polite">
+      <div class="sticky-navigation">
+        <header class="topbar">
+          <div class="brand-mini">
+            <span class="brand-mark">✦</span>
+            <span>반짝! 복원 미술관</span>
+          </div>
+          <div class="resource-bar" aria-label="미술관 자원">
+            <div class="resource-chip"><span>🪙</span><strong id="coinValue">0</strong></div>
+            <div class="resource-chip"><span>⭐</span><strong id="repValue">0</strong></div>
+            <div class="resource-chip"><span>📅</span><strong id="dayValue">1일</strong></div>
+            <div class="resource-chip" title="누적 관람객"><span>👥</span><strong id="totalVisitorValue">0명</strong></div>
+          </div>
+          <button id="assistantButton" class="assistant-button" aria-expanded="false" aria-controls="assistantGreetingModal">
+            <img src="assets/assistant-yoonseul.png" alt="" data-assistant-image />
+            <span><small>관장실 비서</small><strong data-assistant-template="{name}">윤슬</strong></span>
+            <i aria-hidden="true">!</i>
+          </button>
+          <button id="soundButton" class="icon-button" aria-label="효과음과 배경음악 끄기" title="효과음과 배경음악 끄기">🎵</button>
+        </header>
+
+        <button id="mobileMenuToggle" class="mobile-menu-toggle" type="button" aria-expanded="false" aria-controls="mainTabs">
+          <span id="mobileMenuCurrentIcon" class="mobile-menu-current-icon" aria-hidden="true">📦</span>
+          <span class="mobile-menu-current-copy"><small>현재 공간</small><strong id="mobileMenuCurrentLabel">수장고</strong></span>
+          <span class="mobile-menu-toggle-hint">메뉴 열기</span>
+          <span class="mobile-menu-chevron" aria-hidden="true">⌄</span>
+        </button>
+
+        <nav id="mainTabs" class="main-tabs" aria-label="주요 공간">
+          <button class="tab-button is-active" data-view="storage" title="수장고는 작품을 안전하게 보관하는 방이에요."><span>📦</span>수장고</button>
+          <button class="tab-button" data-view="lab" title="복원실은 손상된 작품을 조사하고 고치는 방이에요."><span>🧤</span>복원실</button>
+          <button class="tab-button" data-view="gallery"><span>🏛️</span>전시관</button>
+          <button class="tab-button" data-view="story"><span>📖</span>스토리</button>
+          <button class="tab-button" data-view="records" title="기록실에서 지금까지 고친 작품을 다시 볼 수 있어요."><span>📚</span>기록실</button>
+          <button class="tab-button" data-view="practice" title="보존은 작품이 더 망가지지 않도록 지키는 일이에요."><span>🎓</span>보존 연습</button>
+        </nav>
+      </div>
+
+      <div class="content-frame">
+        <section id="storageView" class="view is-active" data-view-panel="storage">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">COLLECTION STORAGE</p>
+              <h2>오늘 복원할 작품을 골라요</h2>
+              <p>재료와 손상 상태를 살펴본 뒤 복원실로 옮기세요.</p>
+            </div>
+            <div class="progress-badge"><span id="restoredCount">0</span>/<span id="totalCount">0</span> 복원</div>
+          </div>
+          <div class="collection-toolbar" aria-label="미술품 목록 검색과 필터">
+            <label class="collection-search">
+              <span aria-hidden="true">🔎</span>
+              <input id="artworkSearch" type="search" placeholder="작품명·재료 검색" autocomplete="off" />
+            </label>
+            <select id="materialFilter" aria-label="재료별 보기">
+              <option value="all">모든 재료</option>
+            </select>
+            <select id="statusFilter" aria-label="복원 상태별 보기">
+              <option value="all">모든 상태</option>
+              <option value="available">복원 가능</option>
+              <option value="restored">복원 완료</option>
+              <option value="locked">잠김</option>
+            </select>
+            <span id="collectionSummary" class="collection-summary">200개 작품</span>
+          </div>
+          <div id="artworkGrid" class="artwork-grid"></div>
+          <button id="loadMoreArtworks" class="button button-soft collection-more is-hidden">작품 더 보기</button>
+        </section>
+
+        <section id="labView" class="view" data-view-panel="lab">
+          <div class="lab-empty" id="labEmpty">
+            <div class="empty-icon">🧤</div>
+            <h2>복원할 작품을 수장고에서 선택하세요</h2>
+            <p>먼저 살펴보고 시험한 뒤, 꼭 필요한 만큼만 손대는 것이 좋은 복원의 시작이에요.</p>
+            <button class="button button-primary" data-go-view="storage">수장고로 가기</button>
+          </div>
+
+          <div id="labWorkspace" class="lab-workspace is-hidden">
+            <div class="lab-header">
+              <div>
+                <p class="eyebrow" id="labMaterial">MATERIAL</p>
+                <h2 id="labTitle">작품명</h2>
+                <p id="labSubtitle">손상 상태</p>
+              </div>
+              <button id="returnToStorage" class="button button-ghost">작업 보류</button>
+            </div>
+
+            <div class="workflow-strip" aria-label="복원 기본 절차">
+              <span class="workflow-item is-active">1 조사</span>
+              <span class="workflow-arrow">›</span>
+              <span class="workflow-item">2 시험</span>
+              <span class="workflow-arrow">›</span>
+              <span class="workflow-item">3 손상 멈추기</span>
+              <span class="workflow-arrow">›</span>
+              <span class="workflow-item">4 복원</span>
+              <span class="workflow-arrow">›</span>
+              <span class="workflow-item">5 기록</span>
+            </div>
+
+            <div class="lab-layout">
+              <div class="art-stage-card">
+                <div class="stage-topline">
+                  <span id="stepCounter">1 / 4 단계</span>
+                  <span id="labTimer" class="lab-timer" aria-label="복원 작업 시간">복원 작업 시간 · 00:00.0</span>
+                  <span id="labUpgradeBadge" class="lab-upgrade-badge is-hidden">🌡️ 손상 예방 설비 · 위험 -35%</span>
+                  <div id="streakHud" class="streak-hud" role="status" aria-live="polite" aria-label="현재 연속 성공 0단계">
+                    <span>✨ 연속 성공</span>
+                    <strong><b id="streakValue">0</b>단계</strong>
+                    <small id="streakBest">최고 0</small>
+                  </div>
+                  <div class="risk-meter" aria-label="작품 위험도">
+                    <span>위험도</span>
+                    <div class="risk-track"><i id="riskFill"></i></div>
+                    <strong id="riskValue">0%</strong>
+                  </div>
+                </div>
+                <div id="artStage" class="art-stage" role="application" aria-label="미술품 복원 작업 영역"></div>
+                <div class="stage-caption">
+                  <div>
+                    <strong id="stepName">손상 조사</strong>
+                    <span id="stepInstruction">빛나는 손상 지점을 찾아주세요.</span>
+                  </div>
+                  <div id="nearMissFeedback" class="near-miss-feedback is-hidden" role="status" aria-live="polite">
+                    <div class="near-miss-heading">
+                      <strong id="nearMissTitle">안전 범위와 결과 비교</strong>
+                      <span id="nearMissPercent">목표에 가까움 0%</span>
+                    </div>
+                    <div id="nearMissComparison" class="near-miss-comparison" aria-hidden="true">
+                      <span class="near-miss-target"></span>
+                      <i class="near-miss-actual"></i>
+                    </div>
+                    <div class="near-miss-values">
+                      <span id="nearMissTarget">안전 범위 0~0</span>
+                      <span id="nearMissActual">내 결과 0</span>
+                    </div>
+                  </div>
+                  <div id="difficultyFiveNotice" class="difficulty-five-notice is-hidden" role="status">
+                    <span aria-hidden="true">✦</span>
+                    <p><strong>숙련 단계 안내</strong> 초록 범위 없이 재료의 색이 또렷해지는지, 빛나거나 거칠어지는지 보고 판단하세요.</p>
+                    <button id="difficultyFiveNoticeClose" type="button" aria-label="숙련 단계 안내 닫기">×</button>
+                  </div>
+                  <button id="restartStepButton" type="button" class="button button-soft restart-step-button">↻ 현재 단계 다시하기</button>
+                </div>
+                <div class="minigame-explainer" aria-live="polite">
+                  <div class="minigame-explainer-title">
+                    <span>배우는 복원 용어</span>
+                    <strong id="minigameFormalName">사광 손상 조사</strong>
+                    <em id="minigameMaterialBadge">도자기 맞춤 안내</em>
+                  </div>
+                  <div class="minigame-explainer-row is-easy">
+                    <span>💬 쉽게 말하면</span>
+                    <p id="minigameEasyText">빛의 방향을 바꾸며 숨어 있는 손상을 찾는 일이에요.</p>
+                  </div>
+                  <div class="minigame-explainer-row is-impact">
+                    <span>🖼️ 작품에 좋은 점</span>
+                    <p id="minigameImpactText">약한 곳을 먼저 찾아 다음 작업에서 더 손상되는 일을 막아요.</p>
+                  </div>
+                </div>
+              </div>
+
+              <aside class="tool-panel">
+                <div class="panel-card lab-lore-card">
+                  <div class="panel-title-row">
+                    <p class="panel-label" data-assistant-template="{name}의 작품 안내">윤슬의 작품 안내</p>
+                    <button id="labArtworkInfoButton" class="text-button">자세히</button>
+                  </div>
+                  <strong id="labArtworkEra">시대 정보</strong>
+                  <span id="labArtworkArtist">작가 정보</span>
+                  <p id="labArtworkStory">작품 이야기를 준비하고 있습니다.</p>
+                </div>
+
+                <div class="panel-card diagnosis-card">
+                  <p class="panel-label">상태 기록</p>
+                  <p id="diagnosisText">작품 상태를 확인하는 중입니다.</p>
+                </div>
+
+                <div id="toolSelectionCard" class="panel-card tool-selection-card">
+                  <div class="panel-title-row">
+                    <p class="panel-label">도구 선택</p>
+                    <span id="toolHint" class="hint-pill">알맞은 도구 1개</span>
+                  </div>
+                  <div class="mobile-tool-brief" aria-label="현재 작업 단서">
+                    <span>이번 작업</span>
+                    <strong id="mobileToolBriefText">작업 설명을 보고 알맞은 도구를 골라보세요.</strong>
+                  </div>
+                  <div id="toolGrid" class="tool-grid"></div>
+                </div>
+
+                <div class="panel-card mini-help">
+                  <p class="panel-label">작업 방법</p>
+                  <ol>
+                    <li>설명에 맞는 도구를 고릅니다.</li>
+                    <li>한 작품에서 4~5개의 작업을 차례로 진행합니다.</li>
+                    <li>알맞지 않은 도구를 고르면 작품 위험도가 올라갑니다.</li>
+                  </ol>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section id="galleryView" class="view" data-view-panel="gallery">
+          <div class="section-heading gallery-heading">
+            <div>
+              <p class="eyebrow">YOUR MUSEUM</p>
+              <h2>복원한 작품으로 전시를 꾸며요</h2>
+              <p>오늘 개관을 누르면 오늘 번 코인을 받고 다음 날로 넘어가요. 새로 복원한 작품이 있어야 관람객의 관심이 다시 높아집니다.</p>
+            </div>
+            <button id="openMuseumButton" class="button button-primary">오늘 개관 · 수입 받기</button>
+          </div>
+
+          <div class="museum-dashboard">
+            <div class="gallery-scene-card">
+              <div id="galleryDioramaViewport" class="gallery-diorama-viewport">
+                <div id="galleryDiorama" class="gallery-diorama">
+                  <div class="gallery-wall">
+                    <div class="ceiling-light light-left"></div>
+                    <div class="ceiling-light light-right"></div>
+                    <div id="gallerySlots" class="gallery-slots"></div>
+                  </div>
+                  <div class="gallery-floor"></div>
+                  <div id="galleryFacilityLayer" class="gallery-facility-layer"></div>
+                  <div id="visitorLayer" class="visitor-layer" aria-label="전시를 관람하는 관람객"></div>
+                </div>
+              </div>
+              <section class="gallery-annex" aria-labelledby="galleryAnnexTitle">
+                <div class="gallery-annex-heading">
+                  <div>
+                    <p>NEW MUSEUM WING</p>
+                    <h3 id="galleryAnnexTitle">미술관 편의 시설</h3>
+                  </div>
+                  <span id="galleryAnnexStatus">완성된 시설을 눌러 오늘의 운영 프로그램을 준비하세요</span>
+                </div>
+                <div id="galleryAnnexLayer" class="gallery-annex-grid"></div>
+              </section>
+            </div>
+
+            <aside class="management-panel">
+              <div class="panel-card stats-card">
+                <p class="panel-label">오늘의 예상</p>
+                <div class="stat-row"><span>관람객</span><strong id="visitorEstimate">0명</strong></div>
+                <div class="stat-row stat-row-income"><span>오늘 예상 수입<small>개관하면 보유 코인에 더해져요</small></span><strong id="incomeEstimate">+0🪙</strong></div>
+                <div class="stat-row"><span>전시 매력도</span><strong id="appealValue">0</strong></div>
+                <div class="stat-row"><span>관람 관심도</span><strong id="freshnessValue">신작 필요</strong></div>
+              </div>
+
+              <div class="panel-card story-progress-card">
+                <div class="story-progress-head">
+                  <p class="panel-label">미술관의 비밀</p>
+                  <strong id="storyProgressText">0 / 100</strong>
+                </div>
+                <div class="story-progress-track" aria-hidden="true"><span id="storyProgressFill"></span></div>
+                <p id="storyNextText">매력도 100이 되면 다음 이야기가 열립니다.</p>
+              </div>
+
+              <div class="panel-card upgrade-panel-card">
+                <button id="mobileUpgradeToggle" class="mobile-upgrade-toggle" type="button" aria-expanded="false" aria-controls="mobileUpgradeContent">
+                  <span class="mobile-upgrade-icon" aria-hidden="true">🛠️</span>
+                  <span class="mobile-upgrade-copy"><small>전시관 관리</small><strong>시설을 꾸미고 가꾸기</strong></span>
+                  <span class="mobile-upgrade-toggle-hint">목록 열기</span>
+                  <span class="mobile-upgrade-chevron" aria-hidden="true">⌄</span>
+                </button>
+                <p class="panel-label upgrade-panel-label">시설을 꾸미고 가꾸기</p>
+                <div id="mobileUpgradeContent" class="mobile-upgrade-content">
+                  <div id="upgradeList" class="upgrade-list"></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="storyView" class="view" data-view-panel="story">
+          <div class="section-heading story-heading">
+            <div>
+              <p class="eyebrow">MUSEUM STORY ARCHIVE</p>
+              <h2>관장님의 이야기 기록</h2>
+              <p>처음 이야기부터 마지막 이야기까지, 지금까지 열린 기록을 언제든 다시 확인하세요.</p>
+            </div>
+            <div id="storyArchiveProgress" class="progress-badge">매력도 0 · 이야기 0/15</div>
+          </div>
+
+          <div class="story-dashboard">
+            <section class="story-archive-card">
+              <div class="story-archive-hero">
+                <span aria-hidden="true">🗝️</span>
+                <div>
+                  <p class="panel-label">다음 기록</p>
+                  <h3 id="storyArchiveNext">봉인된 관장실의 편지</h3>
+                  <p id="storyArchiveHint">전시 매력도를 올리면 다음 기록이 열립니다.</p>
+                </div>
+              </div>
+              <div id="storyChapterList" class="story-chapter-list"></div>
+            </section>
+
+            <aside class="story-side-panel">
+              <section class="panel-card bgm-control-card">
+                <p class="panel-label">배경음악 확인</p>
+                <div class="bgm-now">
+                  <span aria-hidden="true">🎼</span>
+                  <div><strong id="bgmTrackTitle">별빛 수장고</strong><small id="bgmStatus">재생 준비</small></div>
+                </div>
+                <label for="bgmVolume">BGM 음량 <strong id="bgmVolumeValue">70%</strong></label>
+                <input id="bgmVolume" type="range" min="0" max="100" value="70" />
+                <button id="bgmTestButton" class="button button-primary">BGM 다시 시작 + 확인음</button>
+                <small>메뉴마다 어울리는 배경음악이 재생됩니다. 소리가 나지 않으면 위 버튼을 한 번 눌러 확인하세요.</small>
+              </section>
+
+              <section class="panel-card story-guide-card">
+                <p class="panel-label">이야기 진행 규칙</p>
+                <ul>
+                  <li>본편은 전시 매력도 100마다 새 이야기가 열립니다.</li>
+                  <li>매력도 1,000에서 중요한 마지막 이야기가 열립니다.</li>
+                  <li>마지막 이야기 뒤에는 매력도 300마다 후일담이 열리며, 매력도 2,500에서 5편을 모두 확인할 수 있습니다.</li>
+                </ul>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section id="recordsView" class="view" data-view-panel="records">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">CONSERVATION LOG</p>
+              <h2>복원 처리 기록</h2>
+              <p>작품을 고치기 전과 후에 무엇을 보고 어떤 도구를 썼는지 남깁니다.</p>
+            </div>
+            <div class="save-actions">
+              <button id="submitRankingButton" class="button button-primary">🏆 현재 기록 제출</button>
+              <a id="viewRankingButton" class="button button-soft ranking-page-link" href="#" target="_blank" rel="noopener noreferrer">전체 랭킹 확인</a>
+              <button id="exportSaveButton" class="button button-soft">저장 파일 받기</button>
+              <button id="importSaveButton" class="button button-ghost">저장 파일 불러오기</button>
+              <button id="resetButton" class="button button-danger-soft">저장 초기화</button>
+              <input id="importSaveInput" class="visually-hidden" type="file" accept="application/json,.json" />
+              <small>랭킹에는 현재 저장 기록에서 공개해도 되는 성과만 보냅니다.<br />전체 저장 파일과 개인 설정은 보내지 않습니다.</small>
+            </div>
+          </div>
+          <section class="ranking-submit-card" aria-labelledby="rankingSubmitTitle">
+            <div class="ranking-submit-icon" aria-hidden="true">🏆</div>
+            <div class="ranking-submit-copy">
+              <p class="eyebrow">DIRECTOR LEADERBOARD</p>
+              <h3 id="rankingSubmitTitle">관장 랭킹</h3>
+              <p>복원·운영 성과를 합산해 최고 기록 하나만 올립니다.</p>
+              <div id="rankingSummary" class="ranking-summary" aria-live="polite"></div>
+            </div>
+            <div class="ranking-connection">
+              <span id="rankingConnectionBadge" class="ranking-connection-badge">연결 확인 중</span>
+              <small id="rankingStatus" role="status">랭킹 제출 준비 상태를 확인하고 있습니다.</small>
+            </div>
+          </section>
+          <div id="recordList" class="record-list"></div>
+        </section>
+
+        <section id="practiceView" class="view" data-view-panel="practice">
+          <div class="section-heading practice-heading">
+            <div>
+              <p class="eyebrow">CONSERVATION PRACTICE</p>
+              <h2 data-assistant-template="{name}의 복원 연습실">윤슬의 복원 연습실</h2>
+              <p id="practiceCountDescription">복원 기술과 난이도 2~5를 골라 자유롭게 연습하세요. 재료비·보상·실제 작품 기록에는 영향을 주지 않습니다.</p>
+            </div>
+            <div id="practiceSummary" class="progress-badge">최고 기록 0 / 0</div>
+          </div>
+          <div id="practiceMenu" class="practice-menu">
+            <div id="practiceResult" class="practice-result is-hidden" role="status"></div>
+            <div id="practiceList" class="practice-list"></div>
+          </div>
+          <div id="practiceArenaHost" class="practice-arena-host"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <section id="tutorialGuide" class="tutorial-guide is-hidden" role="status" aria-live="polite" aria-labelledby="tutorialTitle">
+    <button id="tutorialMobileToggle" class="tutorial-mobile-toggle" type="button" aria-expanded="false" aria-controls="tutorialGuideCard">
+      <img src="assets/assistant-yoonseul.png" alt="비서 윤슬의 안내" data-assistant-image />
+      <span class="tutorial-mobile-copy"><strong data-assistant-template="{name} 안내">윤슬 안내</strong><small>눌러서 보기</small></span>
+      <span id="tutorialMobileProgress" class="tutorial-mobile-progress">1 / 10</span>
+    </button>
+    <div id="tutorialGuideCard" class="tutorial-guide-card">
+      <img src="assets/assistant-yoonseul.png" alt="비서 윤슬" data-assistant-image />
+      <div class="tutorial-guide-copy">
+        <div class="tutorial-guide-topline">
+          <span data-assistant-template="{name}의 첫 운영 안내">윤슬의 첫 운영 안내</span>
+          <strong id="tutorialProgress">1 / 10</strong>
+        </div>
+        <h2 id="tutorialTitle">첫 작품부터 함께 해 볼게요</h2>
+        <p id="tutorialMessage">화면에서 빛나는 곳을 따라가면 첫 운영을 끝까지 익힐 수 있어요.</p>
+        <div class="tutorial-tip"><span aria-hidden="true">💡</span><span id="tutorialTip">작품을 고르기 전에 이야기를 먼저 확인해 보세요.</span></div>
+        <div class="tutorial-guide-actions">
+          <button id="tutorialSkipButton" type="button" class="button button-ghost">처음 안내 건너뛰기</button>
+          <button id="tutorialFocusButton" type="button" class="button button-primary">강조 위치 보기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="tutorialDimmer" class="tutorial-dimmer is-hidden" aria-hidden="true">
+    <i data-tutorial-dim="top"></i>
+    <i data-tutorial-dim="left"></i>
+    <i data-tutorial-dim="right"></i>
+    <i data-tutorial-dim="bottom"></i>
+  </div>
+  <div id="tutorialSpotlight" class="tutorial-spotlight is-hidden" aria-hidden="true"></div>
+
+  <div id="assistantGreetingBackdrop" class="assistant-greeting-backdrop is-hidden" aria-hidden="true">
+    <section id="assistantGreetingModal" class="assistant-greeting-modal" role="dialog" aria-modal="true" aria-labelledby="assistantGreetingTitle">
+      <button id="assistantGreetingCloseButton" class="assistant-close assistant-greeting-close" type="button" aria-label="오늘의 인사 닫기">×</button>
+      <img class="assistant-greeting-portrait" src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+      <div class="assistant-greeting-copy">
+        <p class="eyebrow">TODAY'S GREETING</p>
+        <h2 id="assistantGreetingTitle" data-assistant-template="비서 {name}">비서 윤슬</h2>
+        <section class="assistant-daily-greeting" aria-labelledby="assistantDailyLabel">
+          <div class="assistant-daily-heading">
+            <span aria-hidden="true">☀️</span>
+            <strong id="assistantDailyLabel">1일차 · 오늘의 인사</strong>
+          </div>
+          <p id="assistantDailyMessage">오늘도 미술관의 문을 함께 열어 볼까요?</p>
+        </section>
+        <div class="assistant-greeting-actions">
+          <button id="assistantDailyReplyButton" type="button" class="button button-primary">오늘도 잘 부탁해</button>
+          <button id="assistantGreetingSettingsButton" type="button" class="button button-ghost">비서실 설정 열기</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside id="assistantPanel" class="assistant-panel is-hidden" aria-hidden="true" aria-labelledby="assistantPanelTitle">
+    <div class="assistant-panel-head">
+      <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+      <div>
+        <p>DIRECTOR'S OFFICE</p>
+        <h2 id="assistantPanelTitle" data-assistant-template="비서 {name}">비서 윤슬</h2>
+      </div>
+      <button id="assistantCloseButton" class="assistant-close" aria-label="비서 안내 닫기">×</button>
+    </div>
+    <div class="assistant-dialogue">
+      <strong class="assistant-dialogue-label">오늘의 운영 메모</strong>
+      <span id="assistantGreeting">관장님,</span>
+      <p id="assistantMessage">오늘의 업무를 정리해 드릴게요.</p>
+    </div>
+    <div id="assistantBriefing" class="assistant-briefing"></div>
+    <section class="assistant-switcher" aria-labelledby="assistantSwitcherTitle">
+      <div class="assistant-profile-title"><span>🤝</span><strong id="assistantSwitcherTitle">함께할 비서 선택</strong></div>
+      <div class="assistant-choice-list is-compact" role="group" aria-label="함께할 비서 선택">
+        <button type="button" class="assistant-choice" data-assistant-choice="yoonseul" aria-pressed="true">
+          <img src="assets/assistant-yoonseul.png" alt="여자 비서 윤슬" />
+          <span><strong>윤슬</strong><small>밝고 다정한 안내</small></span>
+          <i>선택됨</i>
+        </button>
+        <button type="button" class="assistant-choice" data-assistant-choice="hangyeol" aria-pressed="false">
+          <img src="assets/assistant-hangyeol.png" alt="남자 비서 한결" />
+          <span><strong>한결</strong><small>차분하고 든든한 안내</small></span>
+          <i>선택</i>
+        </button>
+      </div>
+    </section>
+    <form id="assistantProfileForm" class="assistant-profile-form" novalidate>
+      <div class="assistant-profile-title"><span>🏷️</span><strong>관장실 명패 수정</strong></div>
+      <div class="assistant-profile-fields">
+        <label>관장 이름<input id="assistantDirectorName" maxlength="12" autocomplete="nickname" /></label>
+        <label>미술관 이름<input id="assistantMuseumName" maxlength="20" autocomplete="organization" /></label>
+      </div>
+      <p id="assistantProfileStatus" class="name-edit-status" role="status">욕설, 다른 사람을 괴롭히는 말, 범죄를 부추기는 말, 연락처는 이름으로 쓸 수 없어요.</p>
+      <button type="submit" class="button button-soft">명패 저장</button>
+    </form>
+    <section class="font-size-setting" aria-labelledby="fontSizeSettingTitle">
+      <div><span aria-hidden="true">가</span><strong id="fontSizeSettingTitle">설명 글씨 크기</strong></div>
+      <div class="font-size-buttons" role="group" aria-label="설명 글씨 크기 선택">
+        <button type="button" data-font-size="1" aria-pressed="true">1 기본</button>
+        <button type="button" data-font-size="2" aria-pressed="false">2 더 크게</button>
+        <button type="button" data-font-size="3" aria-pressed="false">3 아주 크게</button>
+      </div>
+    </section>
+    <section class="safety-range-setting" aria-labelledby="safetyRangeSettingTitle">
+      <div>
+        <span aria-hidden="true">◩</span>
+        <span><strong id="safetyRangeSettingTitle">안전 범위 항상 표시</strong><small>숙련 단계에서도 초록 범위를 표시합니다.</small></span>
+      </div>
+      <label class="setting-switch">
+        <input id="alwaysShowSafeZones" type="checkbox" />
+        <span aria-hidden="true"></span>
+      </label>
+    </section>
+    <section class="safety-range-setting puzzle-preview-setting" aria-labelledby="puzzlePreviewSettingTitle">
+      <div>
+        <span aria-hidden="true">🧩</span>
+        <span><strong id="puzzlePreviewSettingTitle">미리보기 시간 늘리기</strong><small>파편의 원래 배치를 항상 5초 동안 보여 줍니다.</small></span>
+      </div>
+      <label class="setting-switch">
+        <input id="extendedPuzzlePreview" type="checkbox" aria-labelledby="puzzlePreviewSettingTitle" />
+        <span aria-hidden="true"></span>
+      </label>
+    </section>
+    <button id="assistantActionButton" class="button button-primary">추천 업무로 이동</button>
+  </aside>
+
+  <div id="modalBackdrop" class="modal-backdrop is-hidden" aria-hidden="true">
+    <section id="resultModal" class="result-modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <div id="resultArt" class="result-art"></div>
+      <p class="eyebrow">RESTORATION COMPLETE</p>
+      <h2 id="resultTitle">복원 완료!</h2>
+      <button id="resultConfirm" class="button button-primary button-large result-primary-action">전시관에 배치</button>
+      <p id="resultSummary" class="result-summary"></p>
+      <div class="result-score-grid">
+        <div><span>정확도</span><strong id="resultAccuracy">100%</strong></div>
+        <div><span>복원 작업 시간</span><strong id="resultTime">00:00</strong></div>
+        <div><span>미술관 평판</span><strong id="resultRep">+0</strong></div>
+        <div><span>지원금</span><strong id="resultCoins">+0</strong></div>
+      </div>
+      <div id="resultAccuracyReward" class="accuracy-reward">
+        <span id="resultGrade">S</span>
+        <div><strong id="resultBonusTitle">실수 없는 복원 보너스</strong><small id="resultBonusText">정확도 보너스 +0🪙</small></div>
+      </div>
+      <div id="resultSpeedReward" class="speed-reward">
+        <span>⏱️</span>
+        <div><strong id="resultSpeedTitle">시간 기록</strong><small id="resultSpeedText">안전하면서 빠르게 끝내면 시간 보너스 점수를 받아요.</small></div>
+      </div>
+      <div class="ethics-note"><span>💡</span><p id="resultEthics"></p></div>
+    </section>
+
+    <section id="dayModal" class="day-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="dayModalTitle">
+      <div class="day-icon">🎟️</div>
+      <p class="eyebrow">MUSEUM DAY REPORT</p>
+      <h2 id="dayModalTitle">오늘의 운영 보고</h2>
+      <div class="day-report-grid">
+        <div><span>방문객</span><strong id="dayVisitors">0명</strong></div>
+        <div><span>수입</span><strong id="dayIncome">0</strong></div>
+        <div><span>미술관 평판</span><strong id="dayRep">+0</strong></div>
+      </div>
+      <p id="dayEventText" class="day-event-text"></p>
+      <button id="dayConfirm" class="button button-primary button-large">다음 날 준비</button>
+    </section>
+
+    <section id="storyModal" class="story-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
+      <div class="story-visual">
+        <img id="storyIllustration" class="story-illustration" src="assets/story/story-000.webp" alt="황동 열쇠와 봉인된 편지가 놓인 관장실 책상" />
+      </div>
+      <div class="story-modal-copy">
+        <p id="storyChapterLabel" class="eyebrow">START STORY</p>
+        <div id="storyAppealBadge" class="story-appeal-badge">관장 취임일</div>
+        <h2 id="storyTitle">봉인된 관장실의 편지</h2>
+        <div id="storyText" class="story-text"></div>
+        <blockquote id="storyQuote"></blockquote>
+        <button id="storyConfirmButton" class="button button-primary button-large" data-assistant-template="{name}과 이야기 계속하기">윤슬과 이야기 계속하기</button>
+      </div>
+    </section>
+
+    <section id="artInfoModal" class="art-info-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="artInfoTitle">
+      <button id="artInfoCloseButton" class="modal-close" aria-label="작품 설명 닫기">×</button>
+      <div id="artInfoVisual" class="art-info-visual"></div>
+      <div class="art-info-copy">
+        <p id="artInfoLabel" class="eyebrow">GAME COLLECTION</p>
+        <h2 id="artInfoTitle">작품명</h2>
+        <div class="art-info-facts">
+          <div><span>시대</span><strong id="artInfoEra"></strong></div>
+          <div><span>작가</span><strong id="artInfoArtist"></strong></div>
+          <div><span>종류</span><strong id="artInfoType"></strong></div>
+          <div><span>어디서 왔나요?</span><strong id="artInfoOrigin"></strong></div>
+        </div>
+        <section><h3>왜 가치가 있나요?</h3><p id="artInfoValue"></p></section>
+        <section class="story-section"><h3>작품에 얽힌 이야기</h3><p id="artInfoStory"></p></section>
+        <p class="fiction-note">※ 이 작품과 인물은 게임을 위해 만든 가상 설정입니다.</p>
+      </div>
+    </section>
+
+    <section id="directorModal" class="director-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="directorModalTitle">
+      <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+      <div class="director-modal-copy">
+        <div id="directorSetupStep" class="director-onboarding-step">
+          <p class="eyebrow">WELCOME, DIRECTOR</p>
+          <h2 id="directorModalTitle">긴급 관장 취임을 부탁드려요</h2>
+          <p>전임 관장 한미라가 남긴 편지에 관장님의 이름이 적혀 있었어요. 문을 닫기까지 30일 남았습니다. 다친 작품의 이야기를 되찾아 미술관을 다시 열어 주세요.</p>
+          <section class="director-assistant-select" aria-labelledby="directorAssistantSelectTitle">
+            <strong id="directorAssistantSelectTitle">함께할 비서를 골라 주세요</strong>
+            <div class="assistant-choice-list" role="group" aria-label="처음 함께할 비서 선택">
+              <button type="button" class="assistant-choice" data-assistant-choice="yoonseul" aria-pressed="true">
+                <img src="assets/assistant-yoonseul.png" alt="여자 비서 윤슬" />
+                <span><strong>윤슬</strong><small>밝고 다정한 안내</small></span>
+                <i>선택됨</i>
+              </button>
+              <button type="button" class="assistant-choice" data-assistant-choice="hangyeol" aria-pressed="false">
+                <img src="assets/assistant-hangyeol.png" alt="남자 비서 한결" />
+                <span><strong>한결</strong><small>차분하고 든든한 안내</small></span>
+                <i>선택</i>
+              </button>
+            </div>
+            <small>비서는 안내 말투와 이야기 속 인물이 달라지며, 게임 보상은 같습니다.</small>
+          </section>
+          <label>관장님 성함<input id="directorNameInput" maxlength="12" value="서리" placeholder="예: 서리" /></label>
+          <label>미술관 이름<input id="museumNameInput" maxlength="20" value="반짝 복원 미술관" /></label>
+          <p id="directorNameStatus" class="name-edit-status" role="status">한글·영문·숫자를 쓸 수 있어요. 욕설, 다른 사람을 괴롭히는 말, 연락처는 쓸 수 없어요.</p>
+          <button id="directorConfirmButton" class="button button-primary button-large">이 비서와 함께 시작</button>
+        </div>
+        <div id="directorTutorialStep" class="director-onboarding-step is-hidden">
+          <p class="eyebrow">YOUR MUSEUM ASSISTANT</p>
+          <h2 id="directorTutorialTitle" data-assistant-template="{name}입니다. 만나서 반가워요!">윤슬입니다. 만나서 반가워요!</h2>
+          <div class="director-tutorial-greeting">
+            <img src="assets/assistant-yoonseul.png" alt="관장실 비서 윤슬" data-assistant-image />
+            <p>관장님께서는 미술관 운영이 처음이라고 들었습니다. 작품을 고르고 복원해 전시한 뒤 하루를 운영하는 방법까지 제가 차근차근 설명해 드릴까요?</p>
+          </div>
+          <div class="director-tutorial-actions">
+            <button id="directorTutorialStartButton" class="button button-primary button-large">네, 처음부터 알려 주세요</button>
+            <button id="directorTutorialSkipButton" class="button button-soft button-large">아니요, 바로 시작할게요</button>
+          </div>
+          <small>처음 안내를 건너뛰어도 게임은 그대로 진행할 수 있습니다.</small>
+        </div>
+      </div>
+    </section>
+
+    <section id="rankingPreviewModal" class="ranking-preview-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="rankingPreviewTitle">
+      <button id="rankingPreviewCloseButton" class="modal-close" aria-label="랭킹 제출 확인 닫기">×</button>
+      <div class="ranking-preview-crown" aria-hidden="true">🏆</div>
+      <p id="rankingPreviewLabel" class="eyebrow">RANKING SUBMISSION</p>
+      <h2 id="rankingPreviewTitle">랭킹 제출 기록 준비 완료</h2>
+      <p id="rankingPreviewMessage" class="ranking-preview-message"></p>
+      <div class="ranking-preview-grid">
+        <div><span>복원 작품</span><strong id="rankingPreviewRestored">0점</strong></div>
+        <div><span>평균 정확도</span><strong id="rankingPreviewAccuracy">0%</strong></div>
+        <div><span>평균 위험도</span><strong id="rankingPreviewRisk">0%</strong></div>
+        <div><span>누적 개관 수입</span><strong id="rankingPreviewIncome">0코인</strong></div>
+        <div><span>누적 관람객</span><strong id="rankingPreviewVisitors">0명</strong></div>
+        <div><span>이야기 완주</span><strong id="rankingPreviewStory">미완주</strong></div>
+        <div><span>예상 관장 점수</span><strong id="rankingPreviewScore">0점</strong></div>
+      </div>
+      <p class="ranking-preview-privacy">공개하는 내용: 관장 이름·미술관 이름·복원 성과·누적 개관 수입·누적 관람객·이야기 완주일 · 보내지 않는 내용: 전체 저장 파일·현재 보유 코인·개인 설정</p>
+      <button id="rankingPreviewConfirmButton" class="button button-primary button-large">확인</button>
+    </section>
+  </div>
+
+  <button id="scrollTopButton" class="scroll-top-button" type="button" aria-label="화면 맨 위로 이동" title="맨 위로 이동" disabled>
+    <span class="scroll-top-arrow" aria-hidden="true">↑</span>
+    <span class="scroll-top-label" aria-hidden="true">맨 위</span>
+  </button>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <audio id="bgmAudio" src="assets/museum-bgm.wav" preload="auto" loop></audio>
+
+  <script src="js/artworks-data.js?v=20260804-particles"></script>
+  <script src="js/ranking-config.js?v=20260805-ranking-v1"></script>
+  <script src="js/game.js?v=20260806-assistant-greeting-v4"></script>
+</body>
+</html>
