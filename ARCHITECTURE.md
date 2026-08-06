@@ -31,6 +31,8 @@
 
 전시관은 조작 UI와 장면의 반응형 전략을 분리한다. `#galleryDioramaViewport` 안의 `#galleryDiorama`만 680px 이하에서 760×670 기준 장면 전체를 폭에 맞춰 축소한다. 따라서 작품 수를 줄이거나 페이지 가로 스크롤을 만들지 않는다. 편의동(`.gallery-annex`)과 운영 패널은 축소하지 않고 정상 글자·터치 크기로 배치한다. 같은 680px 이하에서 `.management-panel`을 `display: contents`로 풀어 `.upgrade-panel-card`를 장면보다 먼저 배치하고, `#mobileUpgradeToggle`로 시설 목록을 접고 편다. 펼친 목록은 제한된 높이 안에서 독립적으로 스크롤하며, 화면을 벗어나거나 넓은 화면으로 전환하면 `setMobileUpgradeOpen()`이 접힌 상태로 정리한다. 장면 배율은 `updateGalleryDioramaScale()`이 `ResizeObserver`와 화면 전환 뒤에 다시 계산한다.
 
+복원실은 900px 이하에서 `.tool-panel`을 `display: contents`로 풀고 `#toolSelectionCard`만 작업 화면보다 먼저 배치한다. 도구 네 개는 한 줄 빠른 도구함으로 표시하며, 작품 안내·상태 기록·작업 방법은 기존처럼 작업 화면 뒤에 둔다. `renderCurrentStep()`의 `revealMobileToolSelection()`은 새 단계와 다시하기 때 이 빠른 도구함을 화면 가운데로 가져온다. 데스크톱 2열 구조와 실제 도구 선택·판정 경로는 바꾸지 않는다.
+
 ## 선택 가능한 비서
 
 `js/game.js`의 `ASSISTANTS`는 여자 비서 `yoonseul`과 남자 비서 `hangyeol`의 이름·초상화·첫 인사를 정의한다. `state.assistantId`는 선택적 세이브 필드이며 기본값은 `yoonseul`이다. `normalizeState()`는 이 필드가 없는 구형 세이브와 알 수 없는 값을 모두 윤슬로 보완한다.

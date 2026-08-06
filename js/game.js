@@ -1050,6 +1050,7 @@
     labArtworkEra: $("#labArtworkEra"),
     labArtworkArtist: $("#labArtworkArtist"),
     labArtworkStory: $("#labArtworkStory"),
+    toolSelectionCard: $("#toolSelectionCard"),
     toolGrid: $("#toolGrid"),
     toolHint: $("#toolHint"),
     returnToStorage: $("#returnToStorage"),
@@ -1255,6 +1256,18 @@
 
   function isMobileGalleryLayout() {
     return window.matchMedia("(max-width: 680px)").matches;
+  }
+
+  function isStackedLabLayout() {
+    return window.matchMedia("(max-width: 900px)").matches;
+  }
+
+  function revealMobileToolSelection() {
+    if (!isStackedLabLayout() || !el.toolSelectionCard || el.labWorkspace.classList.contains("is-hidden")) return;
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    window.requestAnimationFrame(() => {
+      el.toolSelectionCard.scrollIntoView({ behavior, block: "center" });
+    });
   }
 
   function setMobileMenuOpen(open) {
@@ -2473,6 +2486,7 @@
       button.addEventListener("click", () => selectTool(button.dataset.tool, current.tool, button));
     });
     bindMechanicControls();
+    revealMobileToolSelection();
     if (!practiceMode && isFirstRotationTutorialActive() && state.tutorialStep === "lab") {
       scheduleTutorialGuide(true);
     }
