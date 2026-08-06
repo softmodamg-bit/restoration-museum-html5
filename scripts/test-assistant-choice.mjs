@@ -24,6 +24,7 @@ assert.match(game, /function completeDirectorOnboarding\(withTutorial\)/);
 assert.match(game, /state\.tutorialComplete = !withTutorial/);
 assert.match(game, /state\.tutorialStep = withTutorial \? "story" : "complete"/);
 assert.match(game, /function storyIllustrationFor\(threshold\)/);
+assert.match(game, /story-\$\{String\(safeThreshold\)\.padStart\(3, "0"\)\}\.webp\?v=20260806-story-scenes-v1/, "스토리 삽화는 배포 캐시를 피하는 버전 주소를 사용해야 합니다.");
 assert.match(game, /el\.storyIllustration\.src = illustration\.src/);
 assert.match(game, /anchor\.download = `\$\{localSaveTimestamp\(exportedAt\)\}_\$\{directorName\}_\$\{museumName\}\.json`/);
 assert.equal(dailyGreetings.length, 45, "하루 인사는 정확히 45종이어야 합니다.");
@@ -45,6 +46,8 @@ assert.match(index, /class="story-assistant-badge"[\s\S]*?data-assistant-image/)
 assert.match(index, /id="directorTutorialStartButton"[\s\S]*?네, 처음부터 알려 주세요/);
 assert.match(index, /id="directorTutorialSkipButton"[\s\S]*?아니요, 바로 시작할게요/);
 assert.match(index, /class="assistant-daily-greeting"[\s\S]*?id="assistantDailyMessage"/);
+assert.match(index, /styles\.css\?v=20260806-assistant-story-v3/);
+assert.match(index, /js\/game\.js\?v=20260806-assistant-story-v3/);
 assert.match(game, /el\.directorModal\.setAttribute\("aria-labelledby", "directorTutorialTitle"\)/);
 assert.match(styles, /\.assistant-choice\[aria-pressed="true"\]/);
 assert.match(styles, /@media \(max-width: 480px\)[\s\S]*?\.assistant-choice-list/);

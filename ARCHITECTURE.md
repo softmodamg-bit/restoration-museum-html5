@@ -47,7 +47,7 @@
 - 스토리 원고는 기존 윤슬 기준 원문을 유지한다. 화면에 표시할 때만 `assistantCopy()`가 현재 비서 이름으로 바꾸므로 저장된 이야기 진행과 원고 데이터는 달라지지 않는다.
 - 비서 선택은 안내 인물·초상화·첫 인사만 바꾸며 보상, 난이도, 작품 배정과 랭킹 점수에는 영향을 주지 않는다.
 - 외부 메신저와 SNS의 링크 미리보기는 저장 선택과 무관한 고정 홍보 이미지다. `index.html`의 Open Graph·Twitter·`image_src` 메타 태그가 캐시 버전이 붙은 한결 전용 절대 Pages URL을 가리킨다. Open Graph를 무시하고 본문의 첫 `<img>`를 고르는 서비스에 대비해 화면 밖의 `.link-preview-fallback`도 같은 한결 이미지를 먼저 제공한다.
-- 스토리 모달의 `#storyIllustration`은 `storyIllustrationFor(threshold)`가 장마다 다른 WebP 삽화와 대체 문구로 바꾼다. 삽화는 비서 성별과 무관한 사건·장소 중심이며, `.story-assistant-badge` 안의 `[data-assistant-image]`가 현재 비서 얼굴을 모든 장에서 함께 보여 준다.
+- 스토리 모달의 `#storyIllustration`은 `storyIllustrationFor(threshold)`가 장마다 다른 WebP 삽화와 대체 문구로 바꾼다. 삽화는 비서 성별과 무관한 사건·장소 중심이며, `.story-assistant-badge` 안의 `[data-assistant-image]`가 현재 비서 얼굴을 모든 장에서 함께 보여 준다. `index.html`의 CSS·게임 스크립트와 동적 스토리 삽화 URL에는 배포 버전 쿼리를 붙여 GitHub Pages 갱신 뒤 이전 HTML·CSS·JS가 섞여 보이지 않게 한다.
 - 상단의 비서 버튼은 기존 `#assistantPanel`을 연다. 패널의 `.assistant-daily-greeting`은 `DAILY_ASSISTANT_GREETINGS` 45종 중 `state.day`에 해당하는 한 문장을 보여 주며, 46일차부터 같은 순서로 다시 순환한다. 문장은 윤슬·한결 공용이고 `assistantDailyGreetingFor()`가 날짜만으로 결정하므로 새 세이브 필드를 만들지 않는다. 기존 운영 조언·비서 선택·명패·접근성 설정은 같은 패널 아래에 유지한다.
 - `scripts/test-assistant-choice.mjs`가 두 선택 UI, 서로 다른 하루 인사 45종과 날짜 순환, 첫 튜토리얼 선택, 구형 세이브 기본값, 동적 스토리 치환, 16장 삽화의 WebP 형식·모바일 용량, 반응형 비서 배지, 한결 초상화 규격과 공유 메타·본문 대체 이미지의 일치를 검사한다.
 

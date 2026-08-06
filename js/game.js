@@ -896,7 +896,7 @@
   function storyIllustrationFor(threshold) {
     const safeThreshold = Object.hasOwn(STORY_ILLUSTRATION_ALTS, threshold) ? threshold : 0;
     return {
-      src: `assets/story/story-${String(safeThreshold).padStart(3, "0")}.webp`,
+      src: `assets/story/story-${String(safeThreshold).padStart(3, "0")}.webp?v=20260806-story-scenes-v1`,
       alt: STORY_ILLUSTRATION_ALTS[safeThreshold]
     };
   }
