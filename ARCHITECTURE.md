@@ -26,13 +26,13 @@
 | `scripts/` | 데이터, 시각 다양성, 랭킹 백엔드 등 보조 검증 스크립트 |
 | `docs/` | 게임 기획, 구현 브리프, QA 기록 |
 
-`index.html`의 `.sticky-navigation`은 상단 상태 바(`.topbar`), 좁은 모바일용 메뉴 버튼(`.mobile-menu-toggle`), 메인 메뉴(`.main-tabs`)를 한 묶음으로 고정한다. 스크롤 중에도 같은 묶음이 유지되어야 하므로 이 요소들을 다시 개별 `sticky`로 분리하지 않는다. 480px 이하에서는 현재 공간만 표시하는 버튼으로 메뉴를 접고, 버튼을 누르면 기존 3×2 메뉴가 열린다. 비서 안내와 모달은 이 영역보다 높은 레이어를 사용한다.
+`index.html`의 `.sticky-navigation`은 상단 상태 바(`.topbar`), 좁은 모바일용 메뉴 버튼(`.mobile-menu-toggle`), 메인 메뉴(`.main-tabs`)를 한 묶음으로 고정한다. 스크롤 중에도 같은 묶음이 유지되어야 하므로 이 요소들을 다시 개별 `sticky`로 분리하지 않는다. 820px 이하에서는 현재 공간만 표시하는 버튼으로 메뉴를 접고, 버튼을 누르면 기존 3×2 메뉴가 열린다. 비서 안내와 모달은 이 영역보다 높은 레이어를 사용한다.
 
-첫 운영 안내는 데스크톱과 넓은 화면에서 기존 안내 카드로 표시한다. 480px 이하에서는 `#tutorialMobileToggle`의 원형 선택 비서 프로필로 접고, 사용자가 누를 때만 `#tutorialGuideCard`를 펼친다. 접힌 동안에는 강조 테두리와 어두운 배경도 숨기며, `강조 위치 보기`를 직접 누른 뒤에만 잠시 목표를 강조한다.
+첫 운영 안내는 데스크톱과 넓은 화면에서 기존 안내 카드로 표시한다. 820px 이하에서는 `#tutorialMobileToggle`의 원형 선택 비서 프로필로 접고, 사용자가 누를 때만 `#tutorialGuideCard`를 펼친다. 접힌 동안에는 강조 테두리와 어두운 배경도 숨기며, `강조 위치 보기`를 직접 누른 뒤에만 잠시 목표를 강조한다.
 
 전시관은 조작 UI와 장면의 반응형 전략을 분리한다. `#galleryDioramaViewport` 안의 `#galleryDiorama`만 680px 이하에서 760×670 기준 장면 전체를 폭에 맞춰 축소한다. 따라서 작품 수를 줄이거나 페이지 가로 스크롤을 만들지 않는다. 편의동(`.gallery-annex`)과 운영 패널은 축소하지 않고 정상 글자·터치 크기로 배치한다. 같은 680px 이하에서 `.management-panel`을 `display: contents`로 풀어 `.upgrade-panel-card`를 장면보다 먼저 배치하고, `#mobileUpgradeToggle`로 시설 목록을 접고 편다. 펼친 목록은 제한된 높이 안에서 독립적으로 스크롤하며, 화면을 벗어나거나 넓은 화면으로 전환하면 `setMobileUpgradeOpen()`이 접힌 상태로 정리한다. 장면 배율은 `updateGalleryDioramaScale()`이 `ResizeObserver`와 화면 전환 뒤에 다시 계산한다.
 
-복원실은 900px 이하에서 `.tool-panel`을 `display: contents`로 풀고 `#toolSelectionCard`만 작업 화면보다 먼저 배치한다. 도구 네 개는 한 줄 빠른 도구함으로 표시하며, 작품 안내·상태 기록·작업 방법은 기존처럼 작업 화면 뒤에 둔다. `renderCurrentStep()`의 `revealMobileToolSelection()`은 새 단계와 다시하기 때 이 빠른 도구함을 화면 가운데로 가져온다. 데스크톱 2열 구조와 실제 도구 선택·판정 경로는 바꾸지 않는다.
+복원실은 900px 이하에서 `.tool-panel`을 `display: contents`로 풀고 `#toolSelectionCard`만 작업 화면보다 먼저 배치한다. 820px 이하에서는 작업 영역 전체도 플레이 우선 순서로 바꿔 빠른 도구함 → 실제 미니게임 → 작품 안내·상태 기록·작업 방법 → 작품 제목·전체 작업 순서가 되도록 한다. 새 단계에서는 `revealMobileToolSelection()`이 도구함을 고정 메뉴 아래에 맞추고, 올바른 도구를 고르면 `revealMobileMechanicStage()`가 실제 게임 카드로 자동 이동한다. 680px 이하의 단계 상태창은 단계·시간과 스트릭·위험도를 두 줄에 배치하며, 공간이 많이 필요한 게임은 기존 높이를 유지하고 조사·조절형 게임만 화면 높이에 맞춰 줄인다. 데스크톱 2열 구조와 실제 도구 선택·판정 경로는 바꾸지 않는다.
 
 ## 선택 가능한 비서
 

@@ -1251,7 +1251,7 @@
   }
 
   function isCompactMobileLayout() {
-    return window.matchMedia("(max-width: 480px)").matches;
+    return window.matchMedia("(max-width: 820px)").matches;
   }
 
   function isMobileGalleryLayout() {
@@ -1266,7 +1266,15 @@
     if (!isStackedLabLayout() || !el.toolSelectionCard || el.labWorkspace.classList.contains("is-hidden")) return;
     const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
     window.requestAnimationFrame(() => {
-      el.toolSelectionCard.scrollIntoView({ behavior, block: "center" });
+      el.toolSelectionCard.scrollIntoView({ behavior, block: "start" });
+    });
+  }
+
+  function revealMobileMechanicStage() {
+    if (!isCompactMobileLayout() || !el.artStage || el.labWorkspace.classList.contains("is-hidden")) return;
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    window.requestAnimationFrame(() => {
+      el.artStage.closest(".art-stage-card")?.scrollIntoView({ behavior, block: "start" });
     });
   }
 
@@ -2468,6 +2476,7 @@
       </div>
     `;
     $("#mechanicLayer", el.artStage).dataset.mechanic = currentMechanic;
+    el.artStage.dataset.mechanic = currentMechanic;
     el.artStage.classList.toggle("has-four-choice", currentMechanic === "choice" && session.choiceSampleCount === 4);
     el.artStage.classList.toggle("has-budget", currentMechanic === "budget");
     el.artStage.classList.toggle("has-balance", currentMechanic === "balance");
@@ -3815,6 +3824,7 @@
     const cursor = $("#toolCursor");
     if (cursor) cursor.textContent = TOOLS[toolId].icon;
     activateCurrentMechanic();
+    revealMobileMechanicStage();
     if (!practiceMode && isFirstRotationTutorialActive() && state.tutorialStep === "lab") {
       tutorialLabPhase = "mechanic";
       scheduleTutorialGuide(true);
