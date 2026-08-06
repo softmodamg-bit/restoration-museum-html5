@@ -19,6 +19,8 @@ assert.match(game, /chooseAssistant\(button\.dataset\.assistantChoice, state\.on
 
 assert.equal((index.match(/data-assistant-choice="yoonseul"/g) || []).length, 2, "윤슬은 취임식과 비서실에 한 번씩 있어야 합니다.");
 assert.equal((index.match(/data-assistant-choice="hangyeol"/g) || []).length, 2, "한결은 취임식과 비서실에 한 번씩 있어야 합니다.");
+assert.match(index, /property="og:image" content="https:\/\/softmodamg-bit\.github\.io\/restoration-museum-html5\/assets\/assistant-hangyeol\.png"/, "링크 미리보기는 한결 초상화를 사용해야 합니다.");
+assert.match(index, /name="twitter:image" content="https:\/\/softmodamg-bit\.github\.io\/restoration-museum-html5\/assets\/assistant-hangyeol\.png"/, "소셜 미리보기에도 한결 초상화를 사용해야 합니다.");
 assert.ok((index.match(/data-assistant-image/g) || []).length >= 7, "모든 주요 비서 초상화가 선택값을 따라야 합니다.");
 assert.match(index, /비서는 안내 말투와 이야기 속 인물이 달라지며, 게임 보상은 같습니다/);
 assert.match(styles, /\.assistant-choice\[aria-pressed="true"\]/);

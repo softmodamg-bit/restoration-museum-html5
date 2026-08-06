@@ -39,6 +39,7 @@
 - `updateAssistantIdentity()`가 `[data-assistant-image]`, `[data-assistant-template]`, 선택 버튼의 `aria-pressed`를 한 번에 갱신한다. 새 비서 노출 지점을 만들 때 이미지나 이름을 직접 고정하지 말고 이 속성을 사용한다.
 - 스토리 원고는 기존 윤슬 기준 원문을 유지한다. 화면에 표시할 때만 `assistantCopy()`가 현재 비서 이름으로 바꾸므로 저장된 이야기 진행과 원고 데이터는 달라지지 않는다.
 - 비서 선택은 안내 인물·초상화·첫 인사만 바꾸며 보상, 난이도, 작품 배정과 랭킹 점수에는 영향을 주지 않는다.
+- 외부 메신저와 SNS의 링크 미리보기는 저장 선택과 무관한 고정 홍보 이미지다. `index.html`의 Open Graph·Twitter 메타 태그가 한결 초상화의 절대 Pages URL을 가리킨다.
 - `scripts/test-assistant-choice.mjs`가 두 선택 UI, 구형 세이브 기본값, 동적 스토리 치환, 반응형 카드와 한결 초상화 규격을 검사한다.
 
 ## 시설 업그레이드 1·2단계

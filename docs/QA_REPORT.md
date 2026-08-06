@@ -505,3 +505,4 @@ Python is not installed in this environment, so the browser check used the depen
 - 데스크톱에서 윤슬↔한결 즉시 전환과 새로고침 뒤 선택 유지를 확인했다.
 - 390×844에서 취임 화면과 비서실의 두 선택 카드가 모두 보이고, 페이지 전체 가로 넘침이 없음을 확인했다.
 - `node --check js/game.js`, 전체 `scripts/test-*.mjs`, 한결 초상화 PNG 검사와 비서 선택 전용 정적 검사를 통과했다.
+- 외부 링크 미리보기용 Open Graph·Twitter 이미지를 한결 초상화의 절대 GitHub Pages 주소로 고정하고, 전용 정적 검사에 두 메타 태그 검증을 추가했다.
