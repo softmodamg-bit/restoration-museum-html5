@@ -7,7 +7,7 @@
   <meta name="description" content="밝고 캐주얼한 HTML5 미술품 복원·미술관 운영 게임 프로토타입" />
   <title>반짝! 복원 미술관</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=20260806-title-tips" />
+  <link rel="stylesheet" href="styles.css?v=20260806-mobile-layout-v1" />
 </head>
 <body>
   <div class="background-decor" aria-hidden="true">
@@ -89,7 +89,14 @@
           <button id="soundButton" class="icon-button" aria-label="효과음과 배경음악 끄기" title="효과음과 배경음악 끄기">🎵</button>
         </header>
 
-        <nav class="main-tabs" aria-label="주요 공간">
+        <button id="mobileMenuToggle" class="mobile-menu-toggle" type="button" aria-expanded="false" aria-controls="mainTabs">
+          <span id="mobileMenuCurrentIcon" class="mobile-menu-current-icon" aria-hidden="true">📦</span>
+          <span class="mobile-menu-current-copy"><small>현재 공간</small><strong id="mobileMenuCurrentLabel">수장고</strong></span>
+          <span class="mobile-menu-toggle-hint">메뉴 열기</span>
+          <span class="mobile-menu-chevron" aria-hidden="true">⌄</span>
+        </button>
+
+        <nav id="mainTabs" class="main-tabs" aria-label="주요 공간">
           <button class="tab-button is-active" data-view="storage" title="수장고는 작품을 안전하게 보관하는 방이에요."><span>📦</span>수장고</button>
           <button class="tab-button" data-view="lab" title="복원실은 손상된 작품을 조사하고 고치는 방이에요."><span>🧤</span>복원실</button>
           <button class="tab-button" data-view="gallery"><span>🏛️</span>전시관</button>
@@ -269,14 +276,18 @@
 
           <div class="museum-dashboard">
             <div class="gallery-scene-card">
-              <div class="gallery-wall">
-                <div class="ceiling-light light-left"></div>
-                <div class="ceiling-light light-right"></div>
-                <div id="gallerySlots" class="gallery-slots"></div>
+              <div id="galleryDioramaViewport" class="gallery-diorama-viewport">
+                <div id="galleryDiorama" class="gallery-diorama">
+                  <div class="gallery-wall">
+                    <div class="ceiling-light light-left"></div>
+                    <div class="ceiling-light light-right"></div>
+                    <div id="gallerySlots" class="gallery-slots"></div>
+                  </div>
+                  <div class="gallery-floor"></div>
+                  <div id="galleryFacilityLayer" class="gallery-facility-layer"></div>
+                  <div id="visitorLayer" class="visitor-layer" aria-label="전시를 관람하는 관람객"></div>
+                </div>
               </div>
-              <div class="gallery-floor"></div>
-              <div id="galleryFacilityLayer" class="gallery-facility-layer"></div>
-              <div id="visitorLayer" class="visitor-layer" aria-label="전시를 관람하는 관람객"></div>
               <section class="gallery-annex" aria-labelledby="galleryAnnexTitle">
                 <div class="gallery-annex-heading">
                   <div>
@@ -416,7 +427,12 @@
   </main>
 
   <section id="tutorialGuide" class="tutorial-guide is-hidden" role="status" aria-live="polite" aria-labelledby="tutorialTitle">
-    <div class="tutorial-guide-card">
+    <button id="tutorialMobileToggle" class="tutorial-mobile-toggle" type="button" aria-expanded="false" aria-controls="tutorialGuideCard">
+      <img src="assets/assistant-yoonseul.png" alt="비서 윤슬의 안내" />
+      <span class="tutorial-mobile-copy"><strong>윤슬 안내</strong><small>눌러서 보기</small></span>
+      <span id="tutorialMobileProgress" class="tutorial-mobile-progress">1 / 10</span>
+    </button>
+    <div id="tutorialGuideCard" class="tutorial-guide-card">
       <img src="assets/assistant-yoonseul.png" alt="비서 윤슬" />
       <div class="tutorial-guide-copy">
         <div class="tutorial-guide-topline">
@@ -609,6 +625,6 @@
 
   <script src="js/artworks-data.js?v=20260804-particles"></script>
   <script src="js/ranking-config.js?v=20260805-ranking-v1"></script>
-  <script src="js/game.js?v=20260805-easy-language-v1"></script>
+  <script src="js/game.js?v=20260806-mobile-layout-v1"></script>
 </body>
 </html>

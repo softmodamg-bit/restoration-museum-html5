@@ -935,6 +935,9 @@
   let tutorialTargetElement = null;
   let tutorialRenderTimer = null;
   let tutorialDimTimer = null;
+  let tutorialMobileExpanded = false;
+  let tutorialMobileSpotlightActive = false;
+  let tutorialFocusRequested = false;
   let practiceMode = false;
   let practiceMechanicId = null;
   let practiceReturnSession = null;
@@ -954,6 +957,10 @@
     totalVisitorValue: $("#totalVisitorValue"),
     soundButton: $("#soundButton"),
     bgmAudio: $("#bgmAudio"),
+    mobileMenuToggle: $("#mobileMenuToggle"),
+    mainTabs: $("#mainTabs"),
+    mobileMenuCurrentIcon: $("#mobileMenuCurrentIcon"),
+    mobileMenuCurrentLabel: $("#mobileMenuCurrentLabel"),
     assistantButton: $("#assistantButton"),
     assistantPanel: $("#assistantPanel"),
     assistantCloseButton: $("#assistantCloseButton"),
@@ -968,6 +975,8 @@
     alwaysShowSafeZones: $("#alwaysShowSafeZones"),
     extendedPuzzlePreview: $("#extendedPuzzlePreview"),
     tutorialGuide: $("#tutorialGuide"),
+    tutorialMobileToggle: $("#tutorialMobileToggle"),
+    tutorialMobileProgress: $("#tutorialMobileProgress"),
     tutorialProgress: $("#tutorialProgress"),
     tutorialTitle: $("#tutorialTitle"),
     tutorialMessage: $("#tutorialMessage"),
@@ -1027,6 +1036,8 @@
     galleryAnnexLayer: $("#galleryAnnexLayer"),
     galleryAnnexStatus: $("#galleryAnnexStatus"),
     gallerySceneCard: $(".gallery-scene-card"),
+    galleryDioramaViewport: $("#galleryDioramaViewport"),
+    galleryDiorama: $("#galleryDiorama"),
     visitorLayer: $("#visitorLayer"),
     visitorEstimate: $("#visitorEstimate"),
     incomeEstimate: $("#incomeEstimate"),
@@ -1143,6 +1154,8 @@
     renderBgmStatus();
     populateMaterialFilter();
     el.totalCount.textContent = ARTWORKS.length;
+    syncMobileNavigation($(".tab-button.is-active")?.dataset.view || "storage");
+    updateGalleryDioramaScale();
     updateScrollTopButton();
 
     if (state.started) {
@@ -1163,10 +1176,73 @@
     });
   }
 
+  function isCompactMobileLayout() {
+    return window.matchMedia("(max-width: 480px)").matches;
+  }
+
+  function setMobileMenuOpen(open) {
+    const expanded = isCompactMobileLayout() && Boolean(open);
+    el.mainTabs.classList.toggle("is-mobile-open", expanded);
+    el.mobileMenuToggle.setAttribute("aria-expanded", String(expanded));
+    const hint = $(".mobile-menu-toggle-hint", el.mobileMenuToggle);
+    if (hint) hint.textContent = expanded ? "메뉴 닫기" : "메뉴 열기";
+  }
+
+  function syncMobileNavigation(viewName) {
+    const activeButton = $(`.tab-button[data-view="${viewName}"]`);
+    const icon = activeButton?.querySelector("span")?.textContent || "✦";
+    const label = activeButton?.textContent.replace(icon, "").trim() || "공간 이동";
+    el.mobileMenuCurrentIcon.textContent = icon;
+    el.mobileMenuCurrentLabel.textContent = label;
+    setMobileMenuOpen(false);
+  }
+
+  function setTutorialMobileExpanded(expanded) {
+    tutorialMobileExpanded = isCompactMobileLayout() && Boolean(expanded);
+    tutorialMobileSpotlightActive = false;
+    el.tutorialGuide.classList.toggle("is-mobile-open", tutorialMobileExpanded);
+    el.tutorialMobileToggle.setAttribute("aria-expanded", String(tutorialMobileExpanded));
+    document.body.classList.toggle("is-tutorial-guide-open", tutorialMobileExpanded);
+    if (!tutorialMobileExpanded && isCompactMobileLayout()) {
+      el.tutorialDimmer.classList.add("is-hidden");
+      el.tutorialSpotlight.classList.add("is-hidden");
+    }
+    updateScrollTopButton();
+  }
+
+  function updateGalleryDioramaScale() {
+    if (!el.galleryDioramaViewport || !el.galleryDiorama) return;
+    if (!window.matchMedia("(max-width: 680px)").matches) {
+      el.galleryDioramaViewport.style.removeProperty("height");
+      el.galleryDiorama.style.removeProperty("--gallery-scale");
+      el.galleryDiorama.style.removeProperty("--gallery-inverse-scale");
+      return;
+    }
+    const availableWidth = el.galleryDioramaViewport.clientWidth;
+    if (availableWidth <= 0) return;
+    const scale = Math.min(1, availableWidth / 760);
+    el.galleryDiorama.style.setProperty("--gallery-scale", scale.toFixed(4));
+    el.galleryDiorama.style.setProperty("--gallery-inverse-scale", (1 / scale).toFixed(4));
+    el.galleryDioramaViewport.style.height = `${Math.ceil(670 * scale)}px`;
+  }
+
+  function updateResponsiveLayout() {
+    if (!isCompactMobileLayout()) {
+      setMobileMenuOpen(false);
+      el.tutorialGuide.classList.remove("is-mobile-open");
+      el.tutorialMobileToggle.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("is-tutorial-guide-open");
+      tutorialMobileExpanded = false;
+    }
+    updateGalleryDioramaScale();
+    updateTutorialSpotlight();
+    updateScrollTopButton();
+  }
+
   function updateScrollTopButton() {
     const isNeeded = window.scrollY > 160;
     const tutorialVisible = !el.tutorialGuide.classList.contains("is-hidden");
-    const liftAboveTutorial = tutorialVisible && window.innerWidth <= 680;
+    const liftAboveTutorial = tutorialVisible && window.innerWidth <= 680 && (!isCompactMobileLayout() || tutorialMobileExpanded);
     const tutorialRect = liftAboveTutorial ? el.tutorialGuide.getBoundingClientRect() : null;
 
     el.scrollTopButton.classList.toggle("is-needed", isNeeded);
@@ -1193,6 +1269,10 @@
 
     $$(".tab-button").forEach(button => {
       button.addEventListener("click", () => switchView(button.dataset.view));
+    });
+    el.mobileMenuToggle.addEventListener("click", () => {
+      setMobileMenuOpen(el.mobileMenuToggle.getAttribute("aria-expanded") !== "true");
+      playTone("click");
     });
 
     $$('[data-go-view]').forEach(button => {
@@ -1323,7 +1403,15 @@
     });
     el.tutorialFocusButton.addEventListener("click", () => {
       if (state.tutorialStep === "complete") finishFirstRotationTutorial(false);
-      else focusTutorialTarget();
+      else {
+        tutorialFocusRequested = true;
+        setTutorialMobileExpanded(false);
+        focusTutorialTarget();
+      }
+    });
+    el.tutorialMobileToggle.addEventListener("click", () => {
+      setTutorialMobileExpanded(!tutorialMobileExpanded);
+      playTone("open");
     });
     el.tutorialSkipButton.addEventListener("click", () => {
       if (!window.confirm("첫 운영 안내를 건너뛸까요? 게임은 그대로 계속할 수 있어요.")) return;
@@ -1335,11 +1423,11 @@
       el.scrollTopButton.blur();
       playTone("click");
     });
-    window.addEventListener("resize", updateTutorialSpotlight);
-    window.addEventListener("resize", updateScrollTopButton);
+    window.addEventListener("resize", updateResponsiveLayout);
     window.addEventListener("scroll", updateTutorialSpotlight, true);
     window.addEventListener("scroll", updateScrollTopButton, { passive: true });
     new ResizeObserver(updateScrollTopButton).observe(el.tutorialGuide);
+    new ResizeObserver(updateGalleryDioramaScale).observe(el.galleryDioramaViewport);
     el.directorConfirmButton.addEventListener("click", confirmDirectorOnboarding);
     [el.directorNameInput, el.museumNameInput].forEach(input => {
       input.addEventListener("input", () => {
@@ -1445,7 +1533,7 @@
       storyReturnToAssistant = true;
       window.setTimeout(() => openStoryEvent(PROLOGUE_STORY), 220);
     } else if (isFirstRotationTutorialActive()) {
-      window.setTimeout(() => renderTutorialGuide(true), 280);
+      window.setTimeout(() => renderTutorialGuide(!isCompactMobileLayout()), 280);
     } else if (!state.assistantSeen) {
       window.setTimeout(openAssistantPanel, 260);
     }
@@ -1964,6 +2052,7 @@
     if (practiceMode && viewName !== "practice") exitPracticeChallenge(false);
     if ((labWasActive && viewName !== "lab") || (practiceWasActive && practiceMode && viewName !== "practice")) pauseRestoration();
     $$(".tab-button").forEach(btn => btn.classList.toggle("is-active", btn.dataset.view === viewName));
+    syncMobileNavigation(viewName);
     $$('[data-view-panel]').forEach(panel => panel.classList.toggle("is-active", panel.dataset.viewPanel === viewName));
     if (viewName === "gallery") renderGallery();
     if (viewName === "story") renderStoryArchive();
@@ -5996,6 +6085,7 @@
     renderStoryProgress();
     renderVisitors(Math.min(10, Math.ceil(estimates.visitors / 10)), slots);
     renderUpgrades();
+    window.requestAnimationFrame(updateGalleryDioramaScale);
   }
 
   function speakGalleryGuide(displayedArts) {
@@ -6055,7 +6145,7 @@
       const comment = rowIndex === 0
         ? `<span class="visitor-comment" style="--comment-delay:${(i * 1.65).toFixed(2)}s">${escapeHTML(comments[(state.day + i) % comments.length])}</span>`
         : "";
-      return `<button type="button" class="visitor" data-visitor-index="${i}" data-visitor-art-id="${art.id}" data-slot-index="${slotIndex}" aria-label="${escapeHTML(art.title)} 전시를 보는 관람객에게 말 걸기" style="left:${left}%;transform:scale(${scale});--shirt:${colors[i % colors.length]};--skin:${skins[i % skins.length]};animation-delay:${(i % 5) * .18}s">${comment}</button>`;
+      return `<button type="button" class="visitor" data-visitor-index="${i}" data-visitor-art-id="${art.id}" data-slot-index="${slotIndex}" aria-label="${escapeHTML(art.title)} 전시를 보는 관람객에게 말 걸기" style="left:${left}%;--visitor-scale:${scale};--visitor-inverse:${(1 / scale).toFixed(4)};transform:scale(var(--visitor-scale));--shirt:${colors[i % colors.length]};--skin:${skins[i % skins.length]};animation-delay:${(i % 5) * .18}s">${comment}<span class="visitor-touch-target" aria-hidden="true"></span></button>`;
     }).join("");
 
     $$('[data-visitor-art-id]', el.visitorLayer).forEach(visitor => {
@@ -7062,6 +7152,7 @@
   function clearTutorialTarget() {
     tutorialTargetElement?.removeAttribute("data-tutorial-active");
     tutorialTargetElement = null;
+    tutorialMobileSpotlightActive = false;
     window.clearTimeout(tutorialDimTimer);
     el.tutorialDimmer.classList.add("is-hidden");
     el.tutorialDimmer.classList.remove("is-flashing");
@@ -7094,6 +7185,11 @@
   }
 
   function updateTutorialSpotlight() {
+    if (isCompactMobileLayout() && !tutorialMobileSpotlightActive) {
+      el.tutorialDimmer.classList.add("is-hidden");
+      el.tutorialSpotlight.classList.add("is-hidden");
+      return;
+    }
     if (!tutorialTargetElement?.isConnected || tutorialTargetElement.getClientRects().length === 0) {
       el.tutorialDimmer.classList.add("is-hidden");
       el.tutorialSpotlight.classList.add("is-hidden");
@@ -7125,11 +7221,13 @@
     if (!isFirstRotationTutorialActive()) {
       el.tutorialGuide.classList.add("is-hidden");
       el.tutorialGuide.classList.remove("is-top");
+      setTutorialMobileExpanded(false);
       document.body.classList.remove("is-tutorial-running");
       return;
     }
     const guide = currentTutorialGuide();
     el.tutorialProgress.textContent = guide.progress;
+    el.tutorialMobileProgress.textContent = guide.progress;
     el.tutorialTitle.textContent = guide.title;
     el.tutorialMessage.textContent = guide.message;
     el.tutorialTip.textContent = guide.tip;
@@ -7142,13 +7240,15 @@
       tutorialTargetElement?.setAttribute("data-tutorial-active", "true");
     }
     el.tutorialGuide.classList.remove("is-top");
-    updateTutorialSpotlight();
+    if (isCompactMobileLayout()) setTutorialMobileExpanded(false);
+    else updateTutorialSpotlight();
     if (focusTarget) focusTutorialTarget();
   }
 
   function scheduleTutorialGuide(focusTarget = false) {
     window.clearTimeout(tutorialRenderTimer);
-    tutorialRenderTimer = window.setTimeout(() => renderTutorialGuide(focusTarget), 100);
+    const shouldFocus = focusTarget && (!isCompactMobileLayout() || tutorialFocusRequested);
+    tutorialRenderTimer = window.setTimeout(() => renderTutorialGuide(shouldFocus), 100);
   }
 
   function tutorialExpectedView() {
@@ -7170,6 +7270,7 @@
       renderTutorialGuide(false);
     }
     if (!tutorialTargetElement) return;
+    tutorialMobileSpotlightActive = true;
     tutorialTargetElement.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
     if (tutorialTargetElement.matches("button, [href], input, select, [tabindex]")) {
       tutorialTargetElement.focus({ preventScroll: true });
@@ -7182,6 +7283,7 @@
     window.setTimeout(() => {
       updateTutorialSpotlight();
       flashTutorialDimmer();
+      tutorialFocusRequested = false;
     }, 520);
   }
 
@@ -7192,6 +7294,7 @@
     clearTutorialTarget();
     el.tutorialGuide.classList.add("is-hidden");
     el.tutorialGuide.classList.remove("is-top");
+    setTutorialMobileExpanded(false);
     document.body.classList.remove("is-tutorial-running");
     showToast(skipped ? "처음 안내를 건너뛰었어요. 윤슬에게 언제든 다음 할 일을 물어보세요." : "첫 운영 안내 완료! 이제 자유롭게 미술관을 운영하세요.");
     playTone("complete");
