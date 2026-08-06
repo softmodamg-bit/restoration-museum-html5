@@ -65,6 +65,10 @@ button:focus-visible { outline: 4px solid rgba(99, 130, 255, .35); outline-offse
 .title-assistant strong { color: #cf695a; font-size: 12px; }
 .title-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .small-note { margin: 13px 4px 0; color: #9b8293; font-size: 13px; font-weight: 650; }
+.title-start-tips { max-width: 590px; display: grid; gap: 5px; margin-top: 10px; padding: 10px 13px; border: 2px solid rgba(255,255,255,.82); border-radius: 15px; color: #816d7a; background: rgba(255,255,255,.48); box-shadow: inset 0 2px white; font-size: 12px; line-height: 1.45; font-weight: 750; }
+.title-start-tips span { display: block; }
+.title-start-tips kbd { padding: 1px 6px; border: 1px solid #d8c4cc; border-bottom-width: 3px; border-radius: 6px; color: #755b69; background: #fffaf4; font: inherit; font-weight: 950; }
+.title-start-tips strong { color: #c9685d; }
 .title-visual-column { min-width: 0; align-self: center; transform: translateY(-38px); }
 .title-credits {
   display: grid;
@@ -1320,6 +1324,7 @@ body.is-tutorial-running .toast { bottom: 220px; }
 @media (max-width: 900px) {
   .title-screen { grid-template-columns: 1fr; min-height: auto; padding-top: 38px; }
   .title-copy { order: -1; text-align: center; margin: 0 auto; }
+  .title-start-tips { margin-inline: auto; text-align: left; }
   .title-visual-column { width: 100%; transform: none; }
   .title-actions { justify-content: center; }
   .title-visual { min-height: 490px; }
