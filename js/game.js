@@ -3486,6 +3486,7 @@
       return label + `<div class="test-analysis">
         <div class="safety-rule"><strong>안전 판정 기준</strong><span>색 변화 0~5%: 기준 이내</span><span>안료 이동: 없어야 함</span><span>광택 변화 0~5%: 기준 이내</span></div>
         <p id="testChoiceStatus">먼저 ${choiceNames.map(name => name.at(-1)).join("·")}를 한 번씩 눌러 숨은 반응을 모두 확인하세요.</p>
+        <span class="test-scroll-hint" aria-hidden="true">↕ 위아래로 밀어 모든 시험구를 확인하세요</span>
         <div class="test-choice-panel choice-count-${parameters.sampleCount}">${choiceNames.map((name, index) => {
           const reading = !parameters.noSafeSample && index === parameters.correctIndex ? parameters.safe : parameters.unsafe[unsafeIndex++ % parameters.unsafe.length];
           return `<button class="test-choice" data-test-choice="${index}" style="--sample-a:${art.colors[index % 2]};--sample-b:${index === parameters.correctIndex ? "#d8f2df" : "#f7d2c8"}" disabled>

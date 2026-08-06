@@ -7,8 +7,8 @@ const game = fs.readFileSync(new URL("../js/game.js", import.meta.url), "utf8");
 
 assert.match(index, /id="toolSelectionCard" class="panel-card tool-selection-card"/);
 assert.match(index, /id="mobileToolBriefText"/);
-assert.match(index, /styles\.css\?v=20260806-mobile-tool-hint-v1/);
-assert.match(index, /js\/game\.js\?v=20260806-mobile-tool-hint-v1/);
+assert.match(index, /styles\.css\?v=20260806-mobile-choice-scroll-v1/);
+assert.match(index, /js\/game\.js\?v=20260806-mobile-choice-scroll-v1/);
 assert.match(styles, /@media \(max-width: 900px\)[\s\S]*?\.tool-panel \{ display: contents; \}/);
 assert.match(styles, /\.tool-selection-card \{ order: -1;/);
 assert.match(styles, /\.mobile-tool-brief \{ display: none; \}/);

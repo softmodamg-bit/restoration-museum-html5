@@ -283,6 +283,7 @@ button:focus-visible { outline: 4px solid rgba(99, 130, 255, .35); outline-offse
   overflow: hidden;
 }
 .art-stage.has-four-choice { min-height: 720px; }
+.art-stage[data-mechanic="choice"] { touch-action: pan-y; }
 .art-stage.has-balance { min-height: 760px; }
 .art-stage::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: 8%; height: 28px; border-radius: 50%; background: rgba(89,57,65,.12); filter: blur(8px); }
 .lab-workspace.has-upgrade-lab .art-stage { background: radial-gradient(circle at 50% 35%, rgba(255,255,255,.9) 0 18%, transparent 46%), repeating-linear-gradient(90deg,transparent 0 52px,rgba(80,177,145,.07) 53px 55px), linear-gradient(145deg,#d8f5ec,#e8f5ff 52%,#fff0c9); }
@@ -403,6 +404,9 @@ button:focus-visible { outline: 4px solid rgba(99, 130, 255, .35); outline-offse
 .mechanic-layer.is-paused { pointer-events: none; }
 .mechanic-layer.is-paused :is(.uv-finding,.uv-original-fluorescence) { animation-play-state:paused; }
 .mechanic-layer.is-paused > :not(.mechanic-pause-overlay) { filter: grayscale(.45) brightness(.72); opacity: .48; }
+.mechanic-layer[data-mechanic="choice"] { align-content: start; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+.mechanic-layer[data-mechanic="choice"]::-webkit-scrollbar { width: 8px; }
+.mechanic-layer[data-mechanic="choice"]::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: #d49d89; background-clip: padding-box; }
 .mechanic-pause-overlay { position: absolute; z-index: 20; inset: 0; display: none; place-content: center; justify-items: center; gap: 6px; padding: 20px; color: #5b414c; background: rgba(255,248,238,.7); backdrop-filter: blur(3px); text-align: center; }
 .mechanic-layer.is-paused .mechanic-pause-overlay { display: grid; }
 .mechanic-pause-overlay span { width: 54px; height: 54px; display: grid; place-items: center; border: 3px solid white; border-radius: 18px; background: #ffd9b8; box-shadow: 0 10px 24px rgba(78,48,57,.18); font-size: 25px; }
@@ -418,6 +422,7 @@ button:focus-visible { outline: 4px solid rgba(99, 130, 255, .35); outline-offse
 .inspection-controls button { min-height: 42px; padding: 7px 14px; border: 2px solid white; border-radius: 14px; color: white; background: linear-gradient(180deg,#6eb8d2,#4b88af); box-shadow: 0 6px 12px rgba(64,111,140,.25); font-weight: 900; cursor: pointer; }
 .test-analysis { width: min(650px, 96%); display: grid; gap: 8px; margin-top: 58px; }
 .test-analysis > p { margin: 0; color: #6c555e; text-align: center; font-size: 11px; font-weight: 850; }
+.test-scroll-hint { display: none; }
 .safety-rule { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; padding: 8px; border: 2px solid rgba(255,255,255,.9); border-radius: 16px; background: rgba(255,255,255,.88); box-shadow: 0 8px 18px rgba(72,46,55,.1); }
 .safety-rule strong { margin-right: 4px; color: #b85f4e; font-size: 11px; }
 .safety-rule span { padding: 5px 8px; border-radius: 999px; color: #33785b; background: #e1f5e9; font-size: 10px; font-weight: 900; }
@@ -1524,6 +1529,9 @@ body.is-tutorial-running .toast { bottom: 220px; }
   .tool-selection-card, .art-stage-card { scroll-margin-top: 164px; }
   .inspection-controls { bottom: 8px; width: calc(100% - 16px); padding: 9px 10px; }
   .test-analysis { margin-top: 46px; }
+  .mechanic-layer[data-mechanic="choice"] { padding: 8px; }
+  .mechanic-layer[data-mechanic="choice"] .test-analysis { align-self: start; width: 100%; margin-bottom: 18px; padding: 0 4px 20px; }
+  .test-scroll-hint { position: sticky; z-index: 4; top: 0; display: block; justify-self: center; padding: 5px 9px; border: 2px solid rgba(255,255,255,.94); border-radius: 999px; color: #8a615b; background: rgba(255,239,215,.96); box-shadow: 0 5px 11px rgba(91,57,64,.14); font-size: 9px; line-height: 1.3; font-weight: 950; text-align: center; }
   .safety-rule { gap: 4px; padding: 6px; }
   .safety-rule strong { width: 100%; margin: 0; }
   .test-choice-panel { grid-template-columns: 1fr; gap: 7px; margin-top: 42px; }

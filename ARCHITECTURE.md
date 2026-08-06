@@ -240,7 +240,7 @@
 
 `PRACTICE_CHALLENGES`의 `difficulty` 문자열은 연습 목록의 조작 분류 표시이며, 위의 2~5 계산과는 별개다. 각 연습 카드에서 난이도 2(입문)·3(보통)·4(어려움)·5(숙련)를 선택할 수 있으며 `startPracticeChallenge()`가 선택값을 새 연습 세션의 `practiceDifficulty`에 넣는다. `mechanicDifficulty()`는 연습 중에만 이 값을 우선 사용하므로 같은 미니게임의 실제 파라미터 차이를 단계별로 확인할 수 있다. 이 값은 세션 한정이며 `localStorage`, 캠페인 난이도, 실제 작품 기록에는 저장되지 않는다. 선택적 `difficultyLevel`은 카드가 처음 렌더링될 때의 기본값으로만 사용한다.
 
-난이도 5 `choice`는 시험구가 네 개로 늘어나므로 `renderCurrentStep()`이 `artStage`에 `has-four-choice`를 붙여 작업 영역을 확장한다. 모바일에서는 글씨 크기 2·3 설정까지 반영해 작업 영역 높이를 단계적으로 더 확보한다. 시험구 선택 버튼과 처리 중단 버튼은 이 영역 안에 유지되며 하단 단계 설명 패널과 겹치지 않는다.
+난이도 5 `choice`는 시험구가 네 개로 늘어나므로 `renderCurrentStep()`이 `artStage`에 `has-four-choice`를 붙여 작업 영역을 확장한다. 모바일에서는 글씨 크기 2·3 설정까지 반영해 작업 영역 높이를 단계적으로 더 확보한다. 시험구 목록이 화면보다 길어지는 경우에는 `choice`의 `.mechanic-layer`만 독립된 세로 스크롤 영역이 되며 `touch-action: pan-y`를 사용한다. 시험구 선택 버튼과 처리 중단 버튼은 이 영역 안에서 끝까지 접근할 수 있어야 하며, 다른 미니게임의 포인터 조작 규칙은 바꾸지 않는다.
 
 ### `drag` 기억 미리보기와 `rhythm` 연결시간
 
