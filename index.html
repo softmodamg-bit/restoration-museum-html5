@@ -7,7 +7,7 @@
   <meta name="description" content="밝고 캐주얼한 HTML5 미술품 복원·미술관 운영 게임 프로토타입" />
   <title>반짝! 복원 미술관</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=20260806-mobile-layout-v1" />
+  <link rel="stylesheet" href="styles.css?v=20260806-mobile-gallery-upgrades-v1" />
 </head>
 <body>
   <div class="background-decor" aria-hidden="true">
@@ -318,9 +318,17 @@
                 <p id="storyNextText">매력도 100이 되면 다음 이야기가 열립니다.</p>
               </div>
 
-              <div class="panel-card">
-                <p class="panel-label">시설 꾸미기와 개선</p>
-                <div id="upgradeList" class="upgrade-list"></div>
+              <div class="panel-card upgrade-panel-card">
+                <button id="mobileUpgradeToggle" class="mobile-upgrade-toggle" type="button" aria-expanded="false" aria-controls="mobileUpgradeContent">
+                  <span class="mobile-upgrade-icon" aria-hidden="true">🛠️</span>
+                  <span class="mobile-upgrade-copy"><small>전시관 관리</small><strong>시설을 꾸미고 가꾸기</strong></span>
+                  <span class="mobile-upgrade-toggle-hint">목록 열기</span>
+                  <span class="mobile-upgrade-chevron" aria-hidden="true">⌄</span>
+                </button>
+                <p class="panel-label upgrade-panel-label">시설을 꾸미고 가꾸기</p>
+                <div id="mobileUpgradeContent" class="mobile-upgrade-content">
+                  <div id="upgradeList" class="upgrade-list"></div>
+                </div>
               </div>
             </aside>
           </div>
@@ -625,6 +633,6 @@
 
   <script src="js/artworks-data.js?v=20260804-particles"></script>
   <script src="js/ranking-config.js?v=20260805-ranking-v1"></script>
-  <script src="js/game.js?v=20260806-mobile-layout-v1"></script>
+  <script src="js/game.js?v=20260806-mobile-gallery-upgrades-v1"></script>
 </body>
 </html>

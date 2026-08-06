@@ -28,7 +28,7 @@
 
 첫 운영 안내는 데스크톱과 넓은 화면에서 기존 안내 카드로 표시한다. 480px 이하에서는 `#tutorialMobileToggle`의 원형 윤슬 프로필로 접고, 사용자가 누를 때만 `#tutorialGuideCard`를 펼친다. 접힌 동안에는 강조 테두리와 어두운 배경도 숨기며, `강조 위치 보기`를 직접 누른 뒤에만 잠시 목표를 강조한다.
 
-전시관은 조작 UI와 장면의 반응형 전략을 분리한다. `#galleryDioramaViewport` 안의 `#galleryDiorama`만 680px 이하에서 760×670 기준 장면 전체를 폭에 맞춰 축소한다. 따라서 작품 수를 줄이거나 페이지 가로 스크롤을 만들지 않는다. 편의동(`.gallery-annex`)과 운영 패널은 축소하지 않고 정상 글자·터치 크기로 아래에 배치한다. 장면 배율은 `updateGalleryDioramaScale()`이 `ResizeObserver`와 화면 전환 뒤에 다시 계산한다.
+전시관은 조작 UI와 장면의 반응형 전략을 분리한다. `#galleryDioramaViewport` 안의 `#galleryDiorama`만 680px 이하에서 760×670 기준 장면 전체를 폭에 맞춰 축소한다. 따라서 작품 수를 줄이거나 페이지 가로 스크롤을 만들지 않는다. 편의동(`.gallery-annex`)과 운영 패널은 축소하지 않고 정상 글자·터치 크기로 배치한다. 같은 680px 이하에서 `.management-panel`을 `display: contents`로 풀어 `.upgrade-panel-card`를 장면보다 먼저 배치하고, `#mobileUpgradeToggle`로 시설 목록을 접고 편다. 펼친 목록은 제한된 높이 안에서 독립적으로 스크롤하며, 화면을 벗어나거나 넓은 화면으로 전환하면 `setMobileUpgradeOpen()`이 접힌 상태로 정리한다. 장면 배율은 `updateGalleryDioramaScale()`이 `ResizeObserver`와 화면 전환 뒤에 다시 계산한다.
 
 ## 시설 업그레이드 1·2단계
 

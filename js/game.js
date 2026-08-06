@@ -961,6 +961,9 @@
     mainTabs: $("#mainTabs"),
     mobileMenuCurrentIcon: $("#mobileMenuCurrentIcon"),
     mobileMenuCurrentLabel: $("#mobileMenuCurrentLabel"),
+    mobileUpgradeToggle: $("#mobileUpgradeToggle"),
+    mobileUpgradeContent: $("#mobileUpgradeContent"),
+    upgradePanelCard: $(".upgrade-panel-card"),
     assistantButton: $("#assistantButton"),
     assistantPanel: $("#assistantPanel"),
     assistantCloseButton: $("#assistantCloseButton"),
@@ -1180,12 +1183,24 @@
     return window.matchMedia("(max-width: 480px)").matches;
   }
 
+  function isMobileGalleryLayout() {
+    return window.matchMedia("(max-width: 680px)").matches;
+  }
+
   function setMobileMenuOpen(open) {
     const expanded = isCompactMobileLayout() && Boolean(open);
     el.mainTabs.classList.toggle("is-mobile-open", expanded);
     el.mobileMenuToggle.setAttribute("aria-expanded", String(expanded));
     const hint = $(".mobile-menu-toggle-hint", el.mobileMenuToggle);
     if (hint) hint.textContent = expanded ? "메뉴 닫기" : "메뉴 열기";
+  }
+
+  function setMobileUpgradeOpen(open) {
+    const expanded = isMobileGalleryLayout() && Boolean(open);
+    el.upgradePanelCard.classList.toggle("is-mobile-open", expanded);
+    el.mobileUpgradeToggle.setAttribute("aria-expanded", String(expanded));
+    const hint = $(".mobile-upgrade-toggle-hint", el.mobileUpgradeToggle);
+    if (hint) hint.textContent = expanded ? "목록 닫기" : "목록 열기";
   }
 
   function syncMobileNavigation(viewName) {
@@ -1227,6 +1242,7 @@
   }
 
   function updateResponsiveLayout() {
+    if (!isMobileGalleryLayout()) setMobileUpgradeOpen(false);
     if (!isCompactMobileLayout()) {
       setMobileMenuOpen(false);
       el.tutorialGuide.classList.remove("is-mobile-open");
@@ -1273,6 +1289,10 @@
     el.mobileMenuToggle.addEventListener("click", () => {
       setMobileMenuOpen(el.mobileMenuToggle.getAttribute("aria-expanded") !== "true");
       playTone("click");
+    });
+    el.mobileUpgradeToggle.addEventListener("click", () => {
+      setMobileUpgradeOpen(el.mobileUpgradeToggle.getAttribute("aria-expanded") !== "true");
+      playTone("open");
     });
 
     $$('[data-go-view]').forEach(button => {
@@ -2053,6 +2073,7 @@
     if ((labWasActive && viewName !== "lab") || (practiceWasActive && practiceMode && viewName !== "practice")) pauseRestoration();
     $$(".tab-button").forEach(btn => btn.classList.toggle("is-active", btn.dataset.view === viewName));
     syncMobileNavigation(viewName);
+    if (viewName !== "gallery") setMobileUpgradeOpen(false);
     $$('[data-view-panel]').forEach(panel => panel.classList.toggle("is-active", panel.dataset.viewPanel === viewName));
     if (viewName === "gallery") renderGallery();
     if (viewName === "story") renderStoryArchive();
