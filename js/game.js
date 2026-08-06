@@ -119,6 +119,79 @@
     "함께해 줘서 고마워",
     "좋아, 오늘의 이야기도 잘 부탁해"
   ]);
+  const assistantTopic = (type, icon, label, message, reply) => Object.freeze({ type, icon, label, message, reply });
+  const DAILY_ASSISTANT_TOPICS = Object.freeze([
+    assistantTopic("greeting", "☀️", "오늘의 인사", "좋은 아침이에요, 관장님. 오늘도 작품 한 점의 이야기를 차분히 만나 볼까요?", "좋아, 오늘도 함께 시작하자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "복원 단계마다 먼저 도구 설명을 읽어 보세요. 알맞은 도구를 고르면 그 작업에 맞는 연습이 시작돼요.", "알겠어, 설명부터 읽어 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "강한 햇빛은 작품의 색을 천천히 바꿀 수 있어요. 전시 조명과 창가의 빛을 함께 살펴봐요.", "좋아, 빛부터 확인하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "깨진 도자기의 이어 붙인 자국은 흠만이 아니에요. 누가 오래 아끼며 고쳐 썼는지 알려 주는 기록이기도 해요.", "그 흔적도 이야기로 남겨 두자"),
+    assistantTopic("greeting", "🌤️", "오늘의 인사", "어제 복원한 작품을 다시 봤어요. 관장님이 서두르지 않고 고른 흔적이 잘 남아 있더라고요.", "잘 지켜봐 줘서 고마워"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "정확도가 높으면 복원 보상이 좋아져요. 빠르게 끝내는 것보다 안전하고 정확하게 마치는 일이 먼저예요.", "정확하게 마무리해 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "온도와 습도가 자주 바뀌면 나무와 종이가 늘었다 줄었다 할 수 있어요. 일정한 환경이 작품을 편안하게 해요.", "환경 수치도 꼼꼼히 볼게"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "오래된 그림 아래에는 처음 그렸다가 바꾼 선이 숨어 있기도 해요. 작가의 망설임과 선택을 만나는 단서예요.", "숨은 밑그림도 찾아보고 싶어"),
+    assistantTopic("greeting", "🍵", "오늘의 인사", "따뜻한 차를 준비해 뒀어요. 해야 할 일이 많아도 한 작품씩 살피면 충분해요.", "고마워, 한 작품씩 시작하자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "설명과 다른 도구를 고르면 작품의 위험도가 오를 수 있어요. 도구 이름 아래의 쉬운 설명을 꼭 확인해 주세요.", "알맞은 도구인지 다시 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "손이 깨끗해 보여도 땀과 기름이 작품에 남을 수 있어요. 전시 작품은 눈으로 보고 손으로 만지지 않는 것이 좋아요.", "관람객에게도 잘 안내하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "종이의 섬유를 살펴보면 손으로 만든 종이인지 기계로 만든 종이인지 짐작할 수 있어요.", "종이결도 자세히 살펴보자"),
+    assistantTopic("greeting", "🏛️", "오늘의 인사", "관람객이 오기 전 전시실을 한 바퀴 돌았어요. 오늘도 미술관 문을 열 준비가 됐습니다.", "좋아, 기분 좋게 문을 열자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "복원 단계가 마음에 들지 않으면 ‘현재 단계 다시하기’를 쓸 수 있어요. 작품 전체를 처음부터 되돌릴 필요는 없어요.", "필요할 때 다시 해 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "작은 얼룩이나 금도 날짜와 위치를 적어 두면 다음 점검 때 변화를 알아보기 쉬워요.", "작은 변화도 기록하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "금속의 어두운 표면은 언제나 지워야 할 때가 아니에요. 오랜 시간 만들어진 색이 작품의 역사일 수도 있어요.", "시간의 색인지 먼저 확인하자"),
+    assistantTopic("greeting", "🌧️", "오늘의 인사", "비 온 뒤에는 수장고 공기가 달라질 수 있어요. 오늘은 환경 기록부터 함께 확인해 봐요.", "좋아, 수장고부터 살펴보자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "미니게임 이름 옆 별은 난이도를 뜻해요. 보존 연습실에서는 같은 게임을 원하는 단계로 골라 익힐 수 있어요.", "연습실에서 먼저 익혀 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "금이 간 곳 바로 아래를 세게 받치면 오히려 힘이 모일 수 있어요. 약한 곳을 피하면서 무게를 나눠야 해요.", "받침 위치를 신중히 고를게"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "그림의 액자는 작품보다 나중에 만들어졌을 수도 있어요. 액자도 누가 어떻게 전시했는지 알려 주는 자료예요.", "액자까지 함께 살펴보자"),
+    assistantTopic("greeting", "📚", "오늘의 인사", "조용한 수장고에도 많은 이야기가 기다리고 있어요. 오늘은 어떤 작품이 먼저 말을 걸지 궁금하네요.", "천천히 이야기를 찾아보자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "보존 연습실은 실제 복원 기록과 따로 움직여요. 실수해도 작품이나 보유 코인에는 영향을 주지 않아요.", "부담 없이 연습해 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "표면의 먼지는 약한 부분을 건드리지 않도록 조금씩 살펴야 해요. 눈에 잘 보인다고 한 번에 세게 치우면 안 돼요.", "조금씩 안전하게 정리하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "옛 물건에 남은 손자국은 때로 누가 어떻게 사용했는지 알려 주는 중요한 단서가 돼요.", "손자국도 함부로 지우지 말자"),
+    assistantTopic("greeting", "✨", "오늘의 인사", "새로운 하루가 왔어요. 어제보다 한 걸음만 나아가도 미술관은 충분히 자라고 있어요.", "오늘의 한 걸음을 시작하자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "모바일 복원실에서는 위쪽 도구 칸을 먼저 살펴보세요. 도구를 고른 뒤 바로 아래에서 미니게임을 이어 갈 수 있어요.", "도구부터 고르고 진행할게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "작품의 앞면만큼 뒷면과 가장자리도 중요해요. 숨은 이음부나 벌레 흔적이 먼저 보일 수 있어요.", "보이지 않는 곳도 확인하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "그림 재료는 먼 나라의 돌과 식물에서 오기도 했어요. 작은 색 하나가 옛 교류의 길을 보여 주기도 해요.", "색이 온 길도 이야기해 주자"),
+    assistantTopic("greeting", "💡", "오늘의 인사", "전시실 빛이 작품마다 다르게 머무네요. 익숙한 작품도 오늘은 새롭게 보일지 몰라요.", "다른 눈으로 다시 바라보자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "복원 시간이 짧으면 보너스가 있지만, 위험한 선택을 하면서 서두르면 더 큰 손해가 생겨요. 안전이 먼저예요.", "안전을 지키며 빠르게 해 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "좋은 복원은 나중에 다시 살피고 고칠 수 있어야 해요. 원래 부분을 억지로 바꾸지 않는 선택이 중요해요.", "원래 모습을 존중할게"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "도장과 글씨는 작품을 가졌던 사람과 지나온 장소를 알려 주기도 해요. 작은 표시가 긴 여행 기록인 셈이에요.", "작은 표시도 놓치지 말자"),
+    assistantTopic("greeting", "🌱", "오늘의 인사", "큰 변화가 없어 보여도 괜찮아요. 매일의 작은 선택이 모여 작품의 긴 내일을 만들어요.", "차분하게 하나씩 이어 가자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "실수 없이 단계를 이어 가면 연속 성공이 쌓여요. 한 번 실수하면 다시 0부터 시작하니 침착하게 해 보세요.", "연속 성공을 노려 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "전시 작품도 가끔 쉬어야 해요. 빛에 약한 종이와 천은 번갈아 전시하면 더 오래 지킬 수 있어요.", "전시 교체도 계획해 보자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "천에 반복된 무늬는 꾸밈만이 아니라 마을과 가족, 쓰임새를 나타내는 표시였을 수도 있어요.", "무늬 속 이야기도 찾아보자"),
+    assistantTopic("greeting", "📝", "오늘의 인사", "기록장이 관장님을 기다리고 있어요. 오늘 발견한 작은 변화도 내일의 중요한 단서가 될 거예요.", "오늘 기록도 빠짐없이 남기자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "숙련 난이도에서는 초록 안전 범위가 숨겨질 수 있어요. 색뿐 아니라 표면의 광택과 테두리 변화를 함께 보세요.", "재료의 여러 신호를 살펴볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "종이와 나무에 작은 구멍이나 가루가 보이면 벌레 흔적일 수 있어요. 다른 작품과 떨어뜨려 먼저 살펴야 해요.", "주변 작품까지 함께 확인하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "옻칠 표면의 가느다란 갈라짐은 여러 겹을 쌓아 만든 과정과 긴 시간을 함께 보여 줘요.", "갈라짐의 모양도 기록하자"),
+    assistantTopic("greeting", "🌼", "오늘의 인사", "어제보다 조금 나아진 미술관을 발견했어요. 관장님의 선택이 공간 곳곳에 쌓이고 있나 봐요.", "우리 미술관을 더 잘 가꿔 보자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "누르기, 끌기, 멈추기처럼 게임마다 손동작이 달라요. 시작 전 작업 방법의 첫 문장을 읽으면 조작을 바로 알 수 있어요.", "첫 문장을 꼭 확인할게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "전시실 가까이에는 음식과 음료를 두지 않는 것이 좋아요. 흘린 자국과 냄새가 작품과 벌레에 영향을 줄 수 있어요.", "관람 예절도 잘 안내하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "조각의 뒷면에 남은 도구 자국은 완성된 앞모습에서는 볼 수 없는 제작 과정을 들려줘요.", "보이지 않는 제작 흔적도 보자"),
+    assistantTopic("greeting", "🤝", "오늘의 인사", "작품과 사람 사이를 이어 주는 일이 관장님의 중요한 역할이에요. 오늘도 제가 곁에서 돕겠습니다.", "오늘도 서로 잘 부탁해"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "복원을 마친 작품은 전시관에 놓아야 관람객이 볼 수 있어요. 수장고 카드의 전시 버튼을 확인해 보세요.", "복원 뒤 전시도 잊지 않을게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "물이나 불 같은 사고에 대비해 작품을 옮길 순서와 안전한 자리를 미리 정해 두면 큰 도움이 돼요.", "비상 계획도 준비해 두자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "옛 사진은 부분마다 색이 다르게 바랠 수 있어요. 종이와 빛, 보관 방법이 함께 만든 변화예요.", "사진의 색 변화도 살펴보자"),
+    assistantTopic("greeting", "💬", "오늘의 인사", "오늘 결정하기 어려운 일이 있나요? 혼자 답을 정하지 않아도 괜찮아요. 함께 기록을 살펴봐요.", "좋아, 같이 생각해 보자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "관람객의 말풍선은 전시가 잘 보이는지 알려 주는 힌트가 돼요. 빈 전시대 앞에는 관람객이 머물지 않아요.", "관람객의 말도 잘 들어 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "복원 전후 사진은 말로 설명하기 어려운 변화를 보여 줘요. 같은 각도와 빛에서 남기면 비교하기 쉬워요.", "사진 기록도 일정하게 남기자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "벽화는 그림만 떼어 생각하기 어려워요. 벽과 건물, 그 장소의 환경이 작품의 일부이기 때문이에요.", "장소까지 함께 이해해 보자"),
+    assistantTopic("greeting", "🔔", "오늘의 인사", "미술관 문을 여는 소리는 매일 같지만, 찾아오는 사람과 시작되는 이야기는 늘 달라요.", "오늘의 새 이야기를 만나자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "시설을 꾸미고 가꾸면 관람객 수와 수입, 복원 안전에 도움이 돼요. 전시관의 시설 메뉴에서 변화를 바로 볼 수 있어요.", "필요한 시설부터 살펴볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "무거운 작품은 옮길 때 흔들림이 생기지 않도록 길을 먼저 비워 두고 여러 사람이 함께 움직여야 해요.", "옮길 길부터 안전하게 만들자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "오래된 책의 표지 안쪽에서 더 옛날 종이가 발견되기도 해요. 버려진 종이를 다시 쓴 흔적일 수 있어요.", "책 속 숨은 종이도 찾아보자"),
+    assistantTopic("greeting", "🌟", "오늘의 인사", "좋은 선택은 눈에 크게 띄지 않아도 작품을 오래 지켜 줘요. 관장님의 차분함이 오늘도 힘이 될 거예요.", "서두르지 않고 잘 살펴볼게"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "수장고에서는 아직 복원하지 않은 작품이 먼저 보여요. 복원한 작품은 아래쪽과 기록실에서 다시 찾을 수 있어요.", "새 작품부터 골라 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "전시 이름표가 작품에 닿지 않도록 거리를 두세요. 작은 종이 모서리도 약한 표면에는 상처를 낼 수 있어요.", "이름표 위치도 확인하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "유리 안의 작은 기포와 물결은 손으로 만들던 때의 흔적일 수 있어요. 완벽하지 않은 모양이 제작법을 알려 줘요.", "기포도 소중한 단서로 보자"),
+    assistantTopic("greeting", "🧭", "오늘의 인사", "관장님은 혼자가 아니에요. 작품의 기록과 관람객의 반응, 그리고 제가 다음 선택을 함께 도울게요.", "든든하네, 오늘도 함께하자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "전시 매력이 300씩 높아질 때마다 새로운 후일담이 열려요. 복원과 전시, 시설 가꾸기를 함께 이어 가세요.", "다음 이야기도 천천히 열어 보자"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "겉이 더 깨끗해 보인다고 계속 닦으면 원래 표면까지 잃을 수 있어요. 알맞은 때 멈추는 것도 복원이에요.", "멈출 때를 잘 판단할게"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "오늘 남긴 복원 기록도 언젠가는 작품의 역사가 돼요. 미래의 사람은 우리가 한 선택을 기록으로 이해할 거예요.", "우리의 선택도 정직하게 남기자"),
+    assistantTopic("greeting", "🚪", "오늘의 인사", "오늘 첫 관람객은 어느 작품 앞에 멈출까요? 조용히 지켜보는 것도 미술관의 즐거움이에요.", "관람객의 시선을 함께 보자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "랭킹 점수에는 복원 성과뿐 아니라 누적 수입과 관람객, 이야기를 얼마나 빨리 열었는지도 함께 반영돼요.", "미술관 전체를 고르게 키워 볼게"),
+    assistantTopic("care", "🧤", "작품 돌봄 메모", "무엇을 했는지만큼 무엇을 하지 않았는지도 기록해 두세요. 작품을 지키기 위해 멈춘 판단도 중요한 정보예요.", "하지 않은 선택도 기록하자"),
+    assistantTopic("story", "🖼️", "오늘의 미술 이야기", "책 가장자리의 낙서나 접힌 자국은 예전 독자가 어디를 중요하게 봤는지 알려 주는 생활의 흔적이에요.", "사용한 사람의 흔적도 존중하자"),
+    assistantTopic("greeting", "🌙", "오늘의 인사", "하루를 마칠 때는 잘한 일 하나와 다음에 살필 일 하나만 적어도 충분해요. 오늘도 수고 많았어요.", "고마워, 기록하고 마무리하자"),
+    assistantTopic("game", "🎮", "오늘의 게임 팁", "처음 화면으로 돌아가려면 브라우저의 새로고침을 사용할 수 있어요. 글씨 크기는 비서실 설정에서 바꿀 수 있습니다.", "알겠어, 필요할 때 활용할게")
+  ]);
   const SFX_FILES = {
     click: "assets/sfx-click.wav",
     hit: "assets/sfx-hit.wav",
@@ -862,11 +935,25 @@
     { id: "cafeTerrace", tier: 2, unlockDay: 15, requires: "cafe", category: "15일차 시설 개선", name: "미술관 카페 테라스", icon: "🍰", cost: 4200, desc: "운영 수입 +10%", effect: { incomeMult: 0.1 } },
     { id: "conservationCenter", tier: 2, unlockDay: 15, requires: "studio", category: "15일차 시설 개선", name: "통합 복원 센터", icon: "🔭", cost: 4600, desc: "복원 지원금 +10%", effect: { restorationRewardMult: 0.1 } },
     { id: "landmarkFacade", tier: 2, unlockDay: 15, requires: "facade", category: "15일차 시설 개선", name: "미술관 대표 외관", icon: "🎀", cost: 5000, desc: "관람객 +12% · 전시 매력 +4%", effect: { visitorMult: 0.12, appealMult: 0.04 } },
-    { id: "specialExhibitionWing", tier: 2, unlockDay: 15, requires: "grandHall", category: "15일차 시설 개선", name: "특별 기획 전시실", icon: "🎪", cost: 5600, desc: "운영 수입 +15% · 전시 매력 +6%", effect: { incomeMult: 0.15, appealMult: 0.06 } }
+    { id: "specialExhibitionWing", tier: 2, unlockDay: 15, requires: "grandHall", category: "15일차 시설 개선", name: "특별 기획 전시실", icon: "🎪", cost: 5600, desc: "운영 수입 +15% · 전시 매력 +6%", effect: { incomeMult: 0.15, appealMult: 0.06 } },
+    { id: "lightingGallery", tier: 3, unlockDay: 25, requires: "lightingStudio", category: "25일차 시설 완성", name: "빛의 전시 연출관", icon: "🌈", cost: 6500, desc: "전시 매력도 +6%", effect: { appealMult: 0.06 } },
+    { id: "guideLab", tier: 3, unlockDay: 25, requires: "guideNetwork", category: "25일차 시설 완성", name: "맞춤형 해설 연구실", icon: "🗣️", cost: 7100, desc: "관람객 +5% · 개관할 때 평판 +2", effect: { visitorMult: 0.05, repDaily: 2 } },
+    { id: "designShop", tier: 3, unlockDay: 25, requires: "shopWorkshop", category: "25일차 시설 완성", name: "작가 협업 디자인 상점", icon: "🎨", cost: 7700, desc: "운영 수입 +10%", effect: { incomeMult: 0.1 } },
+    { id: "predictiveLab", tier: 3, unlockDay: 25, requires: "labSensors", category: "25일차 시설 완성", name: "손상 예측 관제실", icon: "🛰️", cost: 8300, desc: "복원 지원금 +7% · 실수 위험 -5%", effect: { restorationRewardMult: 0.07, riskReduction: 0.05 } },
+    { id: "microClimate", tier: 3, unlockDay: 25, requires: "climateNetwork", category: "25일차 시설 완성", name: "작품별 환경 보호막", icon: "🫧", cost: 8900, desc: "복원 위험 -5% · 전시 매력 +4%", effect: { riskReduction: 0.05, appealMult: 0.04 } },
+    { id: "inclusiveLounge", tier: 3, unlockDay: 25, requires: "familyLounge", category: "25일차 시설 완성", name: "모두를 위한 관람 쉼터", icon: "🌻", cost: 9500, desc: "예상 관람객 +8% · 개관할 때 평판 +1", effect: { visitorMult: 0.08, repDaily: 1 } },
+    { id: "publicArchive", tier: 3, unlockDay: 25, requires: "archiveLab", category: "25일차 시설 완성", name: "시민 참여 복원 자료관", icon: "📖", cost: 10100, desc: "개관할 때 평판 +3 · 복원 지원금 +4%", effect: { repDaily: 3, restorationRewardMult: 0.04 } },
+    { id: "artGarden", tier: 3, unlockDay: 25, requires: "sculptureCourtyard", category: "25일차 시설 완성", name: "예술 산책 정원", icon: "🪻", cost: 10800, desc: "전시 매력 +7% · 관람객 +4%", effect: { appealMult: 0.07, visitorMult: 0.04 } },
+    { id: "cafeSalon", tier: 3, unlockDay: 25, requires: "cafeTerrace", category: "25일차 시설 완성", name: "작품 이야기 카페 살롱", icon: "🫖", cost: 11600, desc: "운영 수입 +9% · 관람객 +3%", effect: { incomeMult: 0.09, visitorMult: 0.03 } },
+    { id: "researchInstitute", tier: 3, unlockDay: 25, requires: "conservationCenter", category: "25일차 시설 완성", name: "미술품 보존 연구소", icon: "🔎", cost: 12400, desc: "복원 지원금 +9%", effect: { restorationRewardMult: 0.09 } },
+    { id: "nightFacade", tier: 3, unlockDay: 25, requires: "landmarkFacade", category: "25일차 시설 완성", name: "밤빛 미술관 외관", icon: "🌙", cost: 13300, desc: "관람객 +10% · 전시 매력 +3%", effect: { visitorMult: 0.1, appealMult: 0.03 } },
+    { id: "landmarkWing", tier: 3, unlockDay: 25, requires: "specialExhibitionWing", category: "25일차 시설 완성", name: "도시 대표 전시관", icon: "👑", cost: 14200, desc: "운영 수입 +12% · 전시 매력 +5%", effect: { incomeMult: 0.12, appealMult: 0.05 } }
   ];
   const ADVANCED_UPGRADE_UNLOCK_DAY = 15;
-  const BASE_UPGRADES = UPGRADES.filter(upgrade => upgrade.tier !== 2);
+  const FINAL_UPGRADE_UNLOCK_DAY = 25;
+  const BASE_UPGRADES = UPGRADES.filter(upgrade => !upgrade.tier || upgrade.tier === 1);
   const ADVANCED_UPGRADES = UPGRADES.filter(upgrade => upgrade.tier === 2);
+  const FINAL_UPGRADES = UPGRADES.filter(upgrade => upgrade.tier === 3);
   const ANNEX_FACILITY_IDS = new Set(["lounge", "shop", "garden", "cafe", "grandHall"]);
   const ANNEX_PROGRAMS = {
     lounge: [
@@ -1121,9 +1208,10 @@
     assistantGreetingModal: $("#assistantGreetingModal"),
     assistantGreetingCloseButton: $("#assistantGreetingCloseButton"),
     assistantDailyReplyButton: $("#assistantDailyReplyButton"),
-    assistantGreetingSettingsButton: $("#assistantGreetingSettingsButton"),
     assistantPanel: $("#assistantPanel"),
+    assistantPortraitButton: $("#assistantPortraitButton"),
     assistantCloseButton: $("#assistantCloseButton"),
+    assistantDailyIcon: $("#assistantDailyIcon"),
     assistantDailyLabel: $("#assistantDailyLabel"),
     assistantDailyMessage: $("#assistantDailyMessage"),
     assistantGreeting: $("#assistantGreeting"),
@@ -1309,21 +1397,26 @@
     return Object.hasOwn(ASSISTANTS, state.assistantId) ? ASSISTANTS[state.assistantId] : ASSISTANTS[DEFAULT_ASSISTANT_ID];
   }
 
-  function assistantDailyGreetingFor(day = state.day) {
+  function assistantDailyTopicFor(day = state.day) {
     const normalizedDay = Math.max(1, Math.floor(Number(day) || 1));
-    return DAILY_ASSISTANT_GREETINGS[(normalizedDay - 1) % DAILY_ASSISTANT_GREETINGS.length];
+    return DAILY_ASSISTANT_TOPICS[(normalizedDay - 1) % DAILY_ASSISTANT_TOPICS.length];
+  }
+
+  function assistantDailyGreetingFor(day = state.day) {
+    return assistantDailyTopicFor(day).message;
   }
 
   function assistantDailyReplyFor(day = state.day) {
-    const normalizedDay = Math.max(1, Math.floor(Number(day) || 1));
-    return DAILY_DIRECTOR_REPLIES[(normalizedDay - 1) % DAILY_DIRECTOR_REPLIES.length];
+    return assistantDailyTopicFor(day).reply;
   }
 
   function updateAssistantDailyGreeting() {
     const day = Math.max(1, Math.floor(Number(state.day) || 1));
-    if (el.assistantDailyLabel) el.assistantDailyLabel.textContent = `${day}일차 · 오늘의 인사`;
-    if (el.assistantDailyMessage) el.assistantDailyMessage.textContent = assistantDailyGreetingFor(day);
-    if (el.assistantDailyReplyButton) el.assistantDailyReplyButton.textContent = assistantDailyReplyFor(day);
+    const topic = assistantDailyTopicFor(day);
+    if (el.assistantDailyIcon) el.assistantDailyIcon.textContent = topic.icon;
+    if (el.assistantDailyLabel) el.assistantDailyLabel.textContent = `${day}일차 · ${topic.label}`;
+    if (el.assistantDailyMessage) el.assistantDailyMessage.textContent = topic.message;
+    if (el.assistantDailyReplyButton) el.assistantDailyReplyButton.textContent = topic.reply;
   }
 
   function assistantCopy(value) {
@@ -1343,6 +1436,10 @@
     $$('[data-assistant-greeting]').forEach(node => {
       node.textContent = assistant.greeting;
     });
+    if (el.assistantPortraitButton) {
+      el.assistantPortraitButton.setAttribute("aria-label", `${assistant.name}의 오늘 이야기 듣기`);
+      el.assistantPortraitButton.title = `${assistant.name}의 오늘 인사와 도움말 듣기`;
+    }
     el.assistantChoices.forEach(button => {
       const isSelected = button.dataset.assistantChoice === assistant.id;
       button.setAttribute("aria-pressed", String(isSelected));
@@ -1660,10 +1757,10 @@
         renderBgmStatus("음원 파일을 불러오지 못했습니다.");
       }
     });
-    el.assistantButton.addEventListener("click", toggleAssistantGreeting);
+    el.assistantButton.addEventListener("click", toggleAssistantPanel);
+    el.assistantPortraitButton.addEventListener("click", openAssistantGreetingFromPanel);
     el.assistantGreetingCloseButton.addEventListener("click", () => closeAssistantGreeting());
     el.assistantDailyReplyButton.addEventListener("click", () => closeAssistantGreeting());
-    el.assistantGreetingSettingsButton.addEventListener("click", openAssistantPanelFromGreeting);
     el.assistantGreetingBackdrop.addEventListener("click", event => {
       if (event.target === el.assistantGreetingBackdrop) closeAssistantGreeting();
     });
@@ -1931,18 +2028,21 @@
     showToast(withTutorial ? `${selectedAssistant().name} 비서와 첫 운영 안내를 시작합니다.` : `${state.museumName}의 첫 비밀 기록을 엽니다.`);
   }
 
-  function toggleAssistantGreeting() {
-    if (el.assistantGreetingBackdrop.classList.contains("is-hidden")) openAssistantGreeting();
-    else closeAssistantGreeting();
+  function toggleAssistantPanel() {
+    if (el.assistantPanel.classList.contains("is-hidden")) openAssistantPanel();
+    else closeAssistantPanel();
+  }
+
+  function openAssistantGreetingFromPanel() {
+    if (el.assistantPanel.classList.contains("is-hidden")) openAssistantPanel();
+    openAssistantGreeting();
   }
 
   function openAssistantGreeting() {
-    if (!el.assistantPanel.classList.contains("is-hidden")) closeAssistantPanel(false);
     pauseRestoration();
     updateAssistantDailyGreeting();
     el.assistantGreetingBackdrop.classList.remove("is-hidden");
     el.assistantGreetingBackdrop.setAttribute("aria-hidden", "false");
-    el.assistantButton.setAttribute("aria-expanded", "true");
     state.assistantNotice = false;
     state.assistantSeen = true;
     updateAssistantNotice();
@@ -1953,15 +2053,13 @@
   function closeAssistantGreeting(shouldResume = true) {
     el.assistantGreetingBackdrop.classList.add("is-hidden");
     el.assistantGreetingBackdrop.setAttribute("aria-hidden", "true");
-    el.assistantButton.setAttribute("aria-expanded", "false");
+    if (!el.assistantPanel.classList.contains("is-hidden")) {
+      window.setTimeout(() => el.assistantPortraitButton.focus(), 0);
+      return;
+    }
     if (shouldResume && el.assistantPanel.classList.contains("is-hidden") && el.modalBackdrop.classList.contains("is-hidden")) {
       resumeRestoration();
     }
-  }
-
-  function openAssistantPanelFromGreeting() {
-    closeAssistantGreeting(false);
-    openAssistantPanel();
   }
 
   function openAssistantPanel() {
@@ -1969,6 +2067,7 @@
     pauseRestoration();
     el.assistantPanel.classList.remove("is-hidden");
     el.assistantPanel.setAttribute("aria-hidden", "false");
+    el.assistantButton.setAttribute("aria-expanded", "true");
     el.assistantDirectorName.value = state.directorName || "";
     el.assistantMuseumName.value = state.museumName || "반짝 복원 미술관";
     el.assistantDirectorName.removeAttribute("aria-invalid");
@@ -1983,8 +2082,10 @@
   }
 
   function closeAssistantPanel(shouldResume = true) {
+    if (!el.assistantGreetingBackdrop.classList.contains("is-hidden")) closeAssistantGreeting(false);
     el.assistantPanel.classList.add("is-hidden");
     el.assistantPanel.setAttribute("aria-hidden", "true");
+    el.assistantButton.setAttribute("aria-expanded", "false");
     if (shouldResume && el.assistantGreetingBackdrop.classList.contains("is-hidden") && el.modalBackdrop.classList.contains("is-hidden")) {
       resumeRestoration();
     }
@@ -2056,7 +2157,7 @@
     const hasUnread = Boolean(state.assistantNotice);
     const assistantName = selectedAssistant().name;
     el.assistantButton.classList.toggle("has-unread", hasUnread);
-    el.assistantButton.title = hasUnread ? `${assistantName}의 새 안내가 있어요` : `${assistantName}의 오늘 인사와 운영 조언 듣기`;
+    el.assistantButton.title = hasUnread ? `${assistantName}의 새 안내가 있어요` : `${assistantName} 비서실 열기`;
   }
 
   function updateAssistant(viewName) {
@@ -2103,7 +2204,7 @@
       el.assistantActionButton.textContent = practiceMode ? "연습 계속하기" : "보존 기술 고르기";
     } else {
       el.assistantMessage.textContent = nextArt
-        ? `지금 복원하기 좋은 작품은 ‘${nextArt.title}’이에요. 작품 이야기를 먼저 읽으면 처리 판단이 더 선명해질 거예요.`
+        ? `지금 복원하기 좋은 작품은 ‘${nextArt.title}’${hasFinalConsonant(nextArt.title) ? "이에요" : "예요"}. 작품 이야기를 먼저 읽으면 처리 판단이 더 선명해질 거예요.`
         : "현재 평판으로 열 수 있는 새 작품이 없어요. 전시관을 운영해 다음 소장품 의뢰를 받아 볼까요?";
       assistantActionView = nextArt ? "storage" : "gallery";
       el.assistantActionButton.textContent = nextArt ? "추천 작품 보기" : "미술관 개관하기";
@@ -6277,6 +6378,19 @@
     return ADVANCED_UPGRADES.find(upgrade => upgrade.requires === baseId) || null;
   }
 
+  function finalUpgradeForBase(baseId) {
+    const advancedUpgrade = advancedUpgradeForBase(baseId);
+    return advancedUpgrade ? FINAL_UPGRADES.find(upgrade => upgrade.requires === advancedUpgrade.id) || null : null;
+  }
+
+  function baseFacilityIdForUpgrade(upgrade) {
+    let current = upgrade;
+    for (let depth = 0; current?.requires && depth < 3; depth += 1) {
+      current = UPGRADES.find(item => item.id === current.requires) || current;
+    }
+    return current?.id || upgrade?.id || "";
+  }
+
   function facilitySceneMarkup(upgrade) {
     const scenes = {
       lighting: `<div class="gallery-fixture fixture-lighting" data-facility="lighting">
@@ -6325,6 +6439,8 @@
     const programs = ANNEX_PROGRAMS[upgrade.id] || [];
     const advancedUpgrade = advancedUpgradeForBase(upgrade.id);
     const isAdvanced = Boolean(advancedUpgrade && state.upgrades[advancedUpgrade.id]);
+    const finalUpgrade = finalUpgradeForBase(upgrade.id);
+    const isFinal = Boolean(finalUpgrade && state.upgrades[finalUpgrade.id]);
     const scenes = {
       lounge: `<span class="annex-lounge-sofa"><i></i><i></i></span><span class="annex-lounge-lamp">✦</span><span class="annex-lounge-table">☕</span>`,
       shop: `<span class="annex-shop-awning"></span><span class="annex-shop-shelf"><i>▣</i><i>◈</i><i>▤</i></span><span class="annex-shop-counter">SHOP</span>`,
@@ -6339,12 +6455,13 @@
       cafe: `<span class="annex-advanced-decor annex-cafe-upgrade"><i>🍰</i><b>TERRACE</b><i>☕</i></span>`,
       grandHall: `<span class="annex-advanced-decor annex-hall-upgrade"><i>✦</i><b>SPECIAL EXHIBITION</b><i>✦</i></span>`
     };
-    const roomClass = `annex-room annex-room-${upgrade.id} ${installed ? "is-installed" : "is-planned"} ${activeProgram ? "has-daily-program" : ""} ${isAdvanced ? "is-advanced" : ""}`;
+    const finalScene = `<span class="annex-final-decor"><i>${finalUpgrade?.icon || "✦"}</i><b>3단계 완성</b><i>✦</i></span>`;
+    const roomClass = `annex-room annex-room-${upgrade.id} ${installed ? "is-installed" : "is-planned"} ${activeProgram ? "has-daily-program" : ""} ${isAdvanced ? "is-advanced" : ""} ${isFinal ? "is-final" : ""}`;
     const activity = activeProgram
       ? `<span class="annex-program-activity"><i>${activeProgram.icon}</i><i>✦</i><i>${activeProgram.icon}</i></span><span class="annex-live-badge">TODAY · 운영 중</span>`
       : "";
     const stage = installed
-      ? `<button type="button" class="annex-room-stage annex-room-stage-button" data-annex-open="${upgrade.id}" aria-expanded="false" aria-label="${escapeHTML(upgrade.name)} 오늘의 운영 프로그램 선택">${scenes[upgrade.id]}${isAdvanced ? advancedScenes[upgrade.id] || "" : ""}${activity}</button>`
+      ? `<button type="button" class="annex-room-stage annex-room-stage-button" data-annex-open="${upgrade.id}" aria-expanded="false" aria-label="${escapeHTML(upgrade.name)} 오늘의 운영 프로그램 선택">${scenes[upgrade.id]}${isAdvanced ? advancedScenes[upgrade.id] || "" : ""}${isFinal ? finalScene : ""}${activity}</button>`
       : `<div class="annex-room-stage" aria-hidden="true"><span class="annex-blueprint"><b>${upgrade.icon}</b><small>시설 투자 후 이 공간이 완성됩니다</small></span></div>`;
     const operationMarkup = installed ? `
       <div class="annex-operation-status">
@@ -6359,9 +6476,9 @@
           </button>`).join("")}</div>
       </section>` : "";
     return `<article class="${roomClass}" data-facility="${upgrade.id}">
-      <header><span>${upgrade.icon}</span><div><small>${escapeHTML(easyCopy(upgrade.category))}</small><strong>${escapeHTML(easyCopy(upgrade.name))}</strong></div><em>${installed ? isAdvanced ? "2단계 완성" : activeProgram ? "오늘 준비 완료" : "운영 가능" : "코인 모으는 중"}</em></header>
+      <header><span>${upgrade.icon}</span><div><small>${escapeHTML(easyCopy(upgrade.category))}</small><strong>${escapeHTML(easyCopy(upgrade.name))}</strong></div><em>${installed ? isFinal ? "3단계 완성" : isAdvanced ? "2단계 완성" : activeProgram ? "오늘 준비 완료" : "운영 가능" : "코인 모으는 중"}</em></header>
       ${stage}
-      <p>${escapeHTML(easyCopy(upgrade.desc))}${isAdvanced ? `<strong class="annex-improvement-note">✨ ${escapeHTML(easyCopy(advancedUpgrade.name))} 적용 중</strong>` : ""}</p>
+      <p>${escapeHTML(easyCopy(upgrade.desc))}${isAdvanced ? `<strong class="annex-improvement-note">✨ ${escapeHTML(easyCopy(advancedUpgrade.name))} 적용 중</strong>` : ""}${isFinal ? `<strong class="annex-improvement-note is-final">🌈 ${escapeHTML(easyCopy(finalUpgrade.name))} 적용 중</strong>` : ""}</p>
       ${operationMarkup}
     </article>`;
   }
@@ -6545,6 +6662,7 @@
   function renderUpgrades() {
     const ownedBaseCount = BASE_UPGRADES.filter(upgrade => state.upgrades[upgrade.id]).length;
     const ownedAdvancedCount = ADVANCED_UPGRADES.filter(upgrade => state.upgrades[upgrade.id]).length;
+    const ownedFinalCount = FINAL_UPGRADES.filter(upgrade => state.upgrades[upgrade.id]).length;
     const sceneUpgradeIds = ["lighting", "facade", "garden", "lounge", "shop", "cafe", "grandHall", "guide"];
     const sceneUpgradeSet = new Set(sceneUpgradeIds);
     const sections = [
@@ -6554,15 +6672,23 @@
     if (state.day >= ADVANCED_UPGRADE_UNLOCK_DAY) {
       sections.push({ label: "15일차 개방 · 시설 2단계", items: ADVANCED_UPGRADES });
     }
+    if (state.day >= FINAL_UPGRADE_UNLOCK_DAY) {
+      sections.push({ label: "25일차 개방 · 시설 3단계", items: FINAL_UPGRADES });
+    }
     const investmentUnlocked = state.museumIncomeEarned > 0;
     const overviewText = investmentUnlocked
       ? `누적 개관 수입 ${formatNumber(state.museumIncomeEarned)}🪙 · 시설은 보유 코인으로 구매합니다.`
       : "첫 작품을 전시해 개관 수입을 만들면 시설 투자가 열립니다.";
-    const advancedSummary = state.day >= ADVANCED_UPGRADE_UNLOCK_DAY
-      ? `기본 시설 ${ownedBaseCount} / ${BASE_UPGRADES.length} · 2단계 개선 ${ownedAdvancedCount} / ${ADVANCED_UPGRADES.length}`
-      : `기본 시설 ${ownedBaseCount} / ${BASE_UPGRADES.length} · 2단계 개선은 ${ADVANCED_UPGRADE_UNLOCK_DAY}일차에 개방`;
-    const lateUpgradeTeaser = state.day < ADVANCED_UPGRADE_UNLOCK_DAY
+    const advancedSummary = state.day >= FINAL_UPGRADE_UNLOCK_DAY
+      ? `기본 ${ownedBaseCount}/${BASE_UPGRADES.length} · 2단계 ${ownedAdvancedCount}/${ADVANCED_UPGRADES.length} · 3단계 ${ownedFinalCount}/${FINAL_UPGRADES.length}`
+      : state.day >= ADVANCED_UPGRADE_UNLOCK_DAY
+        ? `기본 ${ownedBaseCount}/${BASE_UPGRADES.length} · 2단계 ${ownedAdvancedCount}/${ADVANCED_UPGRADES.length} · 3단계는 ${FINAL_UPGRADE_UNLOCK_DAY}일차에 개방`
+        : `기본 시설 ${ownedBaseCount} / ${BASE_UPGRADES.length} · 2단계 개선은 ${ADVANCED_UPGRADE_UNLOCK_DAY}일차에 개방`;
+    const advancedUpgradeTeaser = state.day < ADVANCED_UPGRADE_UNLOCK_DAY
       ? `<div class="late-upgrade-teaser"><span>🔒</span><div><strong>${ADVANCED_UPGRADE_UNLOCK_DAY}일차에 시설 2단계 개방</strong><small>이미 지은 12개 시설을 더 크게 개선할 수 있어요. 앞으로 ${ADVANCED_UPGRADE_UNLOCK_DAY - state.day}일 남았습니다.</small></div></div>`
+      : "";
+    const finalUpgradeTeaser = state.day >= ADVANCED_UPGRADE_UNLOCK_DAY && state.day < FINAL_UPGRADE_UNLOCK_DAY
+      ? `<div class="late-upgrade-teaser is-tier-three"><span>🌈</span><div><strong>${FINAL_UPGRADE_UNLOCK_DAY}일차에 시설 3단계 개방</strong><small>2단계 시설 12개를 한 번 더 완성하고 새로운 색으로 바꿀 수 있어요. 앞으로 ${FINAL_UPGRADE_UNLOCK_DAY - state.day}일 남았습니다.</small></div></div>`
       : "";
     el.upgradeList.innerHTML = `<div class="upgrade-overview"><strong>${advancedSummary}</strong><span>${overviewText}</span></div>` + sections.map(section => {
       const cards = section.items.map(upgrade => {
@@ -6578,15 +6704,16 @@
           : requirementLocked
             ? `🔒 ${escapeHTML(requiredUpgrade.name)} 필요`
             : `${investmentLocked ? "🔒 " : ""}${formatNumber(upgrade.cost)}🪙`;
-        const ownedCopy = upgrade.tier === 2 ? "2단계 완료" : "설치됨";
-        return `<div class="upgrade-card ${owned ? "is-owned" : ""} ${upgrade.tier === 2 ? "is-tier-two" : ""} ${locked ? "is-locked" : ""}">
+        const ownedCopy = upgrade.tier === 3 ? "3단계 완료" : upgrade.tier === 2 ? "2단계 완료" : "설치됨";
+        const tierCopy = upgrade.tier === 3 ? "3단계 완성" : "2단계 개선";
+        return `<div class="upgrade-card ${owned ? "is-owned" : ""} ${upgrade.tier === 2 ? "is-tier-two" : ""} ${upgrade.tier === 3 ? "is-tier-three" : ""} ${locked ? "is-locked" : ""}">
           <div class="upgrade-icon">${upgrade.icon}</div>
-          <div class="upgrade-copy"><strong>${easyCopy(upgrade.name)}</strong>${upgrade.tier === 2 ? `<em>${escapeHTML(requiredUpgrade?.name || "기본 시설")}의 2단계 개선</em>` : ""}<span>${easyCopy(upgrade.desc)}</span></div>
+          <div class="upgrade-copy"><strong>${easyCopy(upgrade.name)}</strong>${upgrade.tier >= 2 ? `<em>${escapeHTML(requiredUpgrade?.name || "기본 시설")}의 ${tierCopy}</em>` : ""}<span>${easyCopy(upgrade.desc)}</span></div>
           ${owned ? `<span class="hint-pill">${ownedCopy}</span>` : `<button class="button button-soft ${investmentLocked ? "is-budget-locked" : ""} ${cannotAfford ? "is-unaffordable" : ""}" data-buy-upgrade="${upgrade.id}" aria-label="${upgrade.name} 구매, 보유 코인 ${formatNumber(state.coins)} 중 ${formatNumber(upgrade.cost)} 필요" ${dayLocked || requirementLocked ? "disabled" : ""}>${buttonCopy}</button>`}
         </div>`;
       }).join("");
       return `<p class="upgrade-category">${section.label}</p>${cards}`;
-    }).join("") + lateUpgradeTeaser;
+    }).join("") + advancedUpgradeTeaser + finalUpgradeTeaser;
 
     $$('[data-buy-upgrade]', el.upgradeList).forEach(button => {
       button.addEventListener("click", () => buyUpgrade(button.dataset.buyUpgrade));
@@ -6603,7 +6730,7 @@
     }
     const requiredUpgrade = upgrade.requires ? UPGRADES.find(item => item.id === upgrade.requires) : null;
     if (requiredUpgrade && !state.upgrades[requiredUpgrade.id]) {
-      showToast(`${requiredUpgrade.name}${particleForEasyCopy(requiredUpgrade.name, "을")} 먼저 설치해야 2단계로 개선할 수 있어요.`);
+      showToast(`${requiredUpgrade.name}${particleForEasyCopy(requiredUpgrade.name, "을")} 먼저 설치해야 ${upgrade.tier || 1}단계로 개선할 수 있어요.`);
       playTone("wrong");
       return;
     }
@@ -6626,7 +6753,7 @@
     renderLab();
     updateAssistantNotice();
     showUpgradeCelebration(upgrade);
-    showToast(`${upgrade.name} ${upgrade.tier === 2 ? "개선" : "설치"} 완료 · ${upgrade.desc}`);
+    showToast(`${upgrade.name} ${upgrade.tier >= 2 ? "개선" : "설치"} 완료 · ${upgrade.desc}`);
     playTone("complete");
     checkStoryProgress();
   }
@@ -6635,11 +6762,11 @@
     $(".upgrade-celebration")?.remove();
     const celebration = document.createElement("div");
     celebration.className = "upgrade-celebration";
-    const actionLabel = upgrade.tier === 2 ? "개선" : "설치";
+    const actionLabel = upgrade.tier >= 2 ? `${upgrade.tier}단계 개선` : "설치";
     celebration.innerHTML = `<span>${upgrade.icon}</span><div><strong>${escapeHTML(upgrade.name)} ${actionLabel} 완료!</strong><small>${escapeHTML(upgrade.desc)} · 실제 공간과 계산에 바로 반영됐어요.</small></div>`;
     document.body.appendChild(celebration);
     el.gallerySceneCard.classList.add("is-upgrade-flashing");
-    const installedFixture = $(`[data-facility="${upgrade.requires || upgrade.id}"]`, el.gallerySceneCard);
+    const installedFixture = $(`[data-facility="${baseFacilityIdForUpgrade(upgrade)}"]`, el.gallerySceneCard);
     installedFixture?.classList.add("is-revealing");
     window.setTimeout(() => {
       celebration.remove();
@@ -6695,13 +6822,15 @@
 
     const unlocksAdvancedFacilities = state.day < ADVANCED_UPGRADE_UNLOCK_DAY
       && state.day + 1 >= ADVANCED_UPGRADE_UNLOCK_DAY;
+    const unlocksFinalFacilities = state.day < FINAL_UPGRADE_UNLOCK_DAY
+      && state.day + 1 >= FINAL_UPGRADE_UNLOCK_DAY;
     state.coins += income;
     state.museumIncomeEarned += income;
     state.reputation += repGain;
     state.lastDayVisitors = visitors;
     state.totalVisitors += visitors;
     state.day += 1;
-    if (unlocksAdvancedFacilities) state.assistantNotice = true;
+    if (unlocksAdvancedFacilities || unlocksFinalFacilities) state.assistantNotice = true;
     if (!estimates.hasNewArtwork && estimates.freshness <= .3) state.assistantNotice = true;
     if (isFirstRotationTutorialActive() && state.tutorialStep === "gallery") {
       state.tutorialStep = "income";
@@ -6722,7 +6851,10 @@
     const advancedFacilityMessage = unlocksAdvancedFacilities
       ? ` ${ADVANCED_UPGRADE_UNLOCK_DAY}일차가 되어 시설 2단계 개선 12개가 열렸습니다. 이미 지은 시설을 더 발전시켜 보세요.`
       : "";
-    el.dayEventText.textContent = easyCopy(`${freshnessMessage} ${event.text} ${annexMessage}${advancedFacilityMessage}`);
+    const finalFacilityMessage = unlocksFinalFacilities
+      ? ` ${FINAL_UPGRADE_UNLOCK_DAY}일차가 되어 시설 3단계 완성 12개가 열렸습니다. 마지막 단계에서는 시설 색과 모습도 한층 더 선명해집니다.`
+      : "";
+    el.dayEventText.textContent = easyCopy(`${freshnessMessage} ${event.text} ${annexMessage}${advancedFacilityMessage}${finalFacilityMessage}`);
     el.resultModal.classList.add("is-hidden");
     el.storyModal.classList.add("is-hidden");
     renderAll();
