@@ -29,6 +29,8 @@ assert.ok((index.match(/data-assistant-image/g) || []).length >= 7, "모든 주�
 assert.match(index, /비서는 안내 말투와 이야기 속 인물이 달라지며, 게임 보상은 같습니다/);
 assert.match(styles, /\.assistant-choice\[aria-pressed="true"\]/);
 assert.match(styles, /@media \(max-width: 480px\)[\s\S]*?\.assistant-choice-list/);
+assert.match(styles, /\.story-visual > span \{[^}]*top: 18px;[^}]*right: 18px;[^}]*left: auto;[^}]*translate: none;/, "스토리 아이콘은 비서 얼굴 중앙이 아니라 사진 오른쪽 위에 있어야 합니다.");
+assert.match(styles, /@media \(max-width: 680px\)[\s\S]*?\.story-visual > span \{ top: 12px; right: 12px; width: 48px; height: 48px;/, "모바일에서도 스토리 아이콘이 얼굴을 피해 작은 배지로 표시되어야 합니다.");
 
 assert.equal(hangyeolImage.toString("ascii", 1, 4), "PNG");
 const width = hangyeolImage.readUInt32BE(16);
@@ -37,4 +39,4 @@ assert.equal(width, height, "한결 초상화는 UI 크롭을 위한 정사각�
 assert.ok(width >= 1024, "한결 초상화 해상도는 1024px 이상이어야 합니다.");
 assert.deepEqual(linkPreviewImage, hangyeolImage, "한결 전용 링크 미리보기 파일은 검증된 한결 초상화와 같아야 합니다.");
 
-console.log(`Assistant choice OK: 윤슬/한결 selectors, optional-save migration, dynamic story copy, responsive cards, and ${width}x${height} Hangyeol portrait verified.`);
+console.log(`Assistant choice OK: 윤슬/한결 selectors, optional-save migration, dynamic story copy, story icon placement, responsive cards, and ${width}x${height} Hangyeol portrait verified.`);

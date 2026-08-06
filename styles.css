@@ -1270,7 +1270,7 @@ body.is-tutorial-running .toast { bottom: 220px; }
 .story-visual { position: relative; min-height: 560px; overflow: hidden; display: grid; place-items: end center; background: radial-gradient(circle at 30% 20%,#fff7c8,transparent 28%), linear-gradient(160deg,#9bd9c3,#f9d5bb 62%,#d69b82); }
 .story-visual::before { content: ""; position: absolute; inset: 12% 10% auto; height: 44%; border: 14px solid rgba(116,77,75,.72); border-bottom-width: 22px; background: linear-gradient(#fff5d8,#f1c88f); box-shadow: 0 18px 30px rgba(73,45,51,.2), inset 0 0 0 8px rgba(255,255,255,.36); transform: rotate(-3deg); }
 .story-visual img { position: relative; z-index: 2; width: 90%; max-height: 470px; object-fit: cover; object-position: 50% 20%; filter: drop-shadow(0 18px 22px rgba(74,43,52,.25)); }
-.story-visual > span { position: absolute; z-index: 3; top: 16%; left: 50%; translate: -50% 0; font-size: 74px; filter: drop-shadow(0 8px 8px rgba(81,52,50,.18)); }
+.story-visual > span { position: absolute; z-index: 3; top: 18px; right: 18px; left: auto; translate: none; display: grid; place-items: center; width: 64px; height: 64px; border: 3px solid rgba(255,255,255,.86); border-radius: 20px; background: rgba(255,248,225,.92); box-shadow: 0 8px 18px rgba(81,52,50,.2); font-size: 42px; line-height: 1; pointer-events: none; }
 .story-modal-copy { align-self: center; padding: 38px; }
 .story-modal-copy h2 { margin: 7px 0 17px; font-size: clamp(30px,4.4vw,46px); letter-spacing: -.05em; }
 .story-appeal-badge { display: inline-flex; padding: 6px 10px; border: 2px solid #eac59b; border-radius: 999px; color: #aa684f; background: #fff4cf; font-size: 10px; font-weight: 950; }
@@ -1677,7 +1677,7 @@ body.is-tutorial-running .toast { bottom: 220px; }
   .story-visual { min-height: 210px; max-height: 240px; }
   .story-visual::before { inset: 8% 20% auto; height: 62%; }
   .story-visual img { width: 55%; max-height: 245px; }
-  .story-visual > span { top: 14%; font-size: 52px; }
+  .story-visual > span { top: 12px; right: 12px; width: 48px; height: 48px; border-width: 2px; border-radius: 15px; font-size: 31px; }
   .story-modal-copy { padding: 24px 17px; }
   .story-modal-copy h2 { font-size: 29px; }
   .title-assistant { text-align: left; }
