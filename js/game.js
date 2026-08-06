@@ -5899,6 +5899,7 @@
     el.dayModal.classList.add("is-hidden");
     el.artInfoModal.classList.add("is-hidden");
     el.directorModal.classList.add("is-hidden");
+    el.resultModal.scrollTop = 0;
     el.resultModal.classList.remove("is-hidden");
     el.modalBackdrop.classList.remove("is-hidden");
     el.modalBackdrop.setAttribute("aria-hidden", "false");

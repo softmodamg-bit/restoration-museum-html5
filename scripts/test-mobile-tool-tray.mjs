@@ -7,8 +7,13 @@ const game = fs.readFileSync(new URL("../js/game.js", import.meta.url), "utf8");
 
 assert.match(index, /id="toolSelectionCard" class="panel-card tool-selection-card"/);
 assert.match(index, /id="mobileToolBriefText"/);
-assert.match(index, /styles\.css\?v=20260806-mobile-mechanic-scroll-v2/);
-assert.match(index, /js\/game\.js\?v=20260806-mobile-mechanic-scroll-v2/);
+assert.match(index, /styles\.css\?v=20260806-result-exhibit-action-v1/);
+assert.match(index, /js\/game\.js\?v=20260806-result-exhibit-action-v1/);
+const resultTitleIndex = index.indexOf('id="resultTitle"');
+const resultActionIndex = index.indexOf('id="resultConfirm"');
+const resultSummaryIndex = index.indexOf('id="resultSummary"');
+assert.ok(resultTitleIndex >= 0 && resultActionIndex > resultTitleIndex && resultActionIndex < resultSummaryIndex,
+  "The exhibit action should appear immediately after the restoration result title, before the scrollable details.");
 assert.match(styles, /@media \(max-width: 900px\)[\s\S]*?\.tool-panel \{ display: contents; \}/);
 assert.match(styles, /\.tool-selection-card \{ order: -1;/);
 assert.match(styles, /\.mobile-tool-brief \{ display: none; \}/);
@@ -18,6 +23,7 @@ assert.match(styles, /@media \(max-width: 680px\)[\s\S]*?\.tool-selection-card \
 assert.match(game, /function revealMobileToolSelection\(\)/);
 assert.match(game, /el\.toolSelectionCard\.scrollIntoView\(\{ behavior, block: "start" \}\)/);
 assert.match(game, /bindMechanicControls\(\);\s*revealMobileToolSelection\(\);/);
+assert.match(game, /el\.resultModal\.scrollTop = 0;\s*el\.resultModal\.classList\.remove\("is-hidden"\);/);
 assert.match(game, /function revealMobileMechanicStage\(\)/);
 assert.match(game, /el\.artStage\.closest\("\.art-stage-card"\)\?\.scrollIntoView\(\{ behavior, block: "start" \}\)/);
 assert.match(game, /activateCurrentMechanic\(\);\s*revealMobileMechanicStage\(\);/);
