@@ -1175,7 +1175,6 @@
   let tutorialDimTimer = null;
   let tutorialMobileExpanded = false;
   let tutorialMobileSpotlightActive = false;
-  let tutorialFocusRequested = false;
   let practiceMode = false;
   let practiceMechanicId = null;
   let practiceReturnSession = null;
@@ -1809,7 +1808,6 @@
     el.tutorialFocusButton.addEventListener("click", () => {
       if (state.tutorialStep === "complete") finishFirstRotationTutorial(false);
       else {
-        tutorialFocusRequested = true;
         setTutorialMobileExpanded(false);
         focusTutorialTarget();
       }
@@ -1943,7 +1941,7 @@
       storyReturnToAssistant = true;
       window.setTimeout(() => openStoryEvent(PROLOGUE_STORY), 220);
     } else if (isFirstRotationTutorialActive()) {
-      window.setTimeout(() => renderTutorialGuide(!isCompactTutorialLayout()), 280);
+      window.setTimeout(() => renderTutorialGuide(true), 280);
     } else if (!state.assistantSeen) {
       window.setTimeout(openAssistantPanel, 260);
     }
@@ -7766,8 +7764,7 @@
 
   function scheduleTutorialGuide(focusTarget = false) {
     window.clearTimeout(tutorialRenderTimer);
-    const shouldFocus = focusTarget && (!isCompactTutorialLayout() || tutorialFocusRequested);
-    tutorialRenderTimer = window.setTimeout(() => renderTutorialGuide(shouldFocus), 100);
+    tutorialRenderTimer = window.setTimeout(() => renderTutorialGuide(Boolean(focusTarget)), 100);
   }
 
   function tutorialExpectedView() {
@@ -7802,7 +7799,6 @@
     window.setTimeout(() => {
       updateTutorialSpotlight();
       flashTutorialDimmer();
-      tutorialFocusRequested = false;
     }, 520);
   }
 

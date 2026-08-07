@@ -7,8 +7,8 @@ const game = fs.readFileSync(new URL("../js/game.js", import.meta.url), "utf8");
 
 assert.match(index, /id="toolSelectionCard" class="panel-card tool-selection-card"/);
 assert.match(index, /id="mobileToolBriefText"/);
-assert.match(index, /styles\.css\?v=20260808-mobile-modal-scroll-v1/);
-assert.match(index, /js\/game\.js\?v=20260808-mobile-modal-scroll-v1/);
+assert.match(index, /styles\.css\?v=20260808-mobile-tutorial-focus-v1/);
+assert.match(index, /js\/game\.js\?v=20260808-mobile-tutorial-focus-v1/);
 const resultTitleIndex = index.indexOf('id="resultTitle"');
 const resultActionIndex = index.indexOf('id="resultConfirm"');
 const resultSummaryIndex = index.indexOf('id="resultSummary"');

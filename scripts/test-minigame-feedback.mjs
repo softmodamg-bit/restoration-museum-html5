@@ -84,6 +84,9 @@ assert(/function isCompactTutorialLayout\(\)[\s\S]*?max-width: 1400px/.test(game
 assert(/@media \(max-width: 1400px\), \(max-height: 850px\)[\s\S]*?\.tutorial-guide-card \{[\s\S]*?display: none/.test(css), "작업판이 좁은 화면에서는 튜토리얼 카드를 접어야 합니다.");
 assert(/\.tutorial-guide-card \{[^}]*pointer-events: none/.test(css), "튜토리얼 설명 카드가 복원 작업판 입력을 막으면 안 됩니다.");
 assert(/\.tutorial-guide-actions \.button \{[^}]*pointer-events: auto/.test(css), "튜토리얼의 실제 버튼은 계속 클릭할 수 있어야 합니다.");
+assert(/window\.setTimeout\(\(\) => renderTutorialGuide\(true\), 280\)/.test(game), "모바일에서도 이어지는 튜토리얼은 첫 목표를 바로 강조해야 합니다.");
+assert(/function scheduleTutorialGuide\(focusTarget = false\)[\s\S]*?renderTutorialGuide\(Boolean\(focusTarget\)\)/.test(game), "모바일 튜토리얼 단계 전환의 자동 강조 요청을 막으면 안 됩니다.");
+assert(!game.includes("tutorialFocusRequested"), "모바일 자동 강조가 수동 버튼 상태에 의존하면 안 됩니다.");
 
 for (const field of ["difficultyFiveCueSeen", "alwaysShowSafeZones", "extendedPuzzlePreview"]) {
   assert(new RegExp(`\\b${field}: false`).test(game), `Missing default expert-cue field: ${field}`);
