@@ -424,7 +424,7 @@ function leaderboardTable_(leaders) {
 function closeRankingButton_() {
   return "<button type='button' onclick='closeRankingTab()'>랭킹 탭 닫고 게임으로 돌아가기</button>"
     + "<p id='closeHint' style='display:none;margin:10px 0 0;color:#8b6f78;font-size:12px;font-weight:700' role='status'>탭이 닫히지 않으면 Ctrl+W 또는 브라우저의 탭 닫기 버튼을 눌러 주세요.</p>"
-    + "<script>function closeRankingTab(){try{window.top.close();}catch(error){try{window.close();}catch(ignore){}}setTimeout(function(){var hint=document.getElementById('closeHint');if(hint)hint.style.display='block';},250);}<\/script>";
+    + "<script>function closeRankingTab(){var canGoBack=window.history.length>1;try{window.top.close();}catch(error){try{window.close();}catch(ignore){}}setTimeout(function(){if(!document.hidden&&canGoBack){window.history.back();return;}var hint=document.getElementById('closeHint');if(hint)hint.style.display='block';},280);}<\/script>";
 }
 
 function renderLeaderboardPage_(leaders, season) {

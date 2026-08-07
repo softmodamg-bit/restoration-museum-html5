@@ -67,5 +67,9 @@ assert(cssSource.includes(".upgrade-card.is-tier-two") && cssSource.includes(".a
 assert(cssSource.includes(".gallery-scene-card.has-lightingStudio") && cssSource.includes(".gallery-scene-card.has-landmarkFacade"), "전시관 2단계 시각 변화가 누락되었습니다.");
 assert(cssSource.includes(".upgrade-card.is-tier-three") && cssSource.includes(".annex-room.is-final"), "3단계 시설 UI 또는 편의동 색 변화가 없습니다.");
 assert(cssSource.includes(".gallery-scene-card.has-lightingGallery") && cssSource.includes(".gallery-scene-card.has-nightFacade"), "전시관 3단계 색 변화가 누락되었습니다.");
+assert(/@media \(max-width: 1160px\)[\s\S]*?\.management-panel \{ display: contents; \}/.test(cssSource), "폴드·태블릿 폭에서 전시관 관리 패널을 한 열로 풀어야 합니다.");
+assert(/@media \(max-width: 1160px\)[\s\S]*?\.upgrade-panel-card \{ order: 1;/.test(cssSource), "중간 폭에서도 시설 메뉴가 전시 장면보다 먼저 보여야 합니다.");
+assert(/@media \(max-width: 1160px\)[\s\S]*?\.mobile-upgrade-content \{ display: none; \}/.test(cssSource), "중간 폭 시설 목록은 접을 수 있어야 합니다.");
+assert(gameSource.includes('return window.matchMedia("(max-width: 1160px)").matches;'), "시설 메뉴 JS 기준과 CSS 기준이 같아야 합니다.");
 
 console.log(`Upgrade progression passed: ${baseUpgrades.length} base + ${advancedUpgrades.length} advanced + ${finalUpgrades.length} final, final cost ${finalUpgrades.reduce((sum, upgrade) => sum + upgrade.cost, 0).toLocaleString()} coins.`);

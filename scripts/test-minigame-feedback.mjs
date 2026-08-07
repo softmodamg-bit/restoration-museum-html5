@@ -75,6 +75,10 @@ assert(css.includes(".streak-hud.is-bumping"), "Missing streak emphasis style");
 assert(css.includes(".near-miss-feedback.is-near"), "Missing near-miss style");
 assert(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.streak-hud\.is-bumping/.test(css), "Reduced-motion override is missing");
 assert(/@media \(max-width: 680px\)[\s\S]*?\.streak-hud/.test(css), "Mobile streak HUD layout is missing");
+assert(/function isCompactTutorialLayout\(\)[\s\S]*?max-width: 1400px/.test(game), "중간 폭 PC에서도 튜토리얼을 접는 기준이 필요합니다.");
+assert(/@media \(max-width: 1400px\), \(max-height: 850px\)[\s\S]*?\.tutorial-guide-card \{[\s\S]*?display: none/.test(css), "작업판이 좁은 화면에서는 튜토리얼 카드를 접어야 합니다.");
+assert(/\.tutorial-guide-card \{[^}]*pointer-events: none/.test(css), "튜토리얼 설명 카드가 복원 작업판 입력을 막으면 안 됩니다.");
+assert(/\.tutorial-guide-actions \.button \{[^}]*pointer-events: auto/.test(css), "튜토리얼의 실제 버튼은 계속 클릭할 수 있어야 합니다.");
 
 for (const field of ["difficultyFiveCueSeen", "alwaysShowSafeZones", "extendedPuzzlePreview"]) {
   assert(new RegExp(`\\b${field}: false`).test(game), `Missing default expert-cue field: ${field}`);

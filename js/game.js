@@ -1514,8 +1514,12 @@
     return window.matchMedia("(max-width: 820px)").matches;
   }
 
+  function isCompactTutorialLayout() {
+    return window.matchMedia("(max-width: 1400px), (max-height: 850px)").matches;
+  }
+
   function isMobileGalleryLayout() {
-    return window.matchMedia("(max-width: 680px)").matches;
+    return window.matchMedia("(max-width: 1160px)").matches;
   }
 
   function isStackedLabLayout() {
@@ -1564,12 +1568,12 @@
   }
 
   function setTutorialMobileExpanded(expanded) {
-    tutorialMobileExpanded = isCompactMobileLayout() && Boolean(expanded);
+    tutorialMobileExpanded = isCompactTutorialLayout() && Boolean(expanded);
     tutorialMobileSpotlightActive = false;
     el.tutorialGuide.classList.toggle("is-mobile-open", tutorialMobileExpanded);
     el.tutorialMobileToggle.setAttribute("aria-expanded", String(tutorialMobileExpanded));
     document.body.classList.toggle("is-tutorial-guide-open", tutorialMobileExpanded);
-    if (!tutorialMobileExpanded && isCompactMobileLayout()) {
+    if (!tutorialMobileExpanded && isCompactTutorialLayout()) {
       el.tutorialDimmer.classList.add("is-hidden");
       el.tutorialSpotlight.classList.add("is-hidden");
     }
@@ -1601,6 +1605,13 @@
       document.body.classList.remove("is-tutorial-guide-open");
       tutorialMobileExpanded = false;
     }
+    if (!isCompactTutorialLayout()) {
+      el.tutorialGuide.classList.remove("is-mobile-open");
+      el.tutorialMobileToggle.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("is-tutorial-guide-open");
+      tutorialMobileExpanded = false;
+    }
+    syncRankingLinkTarget();
     updateGalleryDioramaScale();
     updateTutorialSpotlight();
     updateScrollTopButton();
@@ -1609,7 +1620,7 @@
   function updateScrollTopButton() {
     const isNeeded = window.scrollY > 160;
     const tutorialVisible = !el.tutorialGuide.classList.contains("is-hidden");
-    const liftAboveTutorial = tutorialVisible && window.innerWidth <= 680 && (!isCompactMobileLayout() || tutorialMobileExpanded);
+    const liftAboveTutorial = tutorialVisible && tutorialMobileExpanded;
     const tutorialRect = liftAboveTutorial ? el.tutorialGuide.getBoundingClientRect() : null;
 
     el.scrollTopButton.classList.toggle("is-needed", isNeeded);
@@ -1923,7 +1934,7 @@
       storyReturnToAssistant = true;
       window.setTimeout(() => openStoryEvent(PROLOGUE_STORY), 220);
     } else if (isFirstRotationTutorialActive()) {
-      window.setTimeout(() => renderTutorialGuide(!isCompactMobileLayout()), 280);
+      window.setTimeout(() => renderTutorialGuide(!isCompactTutorialLayout()), 280);
     } else if (!state.assistantSeen) {
       window.setTimeout(openAssistantPanel, 260);
     }
@@ -7681,7 +7692,7 @@
   }
 
   function updateTutorialSpotlight() {
-    if (isCompactMobileLayout() && !tutorialMobileSpotlightActive) {
+    if (isCompactTutorialLayout() && !tutorialMobileSpotlightActive) {
       el.tutorialDimmer.classList.add("is-hidden");
       el.tutorialSpotlight.classList.add("is-hidden");
       return;
@@ -7736,14 +7747,14 @@
       tutorialTargetElement?.setAttribute("data-tutorial-active", "true");
     }
     el.tutorialGuide.classList.remove("is-top");
-    if (isCompactMobileLayout()) setTutorialMobileExpanded(false);
+    if (isCompactTutorialLayout()) setTutorialMobileExpanded(false);
     else updateTutorialSpotlight();
     if (focusTarget) focusTutorialTarget();
   }
 
   function scheduleTutorialGuide(focusTarget = false) {
     window.clearTimeout(tutorialRenderTimer);
-    const shouldFocus = focusTarget && (!isCompactMobileLayout() || tutorialFocusRequested);
+    const shouldFocus = focusTarget && (!isCompactTutorialLayout() || tutorialFocusRequested);
     tutorialRenderTimer = window.setTimeout(() => renderTutorialGuide(shouldFocus), 100);
   }
 
@@ -7952,10 +7963,28 @@
     };
   }
 
+  function rankingUsesSameTab() {
+    return isCompactMobileLayout() || window.matchMedia("(pointer: coarse)").matches;
+  }
+
+  function syncRankingLinkTarget() {
+    if (!el.viewRankingButton) return;
+    const leaderboardUrl = isRankingEndpointConfigured() ? rankingLeaderboardUrl() : "";
+    el.viewRankingButton.href = leaderboardUrl || "#";
+    if (leaderboardUrl && !rankingUsesSameTab()) {
+      el.viewRankingButton.setAttribute("target", "_blank");
+      el.viewRankingButton.setAttribute("rel", "noopener noreferrer");
+      el.viewRankingButton.title = "새 탭에서 전체 랭킹 열기";
+    } else {
+      el.viewRankingButton.removeAttribute("target");
+      el.viewRankingButton.removeAttribute("rel");
+      el.viewRankingButton.title = leaderboardUrl ? "현재 탭에서 전체 랭킹 열기" : "랭킹 구현 미리보기";
+    }
+  }
+
   function renderRankingPanel() {
     const summary = rankingSummaryFor();
     const connected = isRankingEndpointConfigured();
-    const leaderboardUrl = connected ? rankingLeaderboardUrl() : "";
     el.rankingSummary.innerHTML = [
       `관장 ${state.directorName || "서리"}`,
       `복원 ${formatNumber(summary.restoredCount)}점`,
@@ -7975,14 +8004,7 @@
     el.submitRankingButton.disabled = summary.restoredCount === 0;
     el.submitRankingButton.title = summary.restoredCount ? "현재 복원 성과를 랭킹에 제출" : "작품을 하나 이상 복원해야 제출할 수 있습니다.";
     el.viewRankingButton.textContent = connected ? "전체 랭킹 확인" : "랭킹 구현 미리보기";
-    el.viewRankingButton.href = leaderboardUrl || "#";
-    if (leaderboardUrl) {
-      el.viewRankingButton.setAttribute("target", "_blank");
-      el.viewRankingButton.setAttribute("rel", "noopener noreferrer");
-    } else {
-      el.viewRankingButton.removeAttribute("target");
-      el.viewRankingButton.removeAttribute("rel");
-    }
+    syncRankingLinkTarget();
   }
 
   function openRankingPreview(payload, submitted = false) {
@@ -8079,6 +8101,7 @@
       return;
     }
     el.viewRankingButton.href = leaderboardUrl;
+    syncRankingLinkTarget();
   }
 
   function escapeHTML(value) {

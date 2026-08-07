@@ -54,8 +54,8 @@ assert.match(index, /id="assistantButton"[\s\S]*?aria-controls="assistantPanel"/
 assert.match(index, /id="assistantGreetingBackdrop"[\s\S]*?class="assistant-daily-greeting"[\s\S]*?id="assistantDailyMessage"[\s\S]*?id="assistantDailyReplyButton"/);
 assert.match(index, /id="assistantPanel"[\s\S]*?id="assistantPortraitButton"[\s\S]*?data-assistant-image/);
 assert.doesNotMatch(index, /assistantGreetingSettingsButton|비서실 설정 열기/);
-assert.match(index, /styles\.css\?v=20260807-assistant-conversation-v5/);
-assert.match(index, /js\/game\.js\?v=20260807-assistant-conversation-v5/);
+assert.match(index, /styles\.css\?v=20260808-responsive-stability-v1/);
+assert.match(index, /js\/game\.js\?v=20260808-responsive-stability-v1/);
 assert.match(game, /el\.directorModal\.setAttribute\("aria-labelledby", "directorTutorialTitle"\)/);
 assert.match(game, /el\.assistantButton\.addEventListener\("click", toggleAssistantPanel\)/);
 assert.match(game, /el\.assistantPortraitButton\.addEventListener\("click", openAssistantGreetingFromPanel\)/);
@@ -70,6 +70,9 @@ assert.match(styles, /\.director-tutorial-greeting \{/);
 assert.match(styles, /\.assistant-daily-greeting \{/);
 assert.match(styles, /\.assistant-greeting-backdrop \{/);
 assert.match(styles, /\.assistant-greeting-modal \{/);
+assert.match(styles, /\.assistant-panel \{[^}]*max-height: calc\(100dvh - 112px\)[^}]*overflow-y: auto/, "비서실은 모바일 브라우저의 실제 높이 안에서 스크롤되어야 합니다.");
+assert.match(styles, /@media \(max-width: 680px\)[\s\S]*?\.assistant-panel \{[\s\S]*?env\(safe-area-inset-top\)[\s\S]*?max-height: none/, "좁은 모바일 비서실은 네 방향 안전 영역 안에 들어와야 합니다.");
+assert.match(styles, /\.assistant-panel-head \{[^}]*position: sticky/, "비서실을 스크롤해도 닫기 버튼이 있는 머리글이 보여야 합니다.");
 
 for (const threshold of storyAssetThresholds) {
   const fileName = `story-${String(threshold).padStart(3, "0")}.webp`;
