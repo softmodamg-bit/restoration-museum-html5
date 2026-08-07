@@ -1272,7 +1272,7 @@ body.is-tutorial-running .toast { bottom: 220px; }
 .upgrade-celebration small { margin-top: 5px; color: #9c665b; font-size: 12px; line-height: 1.45; font-weight: 850; }
 @keyframes upgradeCelebration { 0% { opacity: 0; transform: translate(-50%,-40%) scale(.72) rotate(-3deg); } 18%,72% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 100% { opacity: 0; transform: translate(-50%,-60%) scale(.94); } }
 
-.modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 18px; background: rgba(66,44,55,.52); backdrop-filter: blur(10px); }
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 18px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; background: rgba(66,44,55,.52); backdrop-filter: blur(10px); }
 .result-modal, .day-modal, .story-modal, .art-info-modal, .director-modal, .ranking-preview-modal { max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; border: 4px solid rgba(255,255,255,.78); border-radius: 30px; background: linear-gradient(165deg,#fffdf4,#fff0e7); box-shadow: 0 28px 70px rgba(49,31,42,.32), inset 0 3px 0 white; animation: modalIn .26s ease both; }
 .result-modal, .day-modal { width: min(520px, 100%); padding: 26px; text-align: center; }
 @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(.96); } }
@@ -1313,7 +1313,7 @@ body.is-tutorial-running .toast { bottom: 220px; }
 .result-modal > .button, .day-modal > .button { width: 100%; }
 .day-icon { font-size: 72px; margin-bottom: 6px; }
 .day-event-text { margin: 14px 0 20px; padding: 13px; border-radius: 15px; background: #fff6d8; color: #816743; line-height: 1.55; font-weight: 700; }
-.story-modal { width: min(880px, 100%); display: grid; grid-template-columns: minmax(260px,.82fr) minmax(390px,1.18fr); overflow: hidden; }
+.story-modal { width: min(880px, 100%); display: grid; grid-template-columns: minmax(260px,.82fr) minmax(390px,1.18fr); overflow-x: hidden; overflow-y: auto; touch-action: pan-y; }
 .story-visual { position: relative; min-height: 560px; overflow: hidden; background: linear-gradient(160deg,#9bd9c3,#f9d5bb 62%,#d69b82); }
 .story-visual .story-illustration { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .story-modal-copy { align-self: center; padding: 38px; }
@@ -1339,7 +1339,7 @@ body.is-tutorial-running .toast { bottom: 220px; }
 .art-info-copy section p { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.65; font-weight: 650; }
 .art-info-copy .story-section { padding: 14px; border-radius: 16px; background: #fff3cf; }
 .fiction-note { margin: 18px 0 0; color: #a58a91; font-size: 10px; line-height: 1.45; font-weight: 750; }
-.director-modal { width: min(820px, 100%); display: grid; grid-template-columns: .9fr 1.1fr; overflow: hidden; }
+.director-modal { width: min(820px, 100%); display: grid; grid-template-columns: .9fr 1.1fr; overflow-x: hidden; overflow-y: auto; scroll-padding-block: 16px; touch-action: pan-y; }
 .director-modal > img { width: 100%; height: 100%; min-height: 540px; object-fit: cover; object-position: 50% 25%; }
 .director-modal-copy { align-self: center; padding: 34px; }
 .director-modal-copy h2 { margin: 0 0 10px; font-size: 36px; letter-spacing: -.05em; }
@@ -1549,6 +1549,16 @@ body.is-tutorial-running .toast { bottom: 220px; }
 }
 
 @media (max-width: 680px) {
+  .modal-backdrop {
+    place-items: start center;
+    padding: max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));
+  }
+  .result-modal, .day-modal, .story-modal, .art-info-modal, .director-modal, .ranking-preview-modal {
+    max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    margin-block: auto;
+    scroll-padding-block: 14px max(24px,env(safe-area-inset-bottom));
+    touch-action: pan-y;
+  }
   body[data-font-size="2"] { --game-micro-font: 13px; --game-copy-font: 15px; --game-copy-line: 1.62; }
   body[data-font-size="3"] { --game-micro-font: 16px; --game-copy-font: 18px; --game-copy-line: 1.68; }
   .desktop-only { display: none; }

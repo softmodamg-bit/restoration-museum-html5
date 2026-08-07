@@ -2011,6 +2011,7 @@
     el.directorModal.classList.remove("is-hidden");
     el.modalBackdrop.classList.remove("is-hidden");
     el.modalBackdrop.setAttribute("aria-hidden", "false");
+    el.directorModal.scrollTop = 0;
     window.setTimeout(() => el.directorNameInput.focus(), 120);
   }
 
@@ -2029,6 +2030,7 @@
     el.directorModal.setAttribute("aria-labelledby", "directorTutorialTitle");
     el.directorSetupStep.classList.add("is-hidden");
     el.directorTutorialStep.classList.remove("is-hidden");
+    el.directorModal.scrollTop = 0;
     el.directorTutorialStartButton.focus();
     playTone("open");
   }

@@ -54,8 +54,8 @@ assert.match(index, /id="assistantButton"[\s\S]*?aria-controls="assistantPanel"/
 assert.match(index, /id="assistantGreetingBackdrop"[\s\S]*?class="assistant-daily-greeting"[\s\S]*?id="assistantDailyMessage"[\s\S]*?id="assistantDailyReplyButton"/);
 assert.match(index, /id="assistantPanel"[\s\S]*?id="assistantPortraitButton"[\s\S]*?data-assistant-image/);
 assert.doesNotMatch(index, /assistantGreetingSettingsButton|비서실 설정 열기/);
-assert.match(index, /styles\.css\?v=20260808-mobile-hold-guard-v1/);
-assert.match(index, /js\/game\.js\?v=20260808-mobile-hold-guard-v1/);
+assert.match(index, /styles\.css\?v=20260808-mobile-modal-scroll-v1/);
+assert.match(index, /js\/game\.js\?v=20260808-mobile-modal-scroll-v1/);
 assert.match(game, /el\.directorModal\.setAttribute\("aria-labelledby", "directorTutorialTitle"\)/);
 assert.match(game, /el\.assistantButton\.addEventListener\("click", toggleAssistantPanel\)/);
 assert.match(game, /el\.assistantPortraitButton\.addEventListener\("click", openAssistantGreetingFromPanel\)/);
@@ -73,6 +73,10 @@ assert.match(styles, /\.assistant-greeting-modal \{/);
 assert.match(styles, /\.assistant-panel \{[^}]*max-height: calc\(100dvh - 112px\)[^}]*overflow-y: auto/, "비서실은 모바일 브라우저의 실제 높이 안에서 스크롤되어야 합니다.");
 assert.match(styles, /@media \(max-width: 680px\)[\s\S]*?\.assistant-panel \{[\s\S]*?env\(safe-area-inset-top\)[\s\S]*?max-height: none/, "좁은 모바일 비서실은 네 방향 안전 영역 안에 들어와야 합니다.");
 assert.match(styles, /\.assistant-panel-head \{[^}]*position: sticky/, "비서실을 스크롤해도 닫기 버튼이 있는 머리글이 보여야 합니다.");
+assert.match(styles, /\.modal-backdrop \{[^}]*overflow-y: auto[^}]*touch-action: pan-y/, "모바일에서 짧은 화면이면 모달 바깥 영역도 세로로 밀 수 있어야 합니다.");
+assert.match(styles, /\.director-modal \{[^}]*overflow-y: auto[^}]*touch-action: pan-y/, "첫 관장 설정 창은 확인 버튼까지 내부 스크롤되어야 합니다.");
+assert.match(styles, /@media \(max-width: 680px\)[\s\S]*?\.modal-backdrop \{[\s\S]*?safe-area-inset-top[\s\S]*?\.director-modal[^}]*max-height: calc\(100dvh/, "모바일 모달은 동적 화면 높이와 안전 영역 안에서 스크롤되어야 합니다.");
+assert.ok((game.match(/el\.directorModal\.scrollTop = 0/g) || []).length >= 2, "취임 설정을 열거나 다음 단계로 바꿀 때 스크롤 위치를 맨 위로 되돌려야 합니다.");
 
 for (const threshold of storyAssetThresholds) {
   const fileName = `story-${String(threshold).padStart(3, "0")}.webp`;
