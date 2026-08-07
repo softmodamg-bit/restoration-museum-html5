@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#fff8e8" />
+  <title>반짝! 복원 미술관 · 전체 랭킹</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #584151;
+      background: #fff8e8;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-width: 0;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(255, 190, 174, .28), transparent 28rem),
+        radial-gradient(circle at 92% 4%, rgba(179, 228, 205, .28), transparent 26rem),
+        #fff8e8;
+    }
+
+    .ranking-shell-header {
+      position: relative;
+      z-index: 2;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      padding: 10px max(14px, env(safe-area-inset-right)) 10px max(14px, env(safe-area-inset-left));
+      border-bottom: 1px solid rgba(122, 91, 91, .18);
+      background: rgba(255, 253, 247, .94);
+      box-shadow: 0 8px 24px rgba(100, 75, 76, .1);
+    }
+
+    .ranking-shell-title {
+      min-width: 0;
+      margin: 0;
+      font-size: clamp(15px, 3.8vw, 20px);
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ranking-shell-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      flex: 0 0 auto;
+    }
+
+    .ranking-shell-button {
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 1px solid #e4b278;
+      border-radius: 999px;
+      color: #604652;
+      background: #fff4d6;
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .ranking-shell-button:focus-visible {
+      outline: 3px solid rgba(239, 110, 92, .35);
+      outline-offset: 2px;
+    }
+
+    .ranking-frame-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    #rankingFrame {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      border: 0;
+      background: #fffaf0;
+    }
+
+    .ranking-loading,
+    .ranking-error {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: grid;
+      place-content: center;
+      gap: 10px;
+      padding: 24px;
+      text-align: center;
+      background: #fffaf0;
+    }
+
+    .ranking-loading[hidden],
+    .ranking-error[hidden] { display: none; }
+
+    .ranking-error p { margin: 0; }
+
+    @media (max-width: 480px) {
+      .ranking-shell-header { padding-block: 8px; }
+      .ranking-shell-button { min-height: 40px; padding-inline: 12px; font-size: 13px; }
+      .ranking-direct-link { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="ranking-shell-header">
+    <h1 class="ranking-shell-title">🏆 전체 관장 랭킹</h1>
+    <div class="ranking-shell-actions">
+      <a id="rankingDirectLink" class="ranking-shell-button ranking-direct-link" href="#" target="_blank" rel="noopener noreferrer">새 탭에서 열기</a>
+      <button id="returnToGameButton" class="ranking-shell-button" type="button">게임으로 돌아가기</button>
+    </div>
+  </header>
+
+  <main class="ranking-frame-wrap">
+    <div id="rankingLoading" class="ranking-loading" role="status">전체 랭킹을 불러오고 있어요.</div>
+    <div id="rankingError" class="ranking-error" hidden>
+      <strong>전체 랭킹을 불러오지 못했어요.</strong>
+      <p>인터넷 연결을 확인한 뒤 다시 시도해 주세요.</p>
+      <a id="rankingErrorLink" class="ranking-shell-button" href="#" target="_blank" rel="noopener noreferrer">랭킹 주소 직접 열기</a>
+    </div>
+    <iframe id="rankingFrame" title="반짝 복원 미술관 전체 랭킹" allow="clipboard-read; clipboard-write"></iframe>
+  </main>
+
+  <script src="js/ranking-config.js?v=20260805-ranking-v1"></script>
+  <script>
+    (() => {
+      const config = window.RESTORATION_RANKING_CONFIG || {};
+      const endpoint = String(config.endpoint || "").trim();
+      const season = String(config.season || "공모전 시즌 1");
+      const frame = document.getElementById("rankingFrame");
+      const loading = document.getElementById("rankingLoading");
+      const error = document.getElementById("rankingError");
+      const directLink = document.getElementById("rankingDirectLink");
+      const errorLink = document.getElementById("rankingErrorLink");
+      const returnButton = document.getElementById("returnToGameButton");
+
+      function validEndpoint(value) {
+        return /^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec(?:\?.*)?$/.test(value);
+      }
+
+      function returnToGame() {
+        if (window.opener && !window.opener.closed) {
+          window.close();
+          window.setTimeout(() => { window.location.href = "./"; }, 120);
+          return;
+        }
+        if (window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        window.location.href = "./";
+      }
+
+      returnButton.addEventListener("click", returnToGame);
+
+      if (!validEndpoint(endpoint)) {
+        loading.hidden = true;
+        error.hidden = false;
+        directLink.hidden = true;
+        errorLink.hidden = true;
+        return;
+      }
+
+      const url = new URL(endpoint);
+      url.searchParams.set("season", season);
+      directLink.href = url.href;
+      errorLink.href = url.href;
+      frame.addEventListener("load", () => { loading.hidden = true; }, { once: true });
+      frame.addEventListener("error", () => {
+        loading.hidden = true;
+        error.hidden = false;
+      }, { once: true });
+      frame.src = url.href;
+      window.setTimeout(() => {
+        if (!loading.hidden) loading.textContent = "랭킹 서버의 응답을 기다리고 있어요.";
+      }, 7000);
+    })();
+  </script>
+</body>
+</html>

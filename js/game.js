@@ -7845,6 +7845,16 @@
     }
   }
 
+  function rankingViewerUrl() {
+    if (!isRankingEndpointConfigured()) return "";
+    try {
+      return new URL("ranking.html", document.baseURI).href;
+    } catch (error) {
+      console.warn("Ranking viewer URL creation failed", error);
+      return "";
+    }
+  }
+
   function compactRankingRecords() {
     const seen = new Set();
     return state.records.flatMap(record => {
@@ -7977,16 +7987,16 @@
 
   function syncRankingLinkTarget() {
     if (!el.viewRankingButton) return;
-    const leaderboardUrl = isRankingEndpointConfigured() ? rankingLeaderboardUrl() : "";
-    el.viewRankingButton.href = leaderboardUrl || "#";
-    if (leaderboardUrl && !rankingUsesSameTab()) {
+    const viewerUrl = rankingViewerUrl();
+    el.viewRankingButton.href = viewerUrl || "#";
+    if (viewerUrl && !rankingUsesSameTab()) {
       el.viewRankingButton.setAttribute("target", "_blank");
       el.viewRankingButton.setAttribute("rel", "noopener noreferrer");
       el.viewRankingButton.title = "새 탭에서 전체 랭킹 열기";
     } else {
       el.viewRankingButton.removeAttribute("target");
       el.viewRankingButton.removeAttribute("rel");
-      el.viewRankingButton.title = leaderboardUrl ? "현재 탭에서 전체 랭킹 열기" : "랭킹 구현 미리보기";
+      el.viewRankingButton.title = viewerUrl ? "현재 탭에서 전체 랭킹 열기" : "랭킹 구현 미리보기";
     }
   }
 
@@ -8101,14 +8111,14 @@
       openRankingPreview(state.records.length ? buildRankingSubmission() : null, false);
       return;
     }
-    const leaderboardUrl = rankingLeaderboardUrl();
-    if (!leaderboardUrl) {
+    const viewerUrl = rankingViewerUrl();
+    if (!viewerUrl) {
       event.preventDefault();
       showToast("랭킹 주소를 열지 못했습니다.");
       playTone("wrong");
       return;
     }
-    el.viewRankingButton.href = leaderboardUrl;
+    el.viewRankingButton.href = viewerUrl;
     syncRankingLinkTarget();
   }
 

@@ -4,6 +4,7 @@ import vm from "node:vm";
 
 const game = fs.readFileSync(new URL("../js/game.js", import.meta.url), "utf8");
 const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const rankingViewer = fs.readFileSync(new URL("../ranking.html", import.meta.url), "utf8");
 const config = fs.readFileSync(new URL("../js/ranking-config.js", import.meta.url), "utf8");
 const backend = fs.readFileSync(new URL("../ranking-apps-script.gs", import.meta.url), "utf8");
 
@@ -43,12 +44,17 @@ assert.match(backend, /function calculateStorySpeedScore_/);
 assert.match(backend, /entry\.rulesVersion === RANKING_RULES_VERSION/);
 assert.match(index, /<a id="viewRankingButton"[^>]+target="_blank"[^>]+rel="noopener noreferrer"/);
 assert.match(game, /function rankingLeaderboardUrl\(\)/);
-assert.match(game, /el\.viewRankingButton\.href = leaderboardUrl \|\| "#"/);
+assert.match(game, /function rankingViewerUrl\(\)[\s\S]*?new URL\("ranking\.html", document\.baseURI\)/);
+assert.match(game, /el\.viewRankingButton\.href = viewerUrl \|\| "#"/);
 assert.match(game, /function rankingUsesSameTab\(\)[\s\S]*?\(pointer: coarse\)/, "터치 기기에서는 팝업 없이 현재 탭에서 랭킹을 열어야 합니다.");
 assert.match(game, /function syncRankingLinkTarget\(\)[\s\S]*?removeAttribute\("target"\)/, "모바일 랭킹 링크는 새 탭 차단을 피해야 합니다.");
 const leaderboardHandler = game.match(/function openLeaderboard\(event\) \{[\s\S]*?\n  \}/)?.[0] || "";
 assert.match(leaderboardHandler, /event\.preventDefault\(\)/);
 assert.doesNotMatch(leaderboardHandler, /window\.open/);
+assert.match(rankingViewer, /<iframe id="rankingFrame"/);
+assert.match(rankingViewer, /js\/ranking-config\.js/);
+assert.match(rankingViewer, /url\.searchParams\.set\("season", season\)/);
+assert.match(rankingViewer, /window\.history\.back\(\)/);
 assert.match(backend, /canGoBack=window\.history\.length>1[\s\S]*?window\.history\.back\(\)/, "현재 탭에서 연 모바일은 게임 화면으로 돌아갈 수 있어야 합니다.");
 
 console.log("Story and ranking validation passed: 15 authored chapters, 300-appeal epilogue spacing, 2500 finale, compatible legacy migration and director-score-v3 fields");

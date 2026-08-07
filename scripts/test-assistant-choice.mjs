@@ -55,7 +55,7 @@ assert.match(index, /id="assistantGreetingBackdrop"[\s\S]*?class="assistant-dail
 assert.match(index, /id="assistantPanel"[\s\S]*?id="assistantPortraitButton"[\s\S]*?data-assistant-image/);
 assert.doesNotMatch(index, /assistantGreetingSettingsButton|비서실 설정 열기/);
 assert.match(index, /styles\.css\?v=20260808-mobile-tutorial-focus-v1/);
-assert.match(index, /js\/game\.js\?v=20260808-mobile-tutorial-focus-v1/);
+assert.match(index, /js\/game\.js\?v=20260808-mobile-ranking-view-v1/);
 assert.match(game, /el\.directorModal\.setAttribute\("aria-labelledby", "directorTutorialTitle"\)/);
 assert.match(game, /el\.assistantButton\.addEventListener\("click", toggleAssistantPanel\)/);
 assert.match(game, /el\.assistantPortraitButton\.addEventListener\("click", openAssistantGreetingFromPanel\)/);
