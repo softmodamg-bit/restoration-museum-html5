@@ -5,6 +5,7 @@ import vm from "node:vm";
 const game = fs.readFileSync(new URL("../js/game.js", import.meta.url), "utf8");
 const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const rankingViewer = fs.readFileSync(new URL("../ranking.html", import.meta.url), "utf8");
+const pagesWorkflow = fs.readFileSync(new URL("../.github/workflows/pages.yml", import.meta.url), "utf8");
 const config = fs.readFileSync(new URL("../js/ranking-config.js", import.meta.url), "utf8");
 const backend = fs.readFileSync(new URL("../ranking-apps-script.gs", import.meta.url), "utf8");
 
@@ -55,6 +56,7 @@ assert.match(rankingViewer, /<iframe id="rankingFrame"/);
 assert.match(rankingViewer, /js\/ranking-config\.js/);
 assert.match(rankingViewer, /url\.searchParams\.set\("season", season\)/);
 assert.match(rankingViewer, /window\.history\.back\(\)/);
+assert.match(pagesWorkflow, /cp index\.html ranking\.html styles\.css _site\//, "GitHub Pages deployment must include the ranking viewer");
 assert.match(backend, /canGoBack=window\.history\.length>1[\s\S]*?window\.history\.back\(\)/, "현재 탭에서 연 모바일은 게임 화면으로 돌아갈 수 있어야 합니다.");
 
 console.log("Story and ranking validation passed: 15 authored chapters, 300-appeal epilogue spacing, 2500 finale, compatible legacy migration and director-score-v3 fields");

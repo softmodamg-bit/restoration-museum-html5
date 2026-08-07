@@ -387,7 +387,7 @@
 - 클라이언트 미리보기와 `ranking-apps-script.gs`는 `director-score-v3`를 사용한다. 서버는 제출된 `clientSummary`를 믿지 않고 작품 점수와 운영 보너스를 다시 계산한다.
 - 수입 보너스는 누적 개관 수입 25코인당 1점, 관람객 보너스는 5명당 1점이며 각각 최대 5,000점이다. 이야기 보너스는 후일담 5편 완주일에 따라 20일 이내 5,000점, 25일 이내 4,500점, 35일 이내 3,500점, 50일 이내 2,500점, 이후 1,500점이고 미완주는 0점이다.
 - Google Sheet의 기존 행은 삭제하지 않지만 현재 v3 최고 기록 비교와 공개 목록에서는 이전 규칙 행을 제외한다.
-- `전체 랭킹 확인`은 모바일 팝업 차단과 일부 모바일 브라우저의 `script.google.com` 파일 열기 충돌을 피하기 위해 `window.open()`이나 Apps Script 최상위 직접 이동을 쓰지 않는다. `renderRankingPanel()`은 같은 GitHub Pages 출처의 `ranking.html`을 `#viewRankingButton`의 실제 `href`에 넣는다. `ranking.html`이 `js/ranking-config.js`의 Apps Script 조회 주소를 검증한 뒤 전체 화면 `iframe` 안에 공개 랭킹을 표시하며, 직접 열기와 게임으로 돌아가기 대체 동선도 제공한다. 마우스 중심의 넓은 화면은 일반 링크 클릭으로 새 탭을 열고, 820px 이하 또는 거친 포인터 터치 기기는 현재 탭에서 연다. 랭킹 주소가 비어 있을 때만 클릭 기본 동작을 막고 기존 미리보기 모달을 연다.
+- `전체 랭킹 확인`은 모바일 팝업 차단과 일부 모바일 브라우저의 `script.google.com` 파일 열기 충돌을 피하기 위해 `window.open()`이나 Apps Script 최상위 직접 이동을 쓰지 않는다. `renderRankingPanel()`은 같은 GitHub Pages 출처의 `ranking.html`을 `#viewRankingButton`의 실제 `href`에 넣는다. `ranking.html`이 `js/ranking-config.js`의 Apps Script 조회 주소를 검증한 뒤 전체 화면 `iframe` 안에 공개 랭킹을 표시하며, 직접 열기와 게임으로 돌아가기 대체 동선도 제공한다. `.github/workflows/pages.yml`은 이 전용 화면도 Pages 산출물에 복사해야 한다. 마우스 중심의 넓은 화면은 일반 링크 클릭으로 새 탭을 열고, 820px 이하 또는 거친 포인터 터치 기기는 현재 탭에서 연다. 랭킹 주소가 비어 있을 때만 클릭 기본 동작을 막고 기존 미리보기 모달을 연다.
 - `exportSaveFile()`은 세이브를 만든 로컬 시각과 현재 관장명·미술관명을 `YYMMDD_HHMMSS_관장이름_미술관이름.json` 형식의 다운로드 파일명으로 쓴다. `saveFileNameSegment()`가 운영체제에서 금지된 문자를 제거하지만 JSON 내용과 불러오기 형식은 바꾸지 않는다.
 - `scripts/test-story-ranking.mjs`가 고정 원고 15편, 후일담 300 간격, 2,500 상한, 구형 진행 마이그레이션과 클라이언트·서버 v3 필드를 검사한다. `scripts/test-ranking-backend.mjs`가 서버 점수, 보너스 상한, 미완주 0점과 결과 페이지 표시를 검사한다.
 
