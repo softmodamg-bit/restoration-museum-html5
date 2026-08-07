@@ -251,6 +251,8 @@
 
 난이도 5 `choice`는 시험구가 네 개로 늘어나므로 `renderCurrentStep()`이 `artStage`에 `has-four-choice`를 붙여 작업 영역을 확장한다. 모바일에서는 글씨 크기 2·3 설정까지 반영해 작업 영역 높이를 단계적으로 더 확보한다. 680px 이하에서는 전체 미니게임 중 화면 전체를 직접 비추는 `spot`·`uv`만 기존 고정 작업층을 유지하고, 나머지 `.mechanic-layer`는 내용이 작업 영역보다 길어질 때 독립된 세로 스크롤 영역이 된다. 파편·붓·세척 Canvas·받침처럼 직접 끌거나 그리는 조작면은 자체 `touch-action: none`을 유지하므로 작업 입력과 세로 스크롤이 섞이지 않는다. 선택지, 절차 카드, 색 보기 카드, 접합 카드, 세척·처리량 결과와 하단 확정 버튼은 모두 작업층 안에서 끝까지 접근할 수 있어야 한다.
 
+모바일의 길게 누르기는 미니게임 입력으로만 사용한다. `styles.css`의 `.mechanic-layer`는 `-webkit-touch-callout`과 텍스트 선택을 끄고, 실제 홀드 버튼인 `.precision-hold`는 `touch-action: none`으로 브라우저 제스처보다 포인터 입력을 우선한다. `bindEvents()`는 `#artStage`의 `contextmenu`·`selectstart`·`dragstart`를 `preventMechanicBrowserGesture()`로 막되 `.mechanic-layer` 안에서 시작된 이벤트에만 적용한다. 따라서 비서실 이름 입력, 저장 파일, 일반 설명문의 브라우저 동작은 유지된다.
+
 ### `drag` 기억 미리보기와 `rhythm` 연결시간
 
 `drag`와 `rhythm`은 기존 ID와 기존 성공 판정을 유지한 채 인지 요소만 덧붙인다.

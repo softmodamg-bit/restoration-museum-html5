@@ -53,6 +53,11 @@ assert(/session\.practiceDifficulty = selectedDifficulty/.test(practiceStartBody
 assert(!/session\.(?:streak|maxStreak)\s*=/.test(pauseBody + resumeBody), "Pause/resume must not mutate streak state");
 assert(/document\.addEventListener\("visibilitychange"[\s\S]*?pauseRestoration\(\)[\s\S]*?resumeRestoration\(\)/.test(game), "Tab visibility must use the common pause/resume path");
 assert(["pointerdown", "pointerup", "pointercancel"].every(type => game.includes(`addEventListener("${type}"`)), "Pointer controls must keep mouse/touch-compatible events");
+assert(["contextmenu", "selectstart", "dragstart"].every(type => game.includes(`el.artStage.addEventListener("${type}", preventMechanicBrowserGesture)`)), "The mechanic stage must suppress browser long-press menus and selection gestures");
+assert(/function preventMechanicBrowserGesture\(event\)[\s\S]*?closest\("\.mechanic-layer"\)[\s\S]*?event\.preventDefault\(\)/.test(game), "Browser gesture suppression must stay scoped to the interactive mechanic layer");
+assert(/\.mechanic-layer \{[^}]*-webkit-touch-callout: none[^}]*-webkit-user-select: none[^}]*user-select: none/.test(css), "Mechanic layers must suppress mobile touch callouts and text selection");
+assert(/\.precision-hold \{[^}]*touch-action: none[^}]*-webkit-touch-callout: none/.test(css), "The hold control must reserve long presses for game input");
+assert(/function beginPrecisionHold\(event\)[\s\S]*?event\.button !== 0[\s\S]*?event\.isPrimary === false/.test(game), "Precision hold must ignore secondary or non-primary pointers");
 assert(/currentMechanic === "choice"[\s\S]*?completeTestChoiceObservation/.test(resumeBody), "Paused choice observation must resume without a stuck disabled sample");
 assert(/currentMechanic === "sequence"[\s\S]*?renderProcedureScenario\(\)/.test(resumeBody), "Paused sequence transition must rebuild the active scenario");
 assert(/timingState\.overMoistureReady = true/.test(resumeBody), "Paused stability overflow cooldown must recover");

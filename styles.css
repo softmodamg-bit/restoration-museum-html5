@@ -397,7 +397,8 @@ button:focus-visible { outline: 4px solid rgba(99, 130, 255, .35); outline-offse
 .swipe-spark { position: absolute; z-index: 9; transform: translate(-50%,-50%); pointer-events: none; color: #fff; font-size: 22px; text-shadow: 0 0 9px #ff9a5b; animation: sparkOut .38s ease forwards; }
 @keyframes sparkOut { to { transform: translate(-50%,-90%) scale(1.6); opacity: 0; } }
 
-.mechanic-layer { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; padding: 22px; transition: opacity .2s ease, filter .2s ease; }
+.mechanic-layer { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; padding: 22px; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; transition: opacity .2s ease, filter .2s ease; }
+.mechanic-layer :is(img,svg,canvas) { -webkit-user-drag: none; }
 .mechanic-layer:not([data-mechanic="spot"]):not([data-mechanic="uv"]) { background: rgba(255,248,239,.16); backdrop-filter: blur(5px) saturate(.78); }
 .mechanic-layer.is-locked { opacity: .26; filter: grayscale(.45); pointer-events: none; }
 .mechanic-layer.is-paused { pointer-events: none; }
@@ -522,7 +523,7 @@ button:focus-visible { outline: 4px solid rgba(99, 130, 255, .35); outline-offse
 #precisionFill { position: absolute; z-index: 1; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg,#8ad5cf,#68b8d5); }
 #precisionNeedle { position: absolute; z-index: 3; inset-block: -3px; left: 0; width: 4px; transform: translateX(-50%); background: #5b3744; box-shadow: 0 0 0 3px white; }
 .precision-rounds { color: #49a873; font-size: 22px; letter-spacing: .18em; font-weight: 1000; }
-.precision-hold { user-select: none; -webkit-user-select: none; }
+.precision-hold { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .precision-hold.is-holding { transform: translateY(2px); background: linear-gradient(180deg,#e86b61,#c84e55); box-shadow: inset 0 4px 8px rgba(94,35,40,.22); }
 .layer-cleaning-panel { width:min(650px,96%); display:grid; gap:11px; margin-top:64px; padding:18px; border:3px solid white; border-radius:24px; background:rgba(255,255,255,.94); box-shadow:0 18px 35px rgba(72,45,54,.18); text-align:center; }
 .layer-cleaning-panel > p { margin:0; color:#735b63; font-size:12px; line-height:1.5; font-weight:800; }

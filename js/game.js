@@ -1634,6 +1634,12 @@
     }
   }
 
+  function preventMechanicBrowserGesture(event) {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.closest(".mechanic-layer")) return;
+    event.preventDefault();
+  }
+
   function bindEvents() {
     el.startButton.addEventListener("click", () => {
       if (state.started && !window.confirm("현재 저장을 지우고 새로 시작할까요?")) return;
@@ -1897,6 +1903,9 @@
     el.artStage.addEventListener("pointerup", onPointerUp);
     el.artStage.addEventListener("pointercancel", onPointerUp);
     el.artStage.addEventListener("pointerleave", onPointerLeave);
+    el.artStage.addEventListener("contextmenu", preventMechanicBrowserGesture);
+    el.artStage.addEventListener("selectstart", preventMechanicBrowserGesture);
+    el.artStage.addEventListener("dragstart", preventMechanicBrowserGesture);
 
     el.openMuseumButton.addEventListener("click", runMuseumDay);
     el.resultConfirm.addEventListener("click", closeResultModal);
@@ -5144,6 +5153,7 @@
   }
 
   function beginPrecisionHold(event) {
+    if (event.type.startsWith("pointer") && (event.button !== 0 || event.isPrimary === false)) return;
     if (!selectedTool || timingState?.kind !== "precision" || timingState.holding || session.mechanicComplete) return;
     event.preventDefault();
     timingState.holding = true;
