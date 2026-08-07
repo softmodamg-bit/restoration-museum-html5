@@ -56,6 +56,10 @@ assert.match(rankingViewer, /<iframe id="rankingFrame"/);
 assert.match(rankingViewer, /js\/ranking-config\.js/);
 assert.match(rankingViewer, /url\.searchParams\.set\("season", season\)/);
 assert.match(rankingViewer, /window\.history\.back\(\)/);
+assert.match(rankingViewer, /RESTORATION_RANKING_RETURN/);
+assert.match(rankingViewer, /script\.googleusercontent\.com/);
+assert.match(game, /랭킹 페이지로 이동하고 있습니다/);
+assert.match(game, /ranking-loading-card/);
 assert.match(pagesWorkflow, /cp index\.html ranking\.html styles\.css _site\//, "GitHub Pages deployment must include the ranking viewer");
 assert.match(backend, /canGoBack=window\.history\.length>1[\s\S]*?window\.history\.back\(\)/, "현재 탭에서 연 모바일은 게임 화면으로 돌아갈 수 있어야 합니다.");
 

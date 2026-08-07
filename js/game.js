@@ -8081,8 +8081,50 @@
         playTone("wrong");
         return;
       }
-      popup.document.title = "관장 랭킹 제출 중";
-      popup.document.body.textContent = "현재 기록을 확인하고 랭킹에 올리고 있습니다…";
+      const popupDocument = popup.document;
+      popupDocument.documentElement.lang = "ko";
+      popupDocument.title = "관장 랭킹 제출 중";
+      const viewportMeta = popupDocument.createElement("meta");
+      viewportMeta.name = "viewport";
+      viewportMeta.content = "width=device-width, initial-scale=1, viewport-fit=cover";
+      const loadingStyles = popupDocument.createElement("style");
+      loadingStyles.textContent = `
+        * { box-sizing: border-box; }
+        html, body { width: 100%; min-height: 100%; margin: 0; }
+        body {
+          display: grid;
+          min-height: 100dvh;
+          place-items: center;
+          padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+          color: #5b4352;
+          background: radial-gradient(circle at 12% 10%, #ffe2d6 0, transparent 38%), radial-gradient(circle at 90% 90%, #dff3e8 0, transparent 36%), #fff8e8;
+          font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .ranking-loading-card {
+          width: min(560px, 100%);
+          padding: clamp(30px, 8vw, 52px) clamp(22px, 7vw, 44px);
+          border: 3px solid #efd7c8;
+          border-radius: 28px;
+          background: rgba(255, 253, 247, .96);
+          box-shadow: 0 20px 52px rgba(93, 63, 74, .14);
+          text-align: center;
+        }
+        .ranking-loading-icon { display: block; margin-bottom: 14px; font-size: clamp(46px, 14vw, 72px); }
+        h1 { margin: 0; font-size: clamp(28px, 8vw, 42px); line-height: 1.3; word-break: keep-all; }
+        p { margin: 18px 0 0; color: #806773; font-size: clamp(17px, 4.8vw, 22px); font-weight: 700; line-height: 1.7; word-break: keep-all; }
+        .ranking-loading-dots { display: flex; justify-content: center; gap: 10px; margin-top: 26px; }
+        .ranking-loading-dots span { width: 12px; height: 12px; border-radius: 50%; background: #ef8068; animation: ranking-dot 1s ease-in-out infinite alternate; }
+        .ranking-loading-dots span:nth-child(2) { animation-delay: .18s; }
+        .ranking-loading-dots span:nth-child(3) { animation-delay: .36s; }
+        @keyframes ranking-dot { to { opacity: .3; transform: translateY(-7px); } }
+        @media (prefers-reduced-motion: reduce) { .ranking-loading-dots span { animation: none; } }
+      `;
+      popupDocument.head.append(viewportMeta, loadingStyles);
+      const loadingCard = popupDocument.createElement("main");
+      loadingCard.className = "ranking-loading-card";
+      loadingCard.setAttribute("role", "status");
+      loadingCard.innerHTML = `<span class="ranking-loading-icon" aria-hidden="true">🏆</span><h1>랭킹 페이지로 이동하고 있습니다</h1><p>현재 기록을 안전하게 확인하고 있어요.<br>잠시만 기다려 주세요.</p><div class="ranking-loading-dots" aria-hidden="true"><span></span><span></span><span></span></div>`;
+      popupDocument.body.replaceChildren(loadingCard);
       const form = document.createElement("form");
       const input = document.createElement("input");
       form.method = "POST";

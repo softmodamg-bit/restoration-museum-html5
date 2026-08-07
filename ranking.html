@@ -181,6 +181,18 @@
       }
 
       returnButton.addEventListener("click", returnToGame);
+      window.addEventListener("message", event => {
+        if (event.data?.type !== "RESTORATION_RANKING_RETURN") return;
+        try {
+          const hostname = new URL(event.origin).hostname;
+          const trusted = hostname === "script.google.com"
+            || hostname === "script.googleusercontent.com"
+            || hostname.endsWith(".script.googleusercontent.com");
+          if (trusted) returnToGame();
+        } catch (error) {
+          console.warn("Ranking return message was ignored", error);
+        }
+      });
 
       if (!validEndpoint(endpoint)) {
         loading.hidden = true;

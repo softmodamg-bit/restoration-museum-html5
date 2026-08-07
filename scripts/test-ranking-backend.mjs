@@ -103,6 +103,7 @@ assert.throws(
 const receiptHtml = context.renderReceiptPage_(scored, 1, [scored]);
 assert.match(receiptHtml, /랭킹 탭 닫고 게임으로 돌아가기/);
 assert.match(receiptHtml, /window\.top\.close\(\)/);
+assert.match(receiptHtml, /RESTORATION_RANKING_RETURN/);
 assert.match(receiptHtml, /전체 저장 파일과 보유 코인은 저장하지 않습니다/);
 assert.match(receiptHtml, /욕설, 개인정보 노출 등 타인에게 피해를 줄 수 있는 내용은 관리자가 임의로 수정하거나 숨김 처리할 수 있습니다/);
 assert.match(receiptHtml, /랭킹 저장 시각 · 2026\.08\.05 14:30:00 KST/);
@@ -116,6 +117,7 @@ assert.match(receiptHtml, /class='row-saved-at'>저장 2026\.08\.05 14:30:00 KST
 const leaderboardHtml = context.renderLeaderboardPage_([scored], "공모전 시즌 1");
 assert.match(leaderboardHtml, /랭킹 탭 닫고 게임으로 돌아가기/);
 assert.match(leaderboardHtml, /window\.top\.close\(\)/);
+assert.match(leaderboardHtml, /RESTORATION_RANKING_RETURN/);
 assert.match(leaderboardHtml, /\.wrap\{width:min\(1280px,100%\)/);
 assert.match(leaderboardHtml, /\.hero\{width:min\(920px,100%\);margin-inline:auto/);
 assert.match(leaderboardHtml, /table\{width:100%;border-collapse:collapse;min-width:1040px\}/);
