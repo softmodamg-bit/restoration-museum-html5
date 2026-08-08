@@ -7,7 +7,7 @@ const game = fs.readFileSync(new URL("../js/game.js", import.meta.url), "utf8");
 
 assert.match(index, /id="toolSelectionCard" class="panel-card tool-selection-card"/);
 assert.match(index, /id="mobileToolBriefText"/);
-assert.match(index, /styles\.css\?v=20260808-fold-practice-v1/);
+assert.match(index, /styles\.css\?v=20260808-fold-practice-v2/);
 assert.match(index, /js\/game\.js\?v=20260808-mobile-ranking-view-v2/);
 const resultTitleIndex = index.indexOf('id="resultTitle"');
 const resultActionIndex = index.indexOf('id="resultConfirm"');

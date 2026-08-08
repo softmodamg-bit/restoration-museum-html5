@@ -176,6 +176,7 @@ assert(/session\?\.practiceDifficulty \|\| getPracticeChallenge\(practiceMechani
 assert(css.includes(".practice-difficulty-select") && css.includes(".practice-card-actions"), "Practice difficulty controls are not styled");
 assert(/@media \(max-width: 900px\)[\s\S]*?\.practice-list \{ grid-template-columns: 1fr; \}/.test(css), "Fold-width practice cards must switch to one readable column");
 assert(css.includes(".practice-card-copy :is(strong,p,em) { word-break: keep-all; overflow-wrap: break-word; }"), "Practice copy must keep Korean words readable");
+assert(css.includes('body:is([data-font-size="2"],[data-font-size="3"]) .practice-card-copy p { word-break: keep-all; overflow-wrap: break-word; }'), "Large practice copy must not fall back to one-syllable wrapping");
 assert(game.includes('el.artStage.classList.toggle("has-four-choice", currentMechanic === "choice" && session.choiceSampleCount === 4)'), "Choice D5 does not expand the artwork stage");
 assert(css.includes(".art-stage.has-four-choice") && css.includes("min-height: 720px"), "Choice D5 expanded stage styling is missing");
 assert(css.includes('body[data-font-size="2"] .art-stage.has-four-choice { min-height: 980px; }') && css.includes('body[data-font-size="3"] .art-stage.has-four-choice { min-height: 1180px; }'), "Choice D5 mobile stage does not grow with the large text settings");
