@@ -1095,6 +1095,7 @@ button.story-chapter-card:hover { transform: translateY(-2px); border-color: #e8
 .practice-card-copy strong { font-size: 15px; }
 .practice-card-copy > div em { flex-basis: 100%; color: #806f76; font-size: 9px; font-style: normal; font-weight: 850; }
 .practice-card-copy p { margin: 6px 0; color: var(--ink-soft); font-size: 10px; line-height: 1.45; font-weight: 700; }
+.practice-card-copy :is(strong,p,em) { word-break: keep-all; overflow-wrap: break-word; }
 .practice-card-copy p b { display: inline-flex; min-width: 68px; margin-right: 6px; padding: 3px 6px; border-radius: 999px; color: #9b6257; background: #ffe4c9; font-size: 8px; font-weight: 1000; }
 .practice-card-copy .practice-easy { color: #6b5960; }
 .practice-card-copy .practice-easy b { color: #72569b; background: #eee6fb; }
@@ -1488,6 +1489,8 @@ body.is-tutorial-running .toast { bottom: 220px; }
   .gallery-slots { gap: 10px; }
   .slot-art { height: 180px; }
   .gallery-slot { min-height: 260px; }
+  .practice-list { grid-template-columns: 1fr; }
+  .practice-card { min-height: 0; }
 }
 
 @media (min-width: 481px) and (max-width: 820px) {
